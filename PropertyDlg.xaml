@@ -1,0 +1,54 @@
+﻿<Window x:Class="Mini3DCad.PropertyDlg"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Mini3DCad"
+        mc:Ignorable="d"
+        Title="PropertyDlg" Height="250" Width="300" Closing="Window_Closing" Loaded="Window_Loaded">
+    <Grid>
+        <Label Name="lbNameTitle" Content="名称" Margin="5,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBox x:Name="tbName" Text="名称" Margin="80,5,10,0" VerticalAlignment="Top" />
+        <Label Content="線分の色" Margin="5,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <ComboBox Name="cbLineColor" ItemsSource="{Binding}" SelectedValue="{Binding Color}"
+                  Margin="80,30,0,0" Width="100" VerticalAlignment="Top" HorizontalAlignment="Left">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <!--色と色名を並べて表示-->
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="20" Height="Auto" Margin="5,0" BorderThickness="1" 
+                                BorderBrush="Black" Background="{Binding brush}" >
+                        </Border>
+                        <TextBlock Text="{Binding colorTitle}"></TextBlock>
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+        <Label Content="面の色" Margin="5,55,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <ComboBox Name="cbFaceColor" ItemsSource="{Binding}" SelectedValue="{Binding Color}"
+                  Margin="80,60,0,0" Width="100" VerticalAlignment="Top" HorizontalAlignment="Left" >
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <!--色と色名を並べて表示-->
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="20" Height="Auto" Margin="5,0" BorderThickness="1" 
+                                BorderBrush="Black" Background="{Binding brush}" >
+                        </Border>
+                        <TextBlock Text="{Binding colorTitle}"></TextBlock>
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+        <CheckBox Name="chFaceColor" Content="透明" Margin="190,65,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <Label Content="両面表示" Margin="5,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chShading" Margin="80,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <Label Content="3D表示" Margin="5,110,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chDisp3D" Margin="80,115,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <Label Name="lbReverseTitle" Content="逆順" Margin="5,140,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chReverse" Margin="80,145,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <Label Name="lbDivideAngTitle" Content="分割角度" Margin="120,140,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBox Name="tbDivideAng" Margin="180,145,0,0" Width="80" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <Button x:Name="btOK" IsDefault="True" Content="OK" Width="60" Margin="0,0,100,10" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btOK_Click" />
+        <Button x:Name="btCancel" IsCancel="True" Content="Cancel" Width="60" Margin="0,0,20,10" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btCancel_Click" />
+    </Grid>
+</Window>

@@ -1,0 +1,163 @@
+﻿<Window x:Class="Mini3DCad.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Mini3DCad"
+        mc:Ignorable="d"
+        Title="Mini3DCad" Height="450" Width="600" Closing="Window_Closing" Loaded="Window_Loaded"
+        LayoutUpdated="Window_LayoutUpdated" MouseWheel="Window_MouseWheel" MouseMove="Window_MouseMove" 
+        MouseLeftButtonDown="Window_MouseLeftButtonDown" MouseLeftButtonUp="Window_MouseLeftButtonUp" 
+        MouseRightButtonDown="Window_MouseRightButtonDown" MouseRightButtonUp="Window_MouseRightButtonUp" PreviewKeyDown="Window_PreviewKeyDown">
+    <Grid>
+        <DockPanel>
+            <ToolBarTray DockPanel.Dock="Top">
+                <ToolBar Height="30">
+                    <ComboBox Name="cbGenreList" Width="100" ToolTip="大分類" SelectionChanged="cbGenreList_SelectionChanged" >
+                        <ComboBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Name="cbGenreAddMenu" Header="追加" Click="cbGenreMenu_Click" />
+                                <MenuItem Name="cbGenreRenameMenu" Header="名前の変更" Click="cbGenreMenu_Click" />
+                                <MenuItem Name="cbGenreRemoveMenu" Header="削除" Click="cbGenreMenu_Click" />
+                            </ContextMenu>
+                        </ComboBox.ContextMenu>
+                    </ComboBox>
+                </ToolBar>
+                <ToolBar Height="25" >
+                    <Button x:Name="btZoomArea" Width="25" Height="25" Click="btZoom_Click"
+                            ToolTip="領域拡大 F2" >
+                        <Image Source="Icon\ZoomOriginalSize.png" ></Image>
+                    </Button>
+                    <Button x:Name="btZoomIn" Width="25" Height="25" Click="btZoom_Click"
+                            ToolTip="拡大表示 F4" >
+                        <Image Source="Icon\ZoomIn.png" ></Image>
+                    </Button>
+                    <Button x:Name="btZoomOut" Width="25" Height="25" Click="btZoom_Click"
+                            ToolTip="縮小表示 F5" >
+                        <Image Source="Icon\ZoomOut.png" ></Image>
+                    </Button>
+                    <Button x:Name="btZoomFit" Width="25" Height="25" Click="btZoom_Click"
+                            ToolTip="全体表示 F3" >
+                        <Image Source="Icon\ZoomToFit.png" ></Image>
+                    </Button>
+                    <Button x:Name="btMenu" Width="25" Height="25" Click="btMenu_Click" 
+                            ToolTip="ロケイトメニュー F6">
+                        <Image Source="Icon\MenuItem.png" ></Image>
+                    </Button>
+                    <Button x:Name="btAreaPick" ToolTip="領域ピック F7" Width="25" Height="25" Click="btAreaPick_Click"  >
+                        <Image Source="Icon\WebPartZone.png" ></Image>
+                    </Button>
+                </ToolBar>
+                <ToolBar>
+                    <TextBlock Text="色" FontSize="11" VerticalAlignment="Center"/>
+                    <ComboBox Name="cbColor" Width="80" ItemsSource="{Binding}" 
+                              ToolTip="色設定" SelectionChanged="cbColor_SelectionChanged" >
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="20" Height="Auto" Margin="5,0" BorderThickness="1" 
+                                        BorderBrush="Black" Background="{Binding brush}" >
+                                    </Border>
+                                    <TextBlock Text="{Binding colorTitle}"></TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock Text="グリッド" FontSize="11" VerticalAlignment="Center"/>
+                    <ComboBox Name="cbGridSize" Width="40" ToolTip="グリッドのサイズ"
+                              SelectionChanged="cbGridSize_SelectionChanged" />
+                </ToolBar>
+            </ToolBarTray>
+            <StackPanel DockPanel.Dock="Bottom" Height="26">
+                <StatusBar Height="26" >
+                    <Button x:Name="btDummy" Width="0" Height="20" />
+                    <TextBlock Text="コマンド" FontSize="11"/>
+                    <ComboBox x:Name="cbCommand" Width="370" IsEditable="True" PreviewKeyDown="cbCommand_PreviewKeyDown"
+                              ToolTip="コマンド入力欄、Enterキーで実行"/>
+                    <StatusBarItem HorizontalAlignment="Right">
+                        <TextBlock x:Name="tbStatus" Text="状態" />
+                    </StatusBarItem>
+                </StatusBar>
+            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="9*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="100*" />
+                </Grid.ColumnDefinitions>
+                <ListBox Name="lbCategoryList" Grid.Column="0" ToolTip="分類リスト" SelectionChanged="lbCategoryList_SelectionChanged">
+                    <ListBox.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Name="lbCategoryAddMenu" Header="追加" Click="lbCategoryMenu_Click" />
+                            <MenuItem Name="lbCategoryRenameMenu" Header="名前の変更" Click="lbCategoryMenu_Click" />
+                            <MenuItem Name="lbCategoryRemoveMenu" Header="削除" Click="lbCategoryMenu_Click" />
+                            <MenuItem Name="lbCategoryCopyMenu" Header="コピー" Click="lbCategoryMenu_Click" />
+                            <MenuItem Name="lbCategoryMoveMenu" Header="移動" Click="lbCategoryMenu_Click" />
+                        </ContextMenu>
+                    </ListBox.ContextMenu>
+                </ListBox>
+                <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
+                <Grid Grid.Column="2">
+                    <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="10*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="100*" />
+                </Grid.ColumnDefinitions>
+                    <ListBox Name="lbItemList" Grid.Column="0" ToolTip="項目リスト" SelectionChanged="lbItemList_SelectionChanged" Grid.RowSpan="2">
+                        <ListBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Name="lbItemAddMenu" Header="追加" Click="lbItemMenu_Click" />
+                                <MenuItem Name="lbItemRenameMenu" Header="名前の変更" Click="lbItemMenu_Click" />
+                                <MenuItem Name="lbItemRemoveMenu" Header="削除" Click="lbItemMenu_Click" />
+                                <MenuItem Name="lbItemCopyMenu" Header="コピー" Click="lbItemMenu_Click" />
+                                <MenuItem Name="lbItemMoveMenu" Header="移動" Click="lbItemMenu_Click" />
+                                <MenuItem Name="lbItemPropertyMenu" Header="プロパティ" Click="lbItemMenu_Click" />
+                            </ContextMenu>
+                        </ListBox.ContextMenu>
+                    </ListBox>
+                    <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
+                    <Grid Grid.Column="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="12*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="100*" />
+                        </Grid.ColumnDefinitions>
+                        <ListBox x:Name="lbCommand" Grid.Column="0" SelectionChanged="lbCommand_SelectionChanged" >
+                        </ListBox>
+                        <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
+                        <Grid Grid.Column="2">
+                            <TabControl x:Name="tabCanvas" SelectionChanged="TabControl_SelectionChanged" >
+                                <TabItem Name="CanvasFRONT" Header="正面図">
+                                    <Grid Background="#FFE5E5E5">
+                                        <Canvas x:Name="cvCanvasFRONT" >
+                                            <Image x:Name="imScreenFRONT" Margin="0" />
+                                        </Canvas>
+                                    </Grid>
+                                </TabItem>
+                                <TabItem Name="CanvasTOP" Header="平面図">
+                                    <Grid Background="#FFE5E5E5">
+                                        <Canvas x:Name="cvCanvasTOP" >
+                                            <Image x:Name="imScreenTOP" Margin="0" />
+                                        </Canvas>
+                                    </Grid>
+                                </TabItem>
+                                <TabItem Name="CanvasRIGHT" Header="側面図">
+                                    <Grid Background="#FFE5E5E5">
+                                        <Canvas x:Name="cvCanvasRIGHT" >
+                                            <Image x:Name="imScreenRIGHT" Margin="0" />
+                                        </Canvas>
+                                    </Grid>
+                                </TabItem>
+                                <TabItem Name="OpenGL" Header="3D表示">
+                                    <Grid Background="#FFE5E5E5">
+                                        <WindowsFormsHost x:Name="glGraph" Margin="0,0,0,0" />
+                                    </Grid>
+                                </TabItem>
+                            </TabControl>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </DockPanel>
+    </Grid>
+</Window>

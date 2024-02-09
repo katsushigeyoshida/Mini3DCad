@@ -1,0 +1,98 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Icon\copy.png" />
+    <None Remove="Icon\cut.png" />
+    <None Remove="Icon\Highlighter.png" />
+    <None Remove="Icon\MenuItem.png" />
+    <None Remove="Icon\OpenFile.png" />
+    <None Remove="Icon\paste.png" />
+    <None Remove="Icon\Pencil.png" />
+    <None Remove="Icon\redo.png" />
+    <None Remove="Icon\Save.png" />
+    <None Remove="Icon\SaveAs.png" />
+    <None Remove="Icon\Screenshot.png" />
+    <None Remove="Icon\select-all.png" />
+    <None Remove="Icon\Select.png" />
+    <None Remove="Icon\SelectAll.png" />
+    <None Remove="Icon\SelectFrame.png" />
+    <None Remove="Icon\Settings.png" />
+    <None Remove="Icon\StatusHelp.png" />
+    <None Remove="Icon\StatusHelpOutline.png" />
+    <None Remove="Icon\undo.png" />
+    <None Remove="Icon\WebPartZone.png" />
+    <None Remove="Icon\Zoom.png" />
+    <None Remove="Icon\ZoomIn.png" />
+    <None Remove="Icon\ZoomOriginalSize.png" />
+    <None Remove="Icon\ZoomOut.png" />
+    <None Remove="Icon\ZoomToFit.png" />
+    <None Remove="Icon\ZoomToWidth.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTK" Version="3.3.3" />
+    <PackageReference Include="OpenTK.GLControl" Version="3.3.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CoreLib\CoreLib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Image\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Icon\copy.png" />
+    <Resource Include="Icon\cut.png" />
+    <Resource Include="Icon\Highlighter.png" />
+    <Resource Include="Icon\MenuItem.png" />
+    <Resource Include="Icon\OpenFile.png" />
+    <Resource Include="Icon\paste.png" />
+    <Resource Include="Icon\Pencil.png" />
+    <Resource Include="Icon\redo.png" />
+    <Resource Include="Icon\Save.png" />
+    <Resource Include="Icon\SaveAs.png" />
+    <Resource Include="Icon\Screenshot.png" />
+    <Resource Include="Icon\select-all.png" />
+    <Resource Include="Icon\Select.png" />
+    <Resource Include="Icon\SelectAll.png" />
+    <Resource Include="Icon\SelectFrame.png" />
+    <Resource Include="Icon\Settings.png" />
+    <Resource Include="Icon\StatusHelp.png" />
+    <Resource Include="Icon\StatusHelpOutline.png" />
+    <Resource Include="Icon\undo.png" />
+    <Resource Include="Icon\WebPartZone.png" />
+    <Resource Include="Icon\Zoom.png" />
+    <Resource Include="Icon\ZoomIn.png" />
+    <Resource Include="Icon\ZoomOriginalSize.png" />
+    <Resource Include="Icon\ZoomOut.png" />
+    <Resource Include="Icon\ZoomToFit.png" />
+    <Resource Include="Icon\ZoomToWidth.png" />
+  </ItemGroup>
+
+</Project>

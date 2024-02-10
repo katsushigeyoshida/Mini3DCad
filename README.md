@@ -17,7 +17,7 @@
 2023/12/25 プロトタイプの原型(自作グラフィックライブラリ)
 
 ### ■実行環境
-[Mini3DCad.zip](NMini3DCad.zip)をダウンロードして適当なフォルダに展開し、フォルダ内の Mini3DCad.exe をダブルクリックして実行します。  
+[Mini3DCad.zip](Mini3DCad.zip)をダウンロードして適当なフォルダに展開し、フォルダ内の Mini3DCad.exe をダブルクリックして実行します。  
 動作環境によって「.NET 7.0 Runtime」が必要になる場合もあります。  
 https://dotnet.microsoft.com/ja-jp/download
 

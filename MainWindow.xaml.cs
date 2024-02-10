@@ -793,13 +793,18 @@ namespace Mini3DCad
                 // 3D表示
             } else {
                 //  2D表示
-                switch (key) {
-                    case Key.F2: mPrevOpeMode = mOperationMode; mOperationMode = OPEMODE.areaDisp; break;
-                    case Key.F7: mPrevOpeMode = mOperationMode; mOperationMode = OPEMODE.areaPick; break;
-                    default:
-                        mDraw.key2DMove(key, control, shift);
-                        break;
+                if (ylib.onControlKey()) {
+
+                } else {
+                    switch (key) {
+                        case Key.F2: mPrevOpeMode = mOperationMode; mOperationMode = OPEMODE.areaDisp; break;
+                        case Key.F7: mPrevOpeMode = mOperationMode; mOperationMode = OPEMODE.areaPick; break;
+                        default:
+                            mDraw.key2DMove(key, control, shift);
+                            break;
+                    }
                 }
+
             }
         }
 
@@ -845,12 +850,17 @@ namespace Mini3DCad
             mOperationMode = OPEMODE.areaPick;
         }
 
+        /// <summary>
+        /// キーコマンド入力
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void cbCommand_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Enter) {
-                if (mCommandOpe.keyCommand(cbCommand.Text)) {
-                    //    keyCommandList(cbCommand.Text);
-                    //    disp(mEntityData);
+                if (mCommandOpe.keyCommand(cbCommand.Text, mDataManage.mFace)) {
+                    cbCommand.ItemsSource = mCommandOpe.mKeyCommand.keyCommandList(cbCommand.Text);
+                    commandClear();
                 }
             }
         }

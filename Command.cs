@@ -157,6 +157,7 @@ namespace Mini3DCad
     /// </summary>
     class CommandOpe
     {
+        public KeyCommand mKeyCommand;                      //  キー入力コマンド
         public DataManage mDataManage;
         public OPERATION mOperation = OPERATION.non;
         public FACE3D mDispMode = FACE3D.XY;
@@ -169,6 +170,7 @@ namespace Mini3DCad
         {
             mMainWindow = mainWindow;
             mDataManage = dataManage;
+            mKeyCommand = new KeyCommand(mDataManage);
         }
 
         /// <summary>
@@ -244,12 +246,11 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="command">コマンド文字列</param>
         /// <returns></returns>
-        public bool keyCommand(string command)
+        public bool keyCommand(string command, FACE3D face)
         {
-            //mEntityData.mOperationCouunt++;
-            //mKeyCommand.mTextString = text;
-            //return mKeyCommand.setCommand(command, mEntityData.mPara);
-            return false;
+            mDataManage.mOperationCount++;
+            mKeyCommand.setCommand(command, face);
+            return mKeyCommand.execCommand();
         }
 
         /// <summary>

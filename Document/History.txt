@@ -4,11 +4,11 @@
 2024/02/04  Cad3DAppをOpenGL対応に移植、OpenGLに対応するため作成面と3D表示をタブに変更
 
 問題点
-・押出でのドラッギング表示が遅い
-・ローティトしたポリゴンによる押出が回転前のデータで処理される
-・Face面の切り替え直後のスクロールでBitmapがクリアされている
+・押出でのドラッギング表示が遅い(特に円)
+・ローティトしたポリゴンによる押出が回転前のデータで処理される → 2D平面を使うように変更(2024/02/09)
+・Face面の切り替え直後のスクロールでBitmapがクリアされている → Bitmapの有無を判断するようにした(2024/02/07)
 ・ExtrusionやREvolutionを2Dで回転させるとVertexListの再作成でこける、作成面で再作成できないものがある
-　→　translateやrotateでは SurfaceDataListを直接座標変換するように修正
+　→　translateやrotateでは SurfaceDataListを直接座標変換するように修正(2024/02/05)
 ・ポリゴンで特定の線がピックできない(済)
 ・3D表示状態で図面を切り替えたときに3D表示が更新されない → 図面を切り替えた時の初期表示をXY面にする(2024/02/08)
 ・色変更をした直後、3D表示に反映されない(済)
@@ -19,5 +19,15 @@
 ・回転体の作成でFaceColorが引き継がれない、ファイルを読み直す反映される(済)
 
 機能追加、改善
+・キーコマンドの作成
 ・データ保存場所の設定機能
 ・3D機能(押出、回転など)の解除機能(線分、ポリライン、ポリゴンなどに戻す) → 解除(release)機能を追加(2024/02/08)
+
+GitHubの登録
+echo "# Mini3DCad" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/katsushigeyoshida/Mini3DCad.git
+git push -u origin main

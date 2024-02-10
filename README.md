@@ -1,30 +1,30 @@
 # Mini3DCad
-## ŽO–Ê}‚©‚ç‚Â‚­‚éŽOŽŸŒ³‚b‚`‚c
+## ä¸‰é¢å›³ã‹ã‚‰ã¤ãã‚‹ä¸‰æ¬¡å…ƒï¼£ï¼¡ï¼¤
 
-•½–Ê}‚â‘¤–Ê}‚Åì¬‚µ‚½}Œ`‚©‚ç3D}Œ`‚ðì¬‚·‚éŽOŽŸŒ³CAD  
-“–‰AƒT[ƒtƒF[ƒX‚ÌƒOƒ‰ƒtƒBƒbƒNƒ‰ƒCƒuƒ‰ƒŠ‚ðŽ©ì‚µ‚Äì‚Á‚Ä‚¢‚½‚ª•`‰æ‘¬“x‚â‹@”\“I‚ÉŒÀŠE‚ª‚ ‚Á‚½‚Ì‚Å OpenGL ‚ðŽg‚Á‚Äì¬B  
+å¹³é¢å›³ã‚„å´é¢å›³ã§ä½œæˆã—ãŸå›³å½¢ã‹ã‚‰3Då›³å½¢ã‚’ä½œæˆã™ã‚‹ä¸‰æ¬¡å…ƒCAD  
+å½“åˆã€ã‚µãƒ¼ãƒ•ã‚§ãƒ¼ã‚¹ã®ã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã‚’è‡ªä½œã—ã¦ä½œã£ã¦ã„ãŸãŒæç”»é€Ÿåº¦ã‚„æ©Ÿèƒ½çš„ã«é™ç•ŒãŒã‚ã£ãŸã®ã§ OpenGL ã‚’ä½¿ã£ã¦ä½œæˆã€‚  
 
-### ‰æ–Ê(‚Æ‚è‚ ‚¦‚¸)
-2D•\Ž¦
+### ç”»é¢(ã¨ã‚Šã‚ãˆãš)
+2Dè¡¨ç¤º
 <img src="Image/MainWindow2D.png" width="80%">  
 
-3D•\Ž¦
+3Dè¡¨ç¤º
 <img src="Image/MainWindow.png" width="80%">  
 
 
-### —š—ð
-2024/02/08 3D•\Ž¦‚ðOpenGL(OpenTK)‚É•ÏX
-2023/12/25 ƒvƒƒgƒ^ƒCƒv‚ÌŒ´Œ^(Ž©ìƒOƒ‰ƒtƒBƒbƒNƒ‰ƒCƒuƒ‰ƒŠ)
+### å±¥æ­´
+2024/02/08 3Dè¡¨ç¤ºã‚’OpenGL(OpenTK)ã«å¤‰æ›´
+2023/12/25 ãƒ—ãƒ­ãƒˆã‚¿ã‚¤ãƒ—ã®åŽŸåž‹(è‡ªä½œã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯ãƒ©ã‚¤ãƒ–ãƒ©ãƒª)
 
-### ¡ŽÀsŠÂ‹«
-[Mini3DCad.zip](NMini3DCad.zip)‚ðƒ_ƒEƒ“ƒ[ƒh‚µ‚Ä“K“–‚ÈƒtƒHƒ‹ƒ_‚É“WŠJ‚µAƒtƒHƒ‹ƒ_“à‚Ì Mini3DCad.exe ‚ðƒ_ƒuƒ‹ƒNƒŠƒbƒN‚µ‚ÄŽÀs‚µ‚Ü‚·B  
-“®ìŠÂ‹«‚É‚æ‚Á‚Äu.NET 7.0 Runtimev‚ª•K—v‚É‚È‚éê‡‚à‚ ‚è‚Ü‚·B  
+### â– å®Ÿè¡Œç’°å¢ƒ
+[Mini3DCad.zip](NMini3DCad.zip)ã‚’ãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰ã—ã¦é©å½“ãªãƒ•ã‚©ãƒ«ãƒ€ã«å±•é–‹ã—ã€ãƒ•ã‚©ãƒ«ãƒ€å†…ã® Mini3DCad.exe ã‚’ãƒ€ãƒ–ãƒ«ã‚¯ãƒªãƒƒã‚¯ã—ã¦å®Ÿè¡Œã—ã¾ã™ã€‚  
+å‹•ä½œç’°å¢ƒã«ã‚ˆã£ã¦ã€Œ.NET 7.0 Runtimeã€ãŒå¿…è¦ã«ãªã‚‹å ´åˆã‚‚ã‚ã‚Šã¾ã™ã€‚  
 https://dotnet.microsoft.com/ja-jp/download
 
 
-### ¡ŠJ”­ŠÂ‹«  
-ŠJ”­ƒ\ƒtƒg : Microsoft Visual Studio 2022  
-ŠJ”­Œ¾Œê@ : C# 10.0 Windows ƒAƒvƒŠƒP[ƒVƒ‡ƒ“  
-ƒtƒŒ[ƒ€ƒ[ƒN@ :  .NET 7.0  
-NuGetƒ‰ƒCƒuƒ‰ƒŠ : ‚È‚µ  
-Ž©ìƒ‰ƒCƒuƒ‰ƒŠ  : CoreLib (ŽOŽŸŒ³‚ÌŠô‰½ŒvŽZ‚àŠÜ‚Þ)  
+### â– é–‹ç™ºç’°å¢ƒ  
+é–‹ç™ºã‚½ãƒ•ãƒˆ : Microsoft Visual Studio 2022  
+é–‹ç™ºè¨€èªžã€€ : C# 10.0 Windows ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³  
+ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¯ãƒ¼ã‚¯ã€€ :  .NET 7.0  
+NuGetãƒ©ã‚¤ãƒ–ãƒ©ãƒª : ãªã—  
+è‡ªä½œãƒ©ã‚¤ãƒ–ãƒ©ãƒª  : CoreLib (ä¸‰æ¬¡å…ƒã®å¹¾ä½•è¨ˆç®—ã‚‚å«ã‚€)  

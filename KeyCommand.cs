@@ -2,6 +2,19 @@
 
 namespace Mini3DCad
 {
+    /// <summary>
+    /// キー入力コマンド実行
+    /// 
+    /// 対応パラメータ
+    ///  x〇y〇       絶対座標
+    ///  dx〇,dy〇    相対座標
+    ///  p〇          要素番号
+    ///  r〇          半径
+    ///  sa〇         開始角
+    ///  ea〇         修了角
+    ///  "〇〇"       文字列
+    ///  〇〇         数値(IsDogit,-)
+    /// </summary>
     public class KeyCommand
     {
         private List<string> mMainCmd = new List<string>() {
@@ -28,23 +41,24 @@ namespace Mini3DCad
         private YCalc ycalc = new YCalc();
         private YLib ylib = new YLib();
 
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="dataManage"></param>
         public KeyCommand(DataManage dataManage)
         {
             mDataManage = dataManage;
         }
 
-        public bool setCommand(string command, FACE3D face)
+        /// <summary>
+        /// コマンドの実行
+        /// </summary>
+        /// <param name="command">コマンド文字列</param>
+        /// <returns></returns>
+        public bool execCommand(string command)
         {
-            if (0 < command.Length) {
-                mCommandStr = command;
-                mFace = face;
-            }
-            return false;
-        }
-
-
-        public bool execCommand()
-        {
+            if (command.Length == 0)
+                return false;
             getCommandParameter(mCommandStr);
             switch (mMainCmd[mCommandNo]) {
                 case "line":
@@ -63,7 +77,7 @@ namespace Mini3DCad
                     if (2 < mPoints.Count)
                         mDataManage.addArc(mPoints[0], mPoints[1], mPoints[2]);
                     break;
-                case "plyline":
+                case "polyline":
                     if (1 < mPoints.Count)
                         mDataManage.addPolyline(mPoints);
                     break;
@@ -237,6 +251,11 @@ namespace Mini3DCad
             return cmd;
         }
 
+        /// <summary>
+        /// コマンド履歴の登録の
+        /// </summary>
+        /// <param name="command">コマンド文字列</param>
+        /// <returns>コマンドリスト</returns>
         public List<string> keyCommandList(string command)
         {
             int n = mKeyCommandList.IndexOf(command);

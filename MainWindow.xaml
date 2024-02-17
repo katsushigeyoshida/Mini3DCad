@@ -71,6 +71,10 @@
             <StackPanel DockPanel.Dock="Bottom" Height="26">
                 <StatusBar Height="26" >
                     <Button x:Name="btDummy" Width="0" Height="20" />
+                    <Button x:Name="btSetting" Width="20" Height="20" Click="btSetting_Click"
+                            ToolTip="システム設定" >
+                        <Image Source="Icon\Settings.png" ></Image>
+                    </Button>
                     <TextBlock Text="コマンド" FontSize="11"/>
                     <ComboBox x:Name="cbCommand" Width="370" IsEditable="True" PreviewKeyDown="cbCommand_PreviewKeyDown"
                               ToolTip="コマンド入力欄、Enterキーで実行"/>
@@ -127,28 +131,28 @@
                         <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" />
                         <Grid Grid.Column="2">
                             <TabControl x:Name="tabCanvas" SelectionChanged="TabControl_SelectionChanged" >
-                                <TabItem Name="CanvasFRONT" Header="正面図">
+                                <TabItem Name="CanvasFRONT" Header="正面図" ToolTip="XY平面">
                                     <Grid Background="#FFE5E5E5">
                                         <Canvas x:Name="cvCanvasFRONT" >
                                             <Image x:Name="imScreenFRONT" Margin="0" />
                                         </Canvas>
                                     </Grid>
                                 </TabItem>
-                                <TabItem Name="CanvasTOP" Header="平面図">
+                                <TabItem Name="CanvasTOP" Header="平面図" ToolTip="X-Z平面">
                                     <Grid Background="#FFE5E5E5">
                                         <Canvas x:Name="cvCanvasTOP" >
                                             <Image x:Name="imScreenTOP" Margin="0" />
                                         </Canvas>
                                     </Grid>
                                 </TabItem>
-                                <TabItem Name="CanvasRIGHT" Header="側面図">
+                                <TabItem Name="CanvasRIGHT" Header="側面図" ToolTip="-ZY平面">
                                     <Grid Background="#FFE5E5E5">
                                         <Canvas x:Name="cvCanvasRIGHT" >
                                             <Image x:Name="imScreenRIGHT" Margin="0" />
                                         </Canvas>
                                     </Grid>
                                 </TabItem>
-                                <TabItem Name="OpenGL" Header="3D表示">
+                                <TabItem Name="OpenGL" Header="3D表示" ToolTip="3次元表示">
                                     <Grid Background="#FFE5E5E5">
                                         <WindowsFormsHost x:Name="glGraph" Margin="0,0,0,0" />
                                     </Grid>

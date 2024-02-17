@@ -29,8 +29,15 @@ namespace Mini3DCad
         }
     }
 
+    /// <summary>
+    /// データ管理クラス
+    /// </summary>
     public class DataManage
     {
+        public double mArcDivideAng = Math.PI / 16;
+        public double mRevolutionDivideAng = Math.PI / 18;
+        public double mSweepDivideAng = Math.PI / 9;
+
         public FACE3D mFace = FACE3D.XY;                            //  Primitive 作成面
         public Brush mPrimitiveBrush = Brushes.Green;               //  Primitiveの色設定
         public List<PointD> mLocList = new();                       //  ロケイトの保存
@@ -140,6 +147,20 @@ namespace Mini3DCad
                 case OPERATION.copyRotate:
                     if (mLocList.Count == 3 && 0 < mPickElement.Count) {
                         rotate(mPickElement, mLocList, true);
+                        mLocList.Clear();
+                    } else
+                        return false;
+                    break;
+                case OPERATION.offset:
+                    if (mLocList.Count == 2 && 0 < mPickElement.Count) {
+                        offset(mPickElement, mLocList[0], mLocList[1]);
+                        mLocList.Clear();
+                    } else
+                        return false;
+                    break;
+                case OPERATION.copyOffset:
+                    if (mLocList.Count == 2 && 0 < mPickElement.Count) {
+                        offset(mPickElement, mLocList[0], mLocList[1], true);
                         mLocList.Clear();
                     } else
                         return false;
@@ -276,6 +297,26 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// ポリラインの追加
+        /// </summary>
+        /// <param name="polygon">ポリライン</param>
+        /// <param name="color">線分カラー</param>
+        /// <param name="faceColor">フェイスカラー</param>
+        public void addPolyline(Polyline3D polyline, Brush color = null, Brush faceColor = null)
+        {
+            Element element = new Element();
+            element.mName = "ポリライン";
+            element.mPrimitive = createPolyline(polyline);
+            if (color != null)
+                element.mPrimitive.mLineColor = color;
+            if (faceColor != null)
+                element.mPrimitive.mFaceColors[0] = faceColor;
+            element.mOperationNo = mOperationCount;
+            element.update3DData();
+            mElementList.Add(element);
+        }
+
+        /// <summary>
         /// 四角形(Polygon)の追加
         /// </summary>
         /// <param name="sp">始点</param>
@@ -311,7 +352,7 @@ namespace Mini3DCad
         /// <summary>
         /// ポリゴンの追加
         /// </summary>
-        /// <param name="polygon">3D座標点リスト</param>
+        /// <param name="polygon">ポリゴン</param>
         /// <param name="color">線分カラー</param>
         /// <param name="faceColor">フェイスカラー</param>
         public void addPolygon(Polygon3D polygon, Brush color = null, Brush faceColor = null)
@@ -377,6 +418,28 @@ namespace Mini3DCad
             foreach (var pick in picks) {
                 Element element = mElementList[pick.mElementNo].toCopy();
                 element.mPrimitive.rotate(cp, -ang, mFace);
+                element.mOperationNo = mOperationCount;
+                element.update3DData();
+                mElementList.Add(element);
+                if (!copy) {
+                    mElementList[pick.mElementNo].mRemove = true;
+                    addLink(pick.mElementNo);
+                }
+            }
+        }
+
+        /// <summary>
+        /// オフセット
+        /// </summary>
+        /// <param name="picks">ピック要素</param>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        /// <param name="copy">コピーの有無</param>
+        public void offset(List<PickData> picks, PointD sp, PointD ep, bool copy = false)
+        {
+            foreach (var pick in picks) {
+                Element element = mElementList[pick.mElementNo].toCopy();
+                element.mPrimitive.offset(new Point3D(sp, mFace), new Point3D(ep, mFace), mFace);
                 element.mOperationNo = mOperationCount;
                 element.update3DData();
                 mElementList.Add(element);
@@ -509,9 +572,8 @@ namespace Mini3DCad
             Primitive centerLinePrimitive = mElementList[picks[0].mElementNo].mPrimitive;
             Primitive outlinePrimitive = mElementList[picks[1].mElementNo].mPrimitive;
             Brush color = centerLinePrimitive.mLineColor;
-
+            //  中心線
             Line3D centerLine;
-            List<Point3D> outline;
             if (centerLinePrimitive.mPrimitiveId == PrimitiveId.Line) {
                 LinePrimitive linePrimitive = (LinePrimitive)centerLinePrimitive;
                 centerLine = linePrimitive.mLine.toCopy();
@@ -520,12 +582,14 @@ namespace Mini3DCad
                 centerLine = new Line3D(polylinePrimitive.mPolyline.toPoint3D(0), polylinePrimitive.mPolyline.toPoint3D(1));
             } else
                 return;
+            //  外形線
+            Polyline3D outline;
             if (outlinePrimitive.mPrimitiveId == PrimitiveId.Line) {
                 LinePrimitive linePrimitive = (LinePrimitive)outlinePrimitive;
-                outline = linePrimitive.mLine.toPoint3D();
+                outline = new Polyline3D(linePrimitive.mLine, mFace);
             } else if (outlinePrimitive.mPrimitiveId == PrimitiveId.Polyline) {
                 PolylinePrimitive polylinePrimitive = (PolylinePrimitive)outlinePrimitive;
-                outline = polylinePrimitive.mPolyline.toPoint3D();
+                outline = polylinePrimitive.mPolyline.toCopy();
             } else
                 return;
 
@@ -550,6 +614,59 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// 掃引(スィープ)
+        /// </summary>
+        /// <param name="picks">ピック要素</param>
+        public void sweep(List<PickData> picks)
+        {
+            if (picks.Count < 2)
+                return;
+
+            Primitive outline1Primitive = mElementList[picks[0].mElementNo].mPrimitive;
+            Primitive outline2Primitive = mElementList[picks[1].mElementNo].mPrimitive;
+            Brush color = outline1Primitive.mLineColor;
+            //  外形線1
+            Polyline3D outline1;
+            if (outline1Primitive.mPrimitiveId == PrimitiveId.Polyline) {
+                PolylinePrimitive polylinePrimitive = (PolylinePrimitive)outline1Primitive;
+                outline1 = polylinePrimitive.mPolyline.toCopy();
+            } else if (outline1Primitive.mPrimitiveId == PrimitiveId.Arc) {
+                ArcPrimitive arcPrimitive = (ArcPrimitive)outline1Primitive;
+                outline1 = arcPrimitive.mArc.toPolyline3D(mArcDivideAng);
+            } else
+                return;
+            //  外形線2
+            Polyline3D outline2;
+            if (outline2Primitive.mPrimitiveId == PrimitiveId.Polyline) {
+                PolylinePrimitive polylinePrimitive = (PolylinePrimitive)outline2Primitive;
+                outline2 = polylinePrimitive.mPolyline.toCopy();
+            } else if (outline2Primitive.mPrimitiveId == PrimitiveId.Arc) {
+                ArcPrimitive arcPrimitive = (ArcPrimitive)outline2Primitive;
+                outline2 = arcPrimitive.mArc.toPolyline3D(mArcDivideAng);
+            } else
+                return;
+            //  Sweepデータを作成
+            SweepPrimitive sweep = new SweepPrimitive(outline1, outline2, color, true, mFace);
+            if (sweep == null)
+                return;
+            sweep.copyProperty(outline1Primitive);
+            sweep.mPrimitiveId = PrimitiveId.Sweep;
+            sweep.mPick = false;
+
+            Element element = new Element();
+            element.mName = "掃引";
+            element.mPrimitive = sweep;
+            element.mOperationNo = mOperationCount;
+            element.update3DData();
+            mElementList.Add(element);
+
+            mElementList[picks[0].mElementNo].mRemove = true;
+            addLink(picks[0].mElementNo);
+            mElementList[picks[1].mElementNo].mRemove = true;
+            addLink(picks[1].mElementNo);
+        }
+
+        /// <summary>
         /// 押出や回転体を解除して元のポリゴンや線分に戻す
         /// </summary>
         /// <param name="picks"></param>
@@ -560,14 +677,20 @@ namespace Mini3DCad
                 if (element.mPrimitive.mPrimitiveId == PrimitiveId.Extrusion) {
                     //  押出解除
                     ExtrusionPrimitive extrusion = (ExtrusionPrimitive) element.mPrimitive;
-                    addPolygon(extrusion.mPolygon,extrusion.mLineColor, extrusion.mFaceColors[0]);
+                    if (extrusion.mClose)
+                        addPolygon(extrusion.mPolygon,extrusion.mLineColor, extrusion.mFaceColors[0]);
+                    else
+                        addPolyline(extrusion.mPolygon.toPolyline3D(), extrusion.mLineColor, extrusion.mFaceColors[0]);
                 } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
                     //  回転体解除
                     RevolutionPrimitive revolution = (RevolutionPrimitive) element.mPrimitive;
-                    Line3D line = revolution.mCenterLine.toCopy();
-                    addLine(line);
-                    Polyline3D polyline = new Polyline3D(revolution.mOutLine);
-                    addPolyline(polyline.toPoint3D(), revolution.mLineColor, revolution.mFaceColors[0]);
+                    addPolyline(revolution.mCenterLine.toPoint3D(), revolution.mLineColor, revolution.mFaceColors[0]);
+                    addPolyline(revolution.mOutLine.toPoint3D(), revolution.mLineColor, revolution.mFaceColors[0]);
+                } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.Sweep) {
+                    //  掃引解除
+                    SweepPrimitive sweep = (SweepPrimitive) element.mPrimitive;
+                    addPolyline(sweep.mOutLine1.toPoint3D(), sweep.mLineColor, sweep.mFaceColors[0]);
+                    addPolyline(sweep.mOutLine2.toPoint3D(), sweep.mLineColor, sweep.mFaceColors[0]);
                 } else {
                     continue;
                 }
@@ -577,7 +700,7 @@ namespace Mini3DCad
         }
 
         /// <summary>
-        /// Elementの色変更
+        /// Elementの属性変更
         /// </summary>
         /// <param name="picks"></param>
         public void changeProperty(List<PickData> picks)
@@ -590,6 +713,7 @@ namespace Mini3DCad
                 dlg.Title = "属性変更 " + element.mPrimitive.mPrimitiveId;
                 dlg.mName = element.mName;
                 dlg.mLineColor = element.mPrimitive.mLineColor;
+                dlg.mLineFont = element.mPrimitive.mLineType;
                 dlg.mFaceColor = element.mPrimitive.mFaceColors[0];
                 dlg.mFaceColorNull = element.mPrimitive.mFaceColors[0] == null;
                 dlg.mDisp3D = element.mDisp3D;
@@ -599,15 +723,30 @@ namespace Mini3DCad
                     dlg.mDivideAngOn = true;
                     dlg.mDivideAng = ylib.R2D(arc.mDivideAngle);
                 }
-                if (element.mPrimitive.mPrimitiveId == PrimitiveId.Polyline ||
-                    element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon ||
-                    element.mPrimitive.mPrimitiveId == PrimitiveId.Extrusion) {
+                if (element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
+                    RevolutionPrimitive revolution = (RevolutionPrimitive)element.mPrimitive;
+                    dlg.mDivideAngOn = true;
+                    dlg.mDivideAng = ylib.R2D(revolution.mDivideAngle);
+                }
+                if (element.mPrimitive.mPrimitiveId == PrimitiveId.Sweep) {
+                    SweepPrimitive sweep = (SweepPrimitive)element.mPrimitive;
+                    dlg.mDivideAngOn = true;
+                    dlg.mDivideAng = ylib.R2D(sweep.mDivideAngle);
+                }
+                if (element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon ||
+                    element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
                     dlg.mReverseOn = true;
                     dlg.mReverse = false;
                 }
+                if (element.mPrimitive.mPrimitiveId == PrimitiveId.Extrusion ||
+                    element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
+                    dlg.mLineFontOn = false;
+                }
+
                 if (dlg.ShowDialog() == true) {
                     element.mName = dlg.mName;
                     element.mPrimitive.mLineColor = dlg.mLineColor;
+                    element.mPrimitive.mLineType = dlg.mLineFont;
                     if (dlg.mFaceColorNull)
                         element.mPrimitive.mFaceColors[0] = null;
                     else
@@ -615,22 +754,30 @@ namespace Mini3DCad
                     element.mDisp3D = dlg.mDisp3D;
                     element.mBothShading = dlg.mBothShading;
                     element.mOperationNo = mOperationCount;
-                    element.update3DData();
                     if (element.mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
                         ArcPrimitive arc = (ArcPrimitive)element.mPrimitive;
                         arc.mDivideAngle = ylib.D2R(dlg.mDivideAng);
+                    }
+                    if (element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
+                        RevolutionPrimitive revolution = (RevolutionPrimitive)element.mPrimitive;
+                        revolution.mDivideAngle = ylib.D2R(dlg.mDivideAng);
+                    }
+                    if (element.mPrimitive.mPrimitiveId == PrimitiveId.Sweep) {
+                        SweepPrimitive sweep = (SweepPrimitive)element.mPrimitive;
+                        sweep.mDivideAngle = ylib.D2R(dlg.mDivideAng);
                     }
                     if (dlg.mReverse) {
                         if (element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
                             PolygonPrimitive polygon = (PolygonPrimitive)element.mPrimitive;
                             polygon.mPolygon.mPolygon.Reverse();
-                        }
-                        if (element.mPrimitive.mPrimitiveId == PrimitiveId.Extrusion) {
-                            ExtrusionPrimitive push = (ExtrusionPrimitive)element.mPrimitive;
-                            push.mPolygon.mPolygon.Reverse();
+                        } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
+                            RevolutionPrimitive revolution = (RevolutionPrimitive)element.mPrimitive;
+                            revolution.mOutLine.mPolyline.Reverse();
                         }
                     }
-                    element.mPrimitive.createVertexList();
+                    element.mPrimitive.createSurfaceData();
+                    element.mPrimitive.createVertexData();
+                    element.update3DData();
                     mElementList.Add(element);
                     mElementList[picks[i].mElementNo].mRemove = true;
                     addLink(picks[i].mElementNo);
@@ -673,9 +820,7 @@ namespace Mini3DCad
         /// <returns></returns>
         public Primitive createCircle(PointD sp, PointD ep)
         {
-            ArcPrimitive arc = new ArcPrimitive(sp, sp.length(ep), mFace);
-            arc.mLineColor = mPrimitiveBrush;
-            arc.mFaceColors[0] = mPrimitiveBrush;
+            ArcPrimitive arc = new ArcPrimitive(sp, sp.length(ep), mPrimitiveBrush, mFace);
             return arc;
         }
 
@@ -689,9 +834,7 @@ namespace Mini3DCad
         public Primitive createArc(PointD sp, PointD mp, PointD ep)
         {
             ArcD arc2D = new ArcD(sp, mp, ep);
-            ArcPrimitive arc = new ArcPrimitive(arc2D, mFace);
-            arc.mLineColor = mPrimitiveBrush;
-            arc.mFaceColors[0] = mPrimitiveBrush;
+            ArcPrimitive arc = new ArcPrimitive(arc2D, mPrimitiveBrush, mFace);
             return arc;
         }
 
@@ -703,8 +846,6 @@ namespace Mini3DCad
         public Primitive createPolyline(List<PointD> plist)
         {
             PolylinePrimitive polyline = new PolylinePrimitive(plist, mPrimitiveBrush, mFace);
-            polyline.mLineColor = mPrimitiveBrush;
-            polyline.mFaceColors[0] = mPrimitiveBrush;
             return polyline;
         }
 
@@ -716,8 +857,17 @@ namespace Mini3DCad
         public Primitive createPolyline(List<Point3D> plist)
         {
             PolylinePrimitive polyline = new PolylinePrimitive(plist, mPrimitiveBrush, mFace);
-            polyline.mLineColor = mPrimitiveBrush;
-            polyline.mFaceColors[0] = mPrimitiveBrush;
+            return polyline;
+        }
+
+        /// <summary>
+        /// ポリラインプリミティブの作成
+        /// </summary>
+        /// <param name="plist">ポリライン</param>
+        /// <returns>プリミティブ</returns>
+        public Primitive createPolyline(Polyline3D plist)
+        {
+            PolylinePrimitive polyline = new PolylinePrimitive(plist, mPrimitiveBrush, mFace);
             return polyline;
         }
 
@@ -729,8 +879,6 @@ namespace Mini3DCad
         public Primitive createPolygon(List<PointD> plist)
         {
             PolygonPrimitive polygon = new PolygonPrimitive(plist, mPrimitiveBrush, mFace);
-            polygon.mLineColor = mPrimitiveBrush;
-            polygon.mFaceColors[0] = mPrimitiveBrush;
             return polygon;
         }
 
@@ -806,7 +954,7 @@ namespace Mini3DCad
             if (1 < polylines.Count) {
                 Element ele1 = new Element();
                 ele1.mName = "分割ポリライン";
-                ele1.mPrimitive = new PolylinePrimitive(polylines[1].mPolyline, polylinePrimitive.mLineColor);
+                ele1.mPrimitive = new PolylinePrimitive(polylines[1], polylinePrimitive.mLineColor);
                 ele1.mPrimitive.copyProperty(polylinePrimitive);
                 ele1.mOperationNo = mOperationCount;
                 ele1.update3DData();
@@ -815,7 +963,7 @@ namespace Mini3DCad
             if (0 < polylines.Count) {
                 Element ele1 = new Element();
                 ele1.mName = "分割ポリライン";
-                ele1.mPrimitive = new PolylinePrimitive(polylines[0].mPolyline, polylinePrimitive.mLineColor);
+                ele1.mPrimitive = new PolylinePrimitive(polylines[0], polylinePrimitive.mLineColor);
                 ele1.mPrimitive.copyProperty(polylinePrimitive);
                 ele1.mOperationNo = mOperationCount;
                 ele1.update3DData();
@@ -870,7 +1018,7 @@ namespace Mini3DCad
             if (1 < arcs.Count) {
                 Element ele1 = new Element();
                 ele1.mName = "分割円弧";
-                ele1.mPrimitive = new ArcPrimitive(arcs[1]);
+                ele1.mPrimitive = new ArcPrimitive(arcs[1], mPrimitiveBrush);
                 ele1.mPrimitive.copyProperty(arcPrimitive);
                 ele1.mOperationNo = mOperationCount;
                 ele1.update3DData();
@@ -879,7 +1027,7 @@ namespace Mini3DCad
             if (0 < arcs.Count) {
                 Element ele1 = new Element();
                 ele1.mName = "分割円弧";
-                ele1.mPrimitive = new ArcPrimitive(arcs[0]);
+                ele1.mPrimitive = new ArcPrimitive(arcs[0], mPrimitiveBrush);
                 ele1.mPrimitive.copyProperty(arcPrimitive);
                 ele1.mOperationNo = mOperationCount;
                 ele1.update3DData();
@@ -1137,6 +1285,13 @@ namespace Mini3DCad
             list.Add(buf);
             buf = new string[] { "Face", mFace.ToString() };
             list.Add(buf);
+            if (mArea != null) {
+                buf = new string[] { "Area",
+                mArea.mMin.x.ToString(), mArea.mMin.y.ToString(), mArea.mMin.z.ToString(),
+                mArea.mMax.x.ToString(), mArea.mMax.y.ToString(), mArea.mMax.z.ToString(),
+            };
+                list.Add(buf);
+            }
             buf = new string[] { "DataManageEnd" };
             list.Add(buf);
             return list;
@@ -1156,6 +1311,16 @@ namespace Mini3DCad
                     mPrimitiveBrush = ylib.getBrsh(buf[1]);
                 } else if (buf[0] == "Face") {
                     mFace = (FACE3D)Enum.Parse(typeof(FACE3D), buf[1]);
+                } else if (buf[0] == "Area" && buf.Length == 7) {
+                    mArea = new Box3D();
+                    mArea.mMin.x = ylib.doubleParse(buf[1]);
+                    mArea.mMin.y = ylib.doubleParse(buf[2]);
+                    mArea.mMin.z = ylib.doubleParse(buf[3]);
+                    mArea.mMax.x = ylib.doubleParse(buf[4]);
+                    mArea.mMax.y = ylib.doubleParse(buf[5]);
+                    mArea.mMax.z = ylib.doubleParse(buf[6]);
+                    if (mArea.isNaN() || mArea.isEmpty())
+                        mArea = new Box3D(10);
                 } else if (buf[0] == "DataManageEnd") {
                     break;
                 }
@@ -1181,8 +1346,9 @@ namespace Mini3DCad
                 if (buf[0] == "Element") {
                     element = new Element();
                     sp = element.setDataList(dataList, sp);
-                    if (element.mPrimitive != null && 0 < element.mPrimitive.mSurfaceDataList.Count)
+                    if (element.mPrimitive != null && 0 < element.mPrimitive.mSurfaceDataList.Count) {
                         mElementList.Add(element);
+                    }
                 } else if (buf[0] == "DataManage") {
                     sp = setDataList(dataList, sp);
                 } else if (buf[0] == "DataDraw") {

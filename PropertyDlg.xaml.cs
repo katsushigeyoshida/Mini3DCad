@@ -1,6 +1,5 @@
 ﻿using CoreLib;
 using System.Windows;
-using System.Windows.Media;
 using Brush = System.Windows.Media.Brush;
 using Brushes = System.Windows.Media.Brushes;
 
@@ -16,6 +15,8 @@ namespace Mini3DCad
         public Brush mFaceColor = Brushes.Blue;
         public string mLineColorName = "Black";
         public string mFaceColorName = "Blue";
+        public int mLineFont = 0;
+        public bool mLineFontOn = true;
         public bool mFaceColorNull = false;
         public bool mBothShading = true;
         public bool mDisp3D = true;
@@ -24,6 +25,8 @@ namespace Mini3DCad
         public bool mDivideAngOn = false;
         public double mDivideAng = 15;
 
+        private string[] mLineFontName = new string[] {
+            "実線", "破線", "一点鎖線", "二点鎖線"};
         private YLib ylib = new YLib();
 
         public PropertyDlg()
@@ -45,6 +48,9 @@ namespace Mini3DCad
             colorindex = ylib.getBrushNo(mFaceColor);
             if (!mFaceColorNull && 0 <= colorindex)
                 cbFaceColor.SelectedIndex = ylib.getBrushNo(mFaceColor);
+            cbLineFont.ItemsSource = mLineFontName;
+            cbLineFont.SelectedIndex = mLineFont;
+            cbLineFont.IsEnabled = mLineFontOn;
             chFaceColor.IsChecked = mFaceColorNull;
             chShading.IsChecked = mBothShading;
             chDisp3D.IsChecked = mDisp3D;
@@ -69,6 +75,7 @@ namespace Mini3DCad
                 mLineColor = ylib.mBrushList[cbLineColor.SelectedIndex].brush;
                 mLineColorName = ylib.mBrushList[cbLineColor.SelectedIndex].colorTitle;
             }
+            mLineFont = cbLineFont.SelectedIndex;
             if (0 <= cbFaceColor.SelectedIndex) {
                 mFaceColor = ylib.mBrushList[cbFaceColor.SelectedIndex].brush;
                 mFaceColorName = ylib.mBrushList[cbFaceColor.SelectedIndex].colorTitle;

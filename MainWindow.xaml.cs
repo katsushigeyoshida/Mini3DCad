@@ -228,19 +228,20 @@ namespace Mini3DCad
         private void glControl_Load(object sender, EventArgs e)
         {
             GL.Enable(EnableCap.DepthTest);         //  デプスバッファ
-            GL.Enable(EnableCap.ColorMaterial);
+            GL.Enable(EnableCap.ColorMaterial);     //  材質設定
             GL.Enable(EnableCap.Lighting);          //  光源の使用
-            GL.PointSize(3.0f);                     //  点の大きさ
-            GL.LineWidth(1.5f);                     //  線の太さ
 
             //m3Dlib.setLight();
             //m3Dlib.setMaterial();
-            float[] position0 = new float[] { 2.0f, 2.0f, 2.0f, 0.0f };
+            float[] position0 = new float[] { 1.0f, 1.0f, 2.0f, 0.0f };
+            float[] position1 = new float[] { -1.0f, 1.0f, 2.0f, 0.0f };
             GL.Light(LightName.Light0, LightParameter.Position, position0);
-            GL.Enable(EnableCap.Light0);
-            float[] position1 = new float[] { -2.0f, -2.0f, 2.0f, 0.0f };
             GL.Light(LightName.Light1, LightParameter.Position, position1);
+            GL.Enable(EnableCap.Light0);
             GL.Enable(EnableCap.Light1);
+
+            GL.PointSize(3.0f);                     //  点の大きさ
+            GL.LineWidth(1.5f);                     //  線の太さ
         }
 
         /// <summary>
@@ -715,6 +716,7 @@ namespace Mini3DCad
                 mFileData.mDataName = lbItemList.Items[index].ToString() ?? "";
                 mCommandOpe.mDataFilePath = mFileData.getCurItemFilePath();
                 mCommandOpe.loadFile();
+                mDraw.mWorldList.Clear();
                 cbColor.SelectedIndex = ylib.getBrushNo(mDataManage.mPrimitiveBrush);
                 cbGridSize.SelectedIndex = mGridSizeMenu.FindIndex(Math.Abs(mDraw.mGridSize));
                 //mDataManage.mFace = (FACE3D)Enum.ToObject(typeof(FACE3D), tabCanvas.SelectedIndex);
@@ -793,8 +795,8 @@ namespace Mini3DCad
                 // 3D表示
             } else {
                 //  2D表示
-                if (ylib.onControlKey()) {
-
+                if (control) {
+                    mDraw.key2DMove(key, control, shift);
                 } else {
                     switch (key) {
                         case Key.F2: mPrevOpeMode = mOperationMode; mOperationMode = OPEMODE.areaDisp; break;
@@ -851,18 +853,28 @@ namespace Mini3DCad
         }
 
         /// <summary>
-        /// キーコマンド入力
+        /// キーコマンド入力コンボホックス
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void cbCommand_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Enter) {
-                if (mCommandOpe.keyCommand(cbCommand.Text, mDataManage.mFace)) {
+                if (mCommandOpe.keyCommand(cbCommand.Text)) {
                     cbCommand.ItemsSource = mCommandOpe.mKeyCommand.keyCommandList(cbCommand.Text);
                     commandClear();
                 }
             }
+        }
+
+        /// <summary>
+        /// システム設定ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btSetting_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

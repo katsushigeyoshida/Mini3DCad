@@ -386,12 +386,12 @@ namespace Mini3DCad
 
             GL.LightModel(LightModelParameter.LightModelLocalViewer, 0);
             GL.Light(LightName.Light0, LightParameter.Position, lightPosition0);
-            GL.Light(LightName.Light0, LightParameter.Ambient, lightAmbient0);
-            GL.Light(LightName.Light0, LightParameter.Diffuse, lightDiffuse0);
-            GL.Light(LightName.Light0, LightParameter.Specular, lightSpecular0);
             GL.Light(LightName.Light1, LightParameter.Position, lightPosition1);
+            GL.Light(LightName.Light0, LightParameter.Ambient, lightAmbient0);
             GL.Light(LightName.Light1, LightParameter.Ambient, lightAmbient1);
+            GL.Light(LightName.Light0, LightParameter.Diffuse, lightDiffuse0);
             GL.Light(LightName.Light1, LightParameter.Diffuse, lightDiffuse1);
+            GL.Light(LightName.Light0, LightParameter.Specular, lightSpecular0);
             GL.Light(LightName.Light1, LightParameter.Specular, lightSpecular1);
 
             GL.Enable(EnableCap.Lighting);
@@ -576,19 +576,6 @@ namespace Mini3DCad
         }
 
         /// <summary>
-        /// Point3DをVector3に変換
-        /// </summary>
-        /// <param name="pos">Point3D</param>
-        /// <returns>Vector3</returns>
-        private Vector3 point2Vector(Point3D p, double scale, Point3D v)
-        {
-            Point3D pos = p.toCopy();
-            pos.translate(v);
-            pos.scale(new Point3D(scale));
-            return new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
-        }
-
-        /// <summary>
         /// Point3Dリストデータを登録
         /// </summary>
         /// <param name="vertex">座標点リスト</param>
@@ -643,6 +630,19 @@ namespace Mini3DCad
                 default: break;
             }
             return primType;
+        }
+
+        /// <summary>
+        /// Point3DをVector3に変換
+        /// </summary>
+        /// <param name="pos">Point3D</param>
+        /// <returns>Vector3</returns>
+        private Vector3 point2Vector(Point3D p, double scale, Point3D v)
+        {
+            Point3D pos = p.toCopy();
+            pos.translate(v);
+            pos.scale(new Point3D(scale));
+            return new Vector3((float)pos.x, (float)pos.y, (float)pos.z);
         }
 
         /// <summary>

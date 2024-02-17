@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Mini3DCad"
         mc:Ignorable="d"
-        Title="PropertyDlg" Height="250" Width="300" Closing="Window_Closing" Loaded="Window_Loaded">
+        Title="PropertyDlg" Height="250" Width="330" Closing="Window_Closing" Loaded="Window_Loaded">
     <Grid>
         <Label Name="lbNameTitle" Content="名称" Margin="5,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <TextBox x:Name="tbName" Text="名称" Margin="80,5,10,0" VerticalAlignment="Top" />
@@ -24,6 +24,8 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
+        <Label Content="線種" Margin="185,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <ComboBox Name="cbLineFont" Margin="220,30,0,0" Width="80" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <Label Content="面の色" Margin="5,55,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <ComboBox Name="cbFaceColor" ItemsSource="{Binding}" SelectedValue="{Binding Color}"
                   Margin="80,60,0,0" Width="100" VerticalAlignment="Top" HorizontalAlignment="Left" >

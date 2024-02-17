@@ -22,6 +22,7 @@ namespace Mini3DCad
         public List<PointD> mAreaLoc = new List<PointD>() {     //  領域座標
             new PointD(), new PointD()
         };
+        public Dictionary<FACE3D, Box> mWorldList = new Dictionary<FACE3D, Box>();
 
         public DataManage mDataManage;
         public YWorldDraw mGDraw;                                  //  2D/3D表示ライブラリ
@@ -57,6 +58,11 @@ namespace Mini3DCad
         /// <param name="face"></param>
         public void setCanvas(Canvas canvas, System.Windows.Controls.Image imScreen, FACE3D face)
         {
+            if (!mWorldList.ContainsKey(mFace)) {
+                mWorldList.Add(mFace, mGDraw.mWorld.toCopy());
+            } else {
+                mWorldList[mFace] = mGDraw.mWorld.toCopy();
+            }
             mCanvas = canvas;
             mImScreen = imScreen;
             mFace = face;
@@ -66,8 +72,11 @@ namespace Mini3DCad
                 width = mGDraw.mView.Width;
                 height = mGDraw.mView.Height;
             }
+            if (!mWorldList.ContainsKey(mFace)) {
+                mWorldList.Add(mFace, mDataManage.mArea.toBox(mFace));
+            }
             mGDraw = new YWorldDraw(mCanvas, width, height);
-            mGDraw.setWorldWindow(mDataManage.mArea.toBox(mFace));
+            mGDraw.setWorldWindow(mWorldList[mFace]);
             mGDraw.clear();
             mGDraw.mClipping = true;
         }
@@ -141,9 +150,8 @@ namespace Mini3DCad
                     if (0 < locList.Count) {
                         List<PointD> plist = locList.ConvertAll(p => p);
                         plist.Add(lastPoint);
-                        mGDraw.drawWPolygon(plist);
-                        //primitive = mDataManage.createPolygon(plist);
-                        //primitive.draw2D(mGDraw, mFace);
+                        primitive = mDataManage.createPolygon(plist);
+                        primitive.draw2D(mGDraw, mFace);
                     }
                     break;
                 case OPERATION.translate:
@@ -152,9 +160,8 @@ namespace Mini3DCad
                         Point3D v = new Point3D(lastPoint, mFace) - new Point3D(locList[0], mFace);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.translate(v);
-                            if (primitive != null)
-                                primitive.draw2D(mGDraw, mFace);
+                            primitive.translateVertexList(v);
+                            primitive.draw2D(mGDraw, mFace);
                         }
                     }
                     break;
@@ -166,9 +173,18 @@ namespace Mini3DCad
                         System.Diagnostics.Debug.WriteLine($"{cp.ToString("F2")} {ang.ToString("f3")} {locList[0].ToString("F3")} {locList[1].ToString("F3")} {lastPoint.ToString("F3")}");
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.rotate(cp, -ang, mFace);
-                            if (primitive != null)
-                                primitive.draw2D(mGDraw, mFace);
+                            primitive.rotateVertexList(cp, -ang, mFace);
+                            primitive.draw2D(mGDraw, mFace);
+                        }
+                    }
+                    break;
+                case OPERATION.offset:
+                case OPERATION.copyOffset:
+                    if (locList.Count == 1) {
+                        foreach (var pick in pickData) {
+                            primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
+                            primitive.offset(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), mFace);
+                            primitive.draw2D(mGDraw, mFace);
                         }
                     }
                     break;
@@ -177,8 +193,7 @@ namespace Mini3DCad
                         Point3D v = new Point3D(lastPoint, mFace) - new Point3D(locList[0], mFace);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.createExtrusion(mDataManage.mElementList[pick.mElementNo].mPrimitive, v);
-                            if (primitive != null)
-                                primitive.draw2D(mGDraw, mFace);
+                            primitive.draw2D(mGDraw, mFace);
                         }
                     }
                     break;
@@ -234,7 +249,7 @@ namespace Mini3DCad
         /// </summary>
         public void dispFit()
         {
-            if (mFace == FACE3D.NON || mDataManage.mArea == null)
+            if (mFace == FACE3D.NON || mDataManage.mArea == null || mDataManage.mArea.isNaN())
                 return;
             mGDraw.setWorldWindow(mDataManage.mArea.toBox(mFace));
             dispInit();
@@ -285,7 +300,7 @@ namespace Mini3DCad
                 }
             } else if (shift) {
                 switch (key) {
-                    case Key.F1: break;
+                    case Key.F1: mGridSize *= -1; draw(); break;
                     default: break;
                 }
             } else {
@@ -550,6 +565,11 @@ namespace Mini3DCad
                     mWorldSize = ylib.doubleParse(buf[1]);
                 } else if (buf[0] == "GridSize") {
                     mGridSize = ylib.doubleParse(buf[1]);
+                } else if (buf[0] == "World") {
+                    mGDraw.mWorld.Left   = ylib.doubleParse(buf[1]);
+                    mGDraw.mWorld.Top    = ylib.doubleParse(buf[2]);
+                    mGDraw.mWorld.Right  = ylib.doubleParse(buf[3]);
+                    mGDraw.mWorld.Bottom = ylib.doubleParse(buf[4]);
                 } else if (buf[0] == "DataDrawEnd") {
                     break;
                 }

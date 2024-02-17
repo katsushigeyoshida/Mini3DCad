@@ -87,10 +87,11 @@ namespace Mini3DCad
         {
             string buf = mPrimitive.propertyInfo();
             buf += "\n" + ylib.insertLinefeed(mPrimitive.dataInfo("F2"), ",", 100);
-            buf += "\nVertexList";
-            List<string> list = mPrimitive.vertexInfo();
-            foreach (string s in list)
-                buf += $"\n{ylib.insertLinefeed(s, ",", 100)}";
+            int count = mPrimitive.mSurfaceDataList.Select(x => x.mVertexList.Count).Sum();
+            buf += $"\nVertexList {count}";
+            //List<string> list = mPrimitive.vertexInfo();
+            //foreach (string s in list)
+            //    buf += $"\n{ylib.insertLinefeed(s, ",", 100)}";
             return buf;
         }
 
@@ -180,12 +181,21 @@ namespace Mini3DCad
                                 revolution.setDataList(buf);
                                 mPrimitive = revolution;
                                 break;
+                            case "Sweep":
+                                SweepPrimitive sweep = new SweepPrimitive();
+                                sweep.setPropertyList(buf);
+                                buf = dataList[sp++];
+                                sweep.setDataList(buf);
+                                mPrimitive = sweep;
+                                break;
                             default:
                                 sp++;
                                 break;
                         }
-                        if (mPrimitive != null)
-                            mPrimitive.createVertexList();
+                        if (mPrimitive != null) {
+                            mPrimitive.createSurfaceData();
+                            mPrimitive.createVertexData();
+                        }
                     } else if (buf[0] == "Name") {
                         mName = buf[1];
                     } else if (buf[0] == "IsShading") {

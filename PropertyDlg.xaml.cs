@@ -11,19 +11,35 @@ namespace Mini3DCad
     public partial class PropertyDlg : Window
     {
         public string mName = "";
+        public bool mNameEnable = false;
         public Brush mLineColor = Brushes.Black;
-        public Brush mFaceColor = Brushes.Blue;
         public string mLineColorName = "Black";
+        public bool mLineColoeEnable = false;
+        public Brush mFaceColor = Brushes.Blue;
         public string mFaceColorName = "Blue";
+        public bool mFaceColorNull = false;
+        public bool mFaceColorEnable = false;
         public int mLineFont = 0;
         public bool mLineFontOn = true;
-        public bool mFaceColorNull = false;
+        public bool mLineFontEnable = false;
         public bool mBothShading = true;
+        public bool mBothShadingEnable = false;
         public bool mDisp3D = true;
+        public bool mDisp3DEnable = false;
+        public double mArcRadius = 1;
+        public bool mArcRadiusEnable = false;
+        public double mArcStartAngle = 0;
+        public bool mArcStartAngleEnable = false;
+        public double mArcEndAngle = Math.PI * 2;
+        public bool mArcOn = false;
+        public bool mArcEndAngleEnable = false;
         public bool mReverseOn = false;
         public bool mReverse = false;
+        public bool mReverseEnable = false;
         public bool mDivideAngOn = false;
         public double mDivideAng = 15;
+        public bool mDivideAngEnable = false;
+        public bool mPropertyAll = false;
 
         private string[] mLineFontName = new string[] {
             "実線", "破線", "一点鎖線", "二点鎖線"};
@@ -48,12 +64,15 @@ namespace Mini3DCad
             colorindex = ylib.getBrushNo(mFaceColor);
             if (!mFaceColorNull && 0 <= colorindex)
                 cbFaceColor.SelectedIndex = ylib.getBrushNo(mFaceColor);
-            cbLineFont.ItemsSource = mLineFontName;
+            cbLineFont.ItemsSource   = mLineFontName;
             cbLineFont.SelectedIndex = mLineFont;
-            cbLineFont.IsEnabled = mLineFontOn;
-            chFaceColor.IsChecked = mFaceColorNull;
-            chShading.IsChecked = mBothShading;
-            chDisp3D.IsChecked = mDisp3D;
+            cbLineFont.IsEnabled     = mLineFontOn;
+            chFaceColor.IsChecked    = mFaceColorNull;
+            chBothShading.IsChecked  = mBothShading;
+            chDisp3D.IsChecked       = mDisp3D;
+            tbArcRadius.Text         = mArcRadius.ToString();
+            tbArcStartAngle.Text     = ylib.double2StrZeroSup(mArcStartAngle);
+            tbArcEndAngle.Text       = ylib.double2StrZeroSup(mArcEndAngle);
             //lbReverseTitle.Visibility = mReverseOn ? Visibility.Visible : Visibility.Collapsed;
             //chReverse.Visibility = mReverseOn ? Visibility.Visible : Visibility.Collapsed;
             chReverse.IsEnabled = mReverseOn ? true : false;
@@ -61,7 +80,27 @@ namespace Mini3DCad
             //lbDivideAngTitle.Visibility = mDivideAngOn ? Visibility.Visible : Visibility.Collapsed;
             //tbDivideAng.Visibility = mDivideAngOn ? Visibility.Visible : Visibility.Collapsed;
             tbDivideAng.IsEnabled = mDivideAngOn ? true : false;
-            tbDivideAng.Text = ylib.double2StrZeroSup(mDivideAng);
+            tbDivideAng.Text      = ylib.double2StrZeroSup(mDivideAng);
+
+            if (!mArcOn) {
+                tbArcRadius.IsEnabled = false;
+                tbArcStartAngle.IsEnabled = false;
+                tbArcEndAngle.IsEnabled = false;
+            }
+
+            if (!mPropertyAll) {
+                chNameEnable.Visibility = Visibility.Hidden;
+                chLineColorEnable.Visibility = Visibility.Hidden;
+                chFaceColorEnable.Visibility = Visibility.Hidden;
+                chLineFontEnable.Visibility = Visibility.Hidden;
+                chBothShadingEnable.Visibility = Visibility.Hidden;
+                chDisp3DEnable.Visibility = Visibility.Hidden;
+                chArcRadiusEnable.Visibility = Visibility.Hidden;
+                chArcStartAngleEnable.Visibility = Visibility.Hidden;
+                chArcEndAngleEnable.Visibility = Visibility.Hidden;
+                chReverseEnable.Visibility = Visibility.Hidden;
+                chDivideAngEnable.Visibility = Visibility.Hidden;
+            }
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -75,16 +114,27 @@ namespace Mini3DCad
                 mLineColor = ylib.mBrushList[cbLineColor.SelectedIndex].brush;
                 mLineColorName = ylib.mBrushList[cbLineColor.SelectedIndex].colorTitle;
             }
+            mNameEnable = chNameEnable.IsChecked == true;
             mLineFont = cbLineFont.SelectedIndex;
+            mLineFontEnable = chLineFontEnable.IsChecked == true;
             if (0 <= cbFaceColor.SelectedIndex) {
                 mFaceColor = ylib.mBrushList[cbFaceColor.SelectedIndex].brush;
                 mFaceColorName = ylib.mBrushList[cbFaceColor.SelectedIndex].colorTitle;
             }
+            mLineColoeEnable = chLineColorEnable.IsChecked == true;
             mFaceColorNull = chFaceColor.IsChecked == true;
-            mBothShading = (chShading.IsChecked == true);
+            mFaceColorEnable = chFaceColor.IsChecked == true;
+            mBothShading = (chBothShading.IsChecked == true);
+            mBothShadingEnable = chBothShading.IsChecked == true;
             mDisp3D = chDisp3D.IsChecked == true;
+            mDisp3DEnable = chDisp3DEnable.IsChecked == true;
+            mArcRadius = ylib.doubleParse(tbArcRadius.Text, 1);
+            mArcStartAngle = ylib.doubleParse(tbArcStartAngle.Text, 1);
+            mArcEndAngle = ylib.doubleParse(tbArcEndAngle.Text, 1);
             mReverse = chReverse.IsChecked == true;
+            mReverseEnable = chReverseEnable.IsChecked == true;
             mDivideAng = ylib.doubleParse(tbDivideAng.Text, 10);
+            mDivideAngEnable = chDivideAngEnable.IsChecked == true;
 
             DialogResult = true;
             Close();

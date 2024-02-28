@@ -17,12 +17,12 @@ namespace Mini3DCad
     public enum OPERATION
     {
         non, loc, pick,
-        line, circle, arc, rect, polyline, polygon,
-        translate, rotate, offset,
-        copyTranslate, copyRotate, copyOffset,
-        connect, divide, changeProperty,
+        point, line, circle, arc, rect, polyline, polygon,
+        translate, rotate, offset, mirror, trim, strach,
+        copyTranslate, copyRotate, copyOffset, copyMirror, copyTrim,
+        connect, divide, changeProperty, changePropertyAll,
         extrusion, revolution, sweep, release,
-        info, remove, undo,
+        info, remove, undo, screenCopy,
         save, load, back, cancel, close
     }
 
@@ -57,23 +57,29 @@ namespace Mini3DCad
     class CommandData
     {
         public List<Command> mCommandData = new() {
-            new Command("作成",       "線分",       OPERATION.line),
-            new Command("作成",       "折線",       OPERATION.polyline),
-            new Command("作成",       "円",         OPERATION.circle),
-            new Command("作成",       "円弧",       OPERATION.arc),
-            new Command("作成",       "四角",       OPERATION.rect),
-            new Command("作成",       "ポリゴン",   OPERATION.polygon),
-            new Command("作成",       "戻る",       OPERATION.back),
-            new Command("2D編集",     "移動",       OPERATION.translate),
-            new Command("2D編集",     "回転",       OPERATION.rotate),
-            new Command("2D編集",     "オフセット", OPERATION.offset),
-            new Command("2D編集",     "分割",       OPERATION.divide),
-            new Command("2D編集",     "接続",       OPERATION.connect),
-            new Command("2D編集",     "属性変更",   OPERATION.changeProperty),
-            new Command("2D編集",     "戻る",       OPERATION.back),
-            new Command("2Dコピー",   "移動",       OPERATION.copyTranslate),
-            new Command("2Dコピー",   "回転",       OPERATION.copyRotate),
+            new Command("作成",       "点",           OPERATION.point),
+            new Command("作成",       "線分",         OPERATION.line),
+            new Command("作成",       "折線",         OPERATION.polyline),
+            new Command("作成",       "円",           OPERATION.circle),
+            new Command("作成",       "円弧",         OPERATION.arc),
+            new Command("作成",       "四角",         OPERATION.rect),
+            new Command("作成",       "ポリゴン",     OPERATION.polygon),
+            new Command("作成",       "戻る",         OPERATION.back),
+            new Command("2D編集",     "移動",         OPERATION.translate),
+            new Command("2D編集",     "回転",         OPERATION.rotate),
+            new Command("2D編集",     "オフセット",   OPERATION.offset),
+            new Command("2D編集",     "反転",         OPERATION.mirror),
+            new Command("2D編集",     "トリム",       OPERATION.trim),
+            new Command("2D編集",     "分割",         OPERATION.divide),
+            new Command("2D編集",     "接続",         OPERATION.connect),
+            new Command("2D編集",     "属性変更",     OPERATION.changeProperty),
+            new Command("2D編集",     "一括属性変更", OPERATION.changePropertyAll),
+            new Command("2D編集",     "戻る",         OPERATION.back),
+            new Command("2Dコピー",   "移動",         OPERATION.copyTranslate),
+            new Command("2Dコピー",   "回転",         OPERATION.copyRotate),
             new Command("2Dコピー",   "オフセット", OPERATION.copyOffset),
+            new Command("2Dコピー",   "反転",       OPERATION.copyMirror),
+            new Command("2Dコピー",   "トリム",     OPERATION.copyTrim),
             new Command("2Dコピー",   "戻る",       OPERATION.back),
             new Command("3D編集",     "押出",       OPERATION.extrusion),
             new Command("3D編集",     "回転体",     OPERATION.revolution),
@@ -85,7 +91,8 @@ namespace Mini3DCad
             new Command("アンドゥ",   "アンドゥ",   OPERATION.undo),
             //new Command("ファイル", "保存",         OPERATION.save),
             //new Command("ファイル", "読込",         OPERATION.load),
-            //new Command("ファイル", "戻る",         OPERATION.back),
+            new Command("ツール",     "画面コピー", OPERATION.screenCopy),
+            new Command("ツール",     "戻る",       OPERATION.back),
             new Command("キャンセル", "キャンセル", OPERATION.cancel),
             new Command("終了",       "終了",       OPERATION.close),
         };
@@ -160,11 +167,13 @@ namespace Mini3DCad
     /// </summary>
     class CommandOpe
     {
-        public KeyCommand mKeyCommand;                      //  キー入力コマンド
+        public int mSaveOperationCount = 10;                    //  定期保存の操作回数
+
+        public KeyCommand mKeyCommand;                          //  キー入力コマンド
         public DataManage mDataManage;
         public OPERATION mOperation = OPERATION.non;
         public FACE3D mDispMode = FACE3D.XY;
-        public string mDataFilePath = "dataFile.csv";
+        public string mDataFilePath = "";
         public MainWindow mMainWindow;
 
         private YLib ylib = new YLib();
@@ -188,6 +197,7 @@ namespace Mini3DCad
             mOperation = ope;
             OPEMODE opeMode = OPEMODE.loc;
             switch (ope) {
+                case OPERATION.point: break;
                 case OPERATION.line: break;
                 case OPERATION.circle: break;
                 case OPERATION.arc: break;
@@ -197,9 +207,13 @@ namespace Mini3DCad
                 case OPERATION.translate: break;
                 case OPERATION.rotate: break;
                 case OPERATION.offset: break;
+                case OPERATION.mirror: break;
+                case OPERATION.trim: break;
                 case OPERATION.copyTranslate: break;
                 case OPERATION.copyRotate: break;
                 case OPERATION.copyOffset: break;
+                case OPERATION.copyMirror: break;
+                case OPERATION.copyTrim: break;
                 case OPERATION.divide: break;
                 case OPERATION.connect:
                     mDataManage.connect(picks);
@@ -207,6 +221,10 @@ namespace Mini3DCad
                     break;
                 case OPERATION.changeProperty:
                     mDataManage.changeProperty(picks);
+                    opeMode = OPEMODE.clear;
+                    break;
+                case OPERATION.changePropertyAll:
+                    mDataManage.changePropertyAll(picks);
                     opeMode = OPEMODE.clear;
                     break;
                 case OPERATION.extrusion: break;
@@ -236,8 +254,16 @@ namespace Mini3DCad
                     mDataManage.undo();
                     opeMode = OPEMODE.clear;
                     break;
+                case OPERATION.screenCopy:
+                    mMainWindow.screenCopy();
+                    opeMode = OPEMODE.clear;
+                    break;
                 case OPERATION.back:
                     opeMode = OPEMODE.non;
+                    break;
+                case OPERATION.save:
+                    saveFile();
+                    opeMode = OPEMODE.clear;
                     break;
                 case OPERATION.cancel:
                     opeMode = OPEMODE.clear;
@@ -248,6 +274,8 @@ namespace Mini3DCad
                     break;
                 default: opeMode = OPEMODE.non; break;
             }
+            if (mDataManage.mOperationCount % mSaveOperationCount == 0)
+                saveFile();
             return opeMode;
         }
 
@@ -263,6 +291,14 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// キーコマンドをファイルに保存
+        /// </summary>
+        public void saveKeycommnad()
+        {
+            mKeyCommand.saveFile();
+        }
+
+        /// <summary>
         /// 全データ削除
         /// </summary>
         public void newData(bool unmsg = false)
@@ -275,11 +311,18 @@ namespace Mini3DCad
         /// <summary>
         /// ファイルにデータを保存
         /// </summary>
-        /// <param name="saveonly"></param>
+        /// <param name="saveonly">未使用</param>
         public void saveFile(bool saveonly = false)
         {
-            if (0 < mDataFilePath.Length)
+            if (0 < mDataFilePath.Length) {
                 mDataManage.saveData(mDataFilePath);
+            } else if (0 < mDataManage.mElementList.Count) {
+                string itemName = mMainWindow.mFileData.addItem();
+                if (0 < itemName.Length) {
+                    mDataFilePath = mMainWindow.mFileData.getItemFilePath(itemName);
+                    mDataManage.saveData(mDataFilePath);
+                }
+            }
         }
 
         /// <summary>

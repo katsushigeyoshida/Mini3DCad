@@ -5,10 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Mini3DCad"
         mc:Ignorable="d"
-        Title="PropertyDlg" Height="250" Width="330" Closing="Window_Closing" Loaded="Window_Loaded">
+        Title="PropertyDlg" Height="250" Width="420" Closing="Window_Closing" Loaded="Window_Loaded">
     <Grid>
         <Label Name="lbNameTitle" Content="名称" Margin="5,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <TextBox x:Name="tbName" Text="名称" Margin="80,5,10,0" VerticalAlignment="Top" />
+        <TextBox x:Name="tbName" Text="名称" Margin="80,5,50,0" VerticalAlignment="Top" />
+        <CheckBox x:Name="chNameEnable" Margin="0,5,20,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
         <Label Content="線分の色" Margin="5,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <ComboBox Name="cbLineColor" ItemsSource="{Binding}" SelectedValue="{Binding Color}"
                   Margin="80,30,0,0" Width="100" VerticalAlignment="Top" HorizontalAlignment="Left">
@@ -24,8 +25,10 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
-        <Label Content="線種" Margin="185,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <ComboBox Name="cbLineFont" Margin="220,30,0,0" Width="80" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chLineColorEnable" Margin="190,35,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="線種" Margin="210,30,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <ComboBox Name="cbLineFont" Margin="250,30,50,0" VerticalAlignment="Top" />
+        <CheckBox x:Name="chLineFontEnable" Margin="0,35,20,0" HorizontalAlignment="Right" VerticalAlignment="Top" />
         <Label Content="面の色" Margin="5,55,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <ComboBox Name="cbFaceColor" ItemsSource="{Binding}" SelectedValue="{Binding Color}"
                   Margin="80,60,0,0" Width="100" VerticalAlignment="Top" HorizontalAlignment="Left" >
@@ -42,14 +45,29 @@
             </ComboBox.ItemTemplate>
         </ComboBox>
         <CheckBox Name="chFaceColor" Content="透明" Margin="190,65,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chFaceColorEnable" Margin="250,65,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <Label Content="両面表示" Margin="5,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <CheckBox Name="chShading" Margin="80,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <Label Content="3D表示" Margin="5,110,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <CheckBox Name="chDisp3D" Margin="80,115,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chBothShading" Margin="80,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chBothShadingEnable" Margin="110,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="3D表示" Margin="210,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chDisp3D" Margin="260,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chDisp3DEnable" Margin="290,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="円弧" Margin="5,110,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <Label Content="半径" Margin="40,110,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBox Name="tbArcRadius" Margin="75,115,0,0" Width="60" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chArcRadiusEnable" Margin="140,115,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="始角" Margin="160,110,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBox Name="tbArcStartAngle" Margin="190,115,0,0" Width="60" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chArcStartAngleEnable" Margin="255,115,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="終角" Margin="275,110,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBox Name="tbArcEndAngle" Margin="305,115,0,0" Width="60" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chArcEndAngleEnable" Margin="370,115,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <Label Name="lbReverseTitle" Content="逆順" Margin="5,140,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <CheckBox Name="chReverse" Margin="80,145,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <Label Name="lbDivideAngTitle" Content="分割角度" Margin="120,140,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <TextBox Name="tbDivideAng" Margin="180,145,0,0" Width="80" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chReverse" Margin="50,145,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chReverseEnable" Margin="70,145,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <Label Name="lbDivideAngTitle" Content="分割角度" Margin="100,140,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <TextBox Name="tbDivideAng" Margin="160,145,0,0" Width="60" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chDivideAngEnable" Margin="230,145,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <Button x:Name="btOK" IsDefault="True" Content="OK" Width="60" Margin="0,0,100,10" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btOK_Click" />
         <Button x:Name="btCancel" IsCancel="True" Content="Cancel" Width="60" Margin="0,0,20,10" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btCancel_Click" />
     </Grid>

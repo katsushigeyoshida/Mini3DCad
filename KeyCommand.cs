@@ -23,7 +23,7 @@ namespace Mini3DCad
             "color", "linetype", "thickness", "pointtype", "pointsize", "textsize", "ha", "va"
         };
 
-        private List<PointD> mPoints = new List<PointD>();
+        private List<Point3D> mPoints = new List<Point3D>();
         private List<int> mPickEnt = new List<int>();
         private double mRadius = 0;
         private double mSa = 0;
@@ -35,7 +35,8 @@ namespace Mini3DCad
 
         public List<string> mKeyCommandList = new();                //  キー入力コマンドの履歴
         public string mTextString = "";                             //  文字列データ
-        public string mCommandStr = "";
+        public string mKeyommandPath = "KeyCommand.csv";            //  キーコマンド履歴ファイルパス
+        public int mMaxKKeyCommand = 100;                           //  保存コマンド数
         public DataManage mDataManage;
 
         private YCalc ycalc = new YCalc();
@@ -48,6 +49,7 @@ namespace Mini3DCad
         public KeyCommand(DataManage dataManage)
         {
             mDataManage = dataManage;
+            loadFile(mKeyommandPath);
         }
 
         /// <summary>
@@ -59,23 +61,27 @@ namespace Mini3DCad
         {
             if (command.Length == 0)
                 return false;
-            getCommandParameter(mCommandStr);
+            getCommandParameter(command);
             switch (mMainCmd[mCommandNo]) {
+                case "point":
+                    if (0 < mPoints.Count)
+                        mDataManage.addPoint(mPoints[0]);
+                    break;
                 case "line":
                     if (1 < mPoints.Count)
                         mDataManage.addLine(mPoints[0], mPoints[1]);
                     break;
                 case "rect":
                     if (1 < mPoints.Count)
-                        mDataManage.addRect(mPoints[0], mPoints[1]);
+                        mDataManage.addRect(mPoints[0].toPointXY(), mPoints[1].toPointXY());
                     break;
                 case "circle":
                     if (1 < mPoints.Count)
-                        mDataManage.addCircle(mPoints[0], mPoints[1]);
+                        mDataManage.addCircle(mPoints[0].toPointXY(), mPoints[1].toPointXY());
                     break;
                 case "arc":
                     if (2 < mPoints.Count)
-                        mDataManage.addArc(mPoints[0], mPoints[1], mPoints[2]);
+                        mDataManage.addArc(mPoints[0].toPointXY(), mPoints[1].toPointXY(), mPoints[2].toPointXY());
                     break;
                 case "polyline":
                     if (1 < mPoints.Count)
@@ -114,11 +120,11 @@ namespace Mini3DCad
                     mCommandNo = mMainCmd.FindIndex(p => 0 <= p.IndexOf(cmd[i]));
                     continue;
                 }
-                if (0 == cmd[i].IndexOf("x") || 0 == cmd[i].IndexOf("y") ||
-                    0 == cmd[i].IndexOf("dx") || 0 == cmd[i].IndexOf("dy")) {
+                if (0 == cmd[i].IndexOf("x") || 0 == cmd[i].IndexOf("y") || 0 == cmd[i].IndexOf("z") ||
+                    0 == cmd[i].IndexOf("dx") || 0 == cmd[i].IndexOf("dy") || 0 == cmd[i].IndexOf("dz")) {
                     //  座標/相対座標
-                    PointD dp = getPoint(cmd[i],
-                        mPoints.Count < 1 ? new PointD(0, 0) : mPoints[mPoints.Count - 1]);
+                    Point3D dp = getPoint(cmd[i],
+                        mPoints.Count < 1 ? new Point3D(0, 0, 0) : mPoints[mPoints.Count - 1]);
                     if (!dp.isNaN())
                         mPoints.Add(dp);
                 } else if (0 == cmd[i].IndexOf("p")) {
@@ -153,13 +159,15 @@ namespace Mini3DCad
         /// <param name="a">パラメータ名</param>
         /// <param name="b">パラメータ名</param>
         /// <returns>パラメータ値</returns>
-        private PointD getPoint(string xy, string a = "x", string b = "y")
+        private Point3D getPoint(string xyz, string a = "x", string b = "y", string c = "z")
         {
-            int xn = xy.IndexOf(a);
-            int yn = xy.IndexOf(b);
-            double x = ycalc.expression(xy.Substring(xn + a.Length, yn - a.Length));
-            double y = ycalc.expression(xy.Substring(yn + b.Length));
-            return new PointD(x, y);
+            int xn = xyz.IndexOf(a);
+            int yn = xyz.IndexOf(b);
+            int zn = xyz.IndexOf(c);
+            double x = ycalc.expression(xyz.Substring(xn + a.Length, yn - a.Length));
+            double y = ycalc.expression(xyz.Substring(yn + b.Length, zn - b.Length));
+            double z = ycalc.expression(xyz.Substring(zn + c.Length));
+            return new Point3D(x, y, z);
         }
 
         /// <summary>
@@ -168,20 +176,24 @@ namespace Mini3DCad
         /// <param name="xy">パラメータ文字列</param>
         /// <param name="prev">前座標</param>
         /// <returns>座標</returns>
-        private PointD getPoint(string xy, PointD prev)
+        private Point3D getPoint(string xyz, Point3D prev)
         {
-            PointD p = new PointD();
-            string[] sep = { "x", "y", "dx", "dy", ",", " " };
-            List<string> list = ylib.splitString(xy, sep);
+            Point3D p = new Point3D();
+            string[] sep = { "x", "y", "z", "dx", "dy", "dz", ",", " " };
+            List<string> list = ylib.splitString(xyz, sep);
             for (int i = 0; i < list.Count; i++) {
                 if (list[i] == "x" && i + 1 < list.Count) {
                     p.x = ycalc.expression(list[++i]);
                 } else if (list[i] == "y" && i + 1 < list.Count) {
                     p.y = ycalc.expression(list[++i]);
+                } else if (list[i] == "z" && i + 1 < list.Count) {
+                    p.z = ycalc.expression(list[++i]);
                 } else if (list[i] == "dx" && i + 1 < list.Count) {
                     p.x = ycalc.expression(list[++i]) + prev.x;
                 } else if (list[i] == "dy" && i + 1 < list.Count) {
                     p.y = ycalc.expression(list[++i]) + prev.y;
+                } else if (list[i] == "dz" && i + 1 < list.Count) {
+                    p.z = ycalc.expression(list[++i]) + prev.z;
                 }
             }
 
@@ -263,6 +275,40 @@ namespace Mini3DCad
                 mKeyCommandList.RemoveAt(n);
             mKeyCommandList.Insert(0, command);
             return mKeyCommandList;
+        }
+
+        /// <summary>
+        /// キーコマンドをファイルに保存
+        /// </summary>
+        public void saveFile()
+        {
+            saveFile(mKeyommandPath);
+        }
+
+        /// <summary>
+        /// キーコマンドをファイルに保存
+        /// </summary>
+        /// <param name="path"></param>
+        public void saveFile(string path)
+        {
+            List<string[]> comlist = new List<string[]>();
+            for (int i = 0; i < mKeyCommandList.Count; i++) {
+                comlist.Add([mKeyCommandList[i]]);
+            }
+            ylib.saveCsvData(path, comlist);
+        }
+
+        /// <summary>
+        /// キーコマンドをファイルを読み込む
+        /// </summary>
+        /// <param name="path"></param>
+        public void loadFile(string path)
+        {
+            List<string[]> llist = ylib.loadCsvData(path);
+            if (llist != null) {
+                for (int i = 0; i < llist.Count && i < mMaxKKeyCommand; i++)
+                    mKeyCommandList.Add(llist[i][0]);
+            }
         }
     }
 }

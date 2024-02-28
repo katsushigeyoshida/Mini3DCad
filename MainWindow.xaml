@@ -8,7 +8,7 @@
         Title="Mini3DCad" Height="450" Width="600" Closing="Window_Closing" Loaded="Window_Loaded"
         LayoutUpdated="Window_LayoutUpdated" MouseWheel="Window_MouseWheel" MouseMove="Window_MouseMove" 
         MouseLeftButtonDown="Window_MouseLeftButtonDown" MouseLeftButtonUp="Window_MouseLeftButtonUp" 
-        MouseRightButtonDown="Window_MouseRightButtonDown" MouseRightButtonUp="Window_MouseRightButtonUp" PreviewKeyDown="Window_PreviewKeyDown">
+        MouseRightButtonDown="Window_MouseRightButtonDown" MouseRightButtonUp="Window_MouseRightButtonUp" PreviewKeyDown="Window_PreviewKeyDown" MouseDoubleClick="Window_MouseDoubleClick">
     <Grid>
         <DockPanel>
             <ToolBarTray DockPanel.Dock="Top">
@@ -71,6 +71,10 @@
             <StackPanel DockPanel.Dock="Bottom" Height="26">
                 <StatusBar Height="26" >
                     <Button x:Name="btDummy" Width="0" Height="20" />
+                    <Button x:Name="btHelp" Width="20" Height="20" Click="btHelp_Click"
+                            ToolTip="ヘルプファイルを開く" >
+                        <Image Source="Icon\StatusHelpOutline.png" ></Image>
+                    </Button>
                     <Button x:Name="btSetting" Width="20" Height="20" Click="btSetting_Click"
                             ToolTip="システム設定" >
                         <Image Source="Icon\Settings.png" ></Image>

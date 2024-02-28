@@ -21,7 +21,8 @@ namespace Mini3DCad
         private double mPrevWindowWidth;        //  変更前のウィンドウ幅
         private System.Windows.WindowState mWindowState = System.Windows.WindowState.Normal;  //  ウィンドウの状態(最大化/最小化)
 
-        private string mAppName = "Mini3DCAD";
+        private string mAppName = "Mini3DCAD";                  //  アプリ名
+        private string mHelpFile = "Mini3DCad_Manual.pdf";      //  マニュアルファイル
         private int mPickBoxSize = 10;                          //  ピック領域サイズ
         private int mMouseScroolSize = 5;                       //  マウスによるスクロール単位
         public OPEMODE mOperationMode = OPEMODE.non;            //  操作モード(loc,pick)
@@ -30,16 +31,17 @@ namespace Mini3DCad
         private PointD mPrePosition;                            //  マウスの前回位置(world座標)
         private bool mMouseLeftButtonDown = false;              //  左ボタン状態
         private bool mMouseRightButtonDown = false;             //  右ボタン状態
-        private double[] mGridSizeMenu = {
+        private double[] mGridSizeMenu = {                      //  グリッドサイズメニュー
             0, 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 10,
             20, 30, 40, 50, 100, 200, 300, 400, 500, 1000
         };
 
+        public LocPick mLocPick;                            //  ロケイト・ピック処理
+        public FileData mFileData;                          //  ファイル管理
         public DataDraw mDraw;                              //  描画クラス
         public DataManage mDataManage;                      //  データ管理クラス
         private CommandData mCommandData;                   //  コマンドデータ
         private CommandOpe mCommandOpe;                     //  コマンド処理
-        private FileData mFileData;                         //  ファイル管理
         private Canvas mCurCanvas;                          //  描画キャンバス
         private System.Windows.Controls.Image mCurImage;    //  描画イメージ
 
@@ -48,8 +50,8 @@ namespace Mini3DCad
         private Vector3 mMax = new Vector3(1, 1, 1);        //  表示領域の最大値
         private double m3DScale = 5;                        //  3D表示の初期スケール
 
+        public GL3DLib m3Dlib;                              //  三次元表示ライブラリ
         private GLControl glControl;                        //  OpenTK.GLcontrol
-        private GL3DLib m3Dlib;                             //  三次元表示ライブラリ
         private YLib ylib = new YLib();                     //  単なるライブラリ
 
         public MainWindow()
@@ -61,7 +63,7 @@ namespace Mini3DCad
             //  OpenGL 初期化
             glControl = new GLControl();
             m3Dlib = new GL3DLib(glControl);
-            m3Dlib.initPosition(1.3f, -70f, 0f, 10f);
+            m3Dlib.initPosition(1.3f, 0f, 0f, 0f);
             m3Dlib.setArea(mMin, mMax);
             //  OpenGLイベント処理
             glControl.Load       += glControl_Load;
@@ -77,6 +79,7 @@ namespace Mini3DCad
             mFileData    = new FileData(this);
             mCommandData = new CommandData();
             mCommandOpe  = new CommandOpe(this, mDataManage);
+            mLocPick     = new LocPick(mDataManage, this);
 
             WindowFormLoad();
         }
@@ -94,6 +97,7 @@ namespace Mini3DCad
             mDataManage.mFace = FACE3D.XY;
             mDraw = new DataDraw(mCurCanvas, mCurImage, this);
             mDraw.mDataManage = mDataManage;
+            mDraw.mLocPick = mLocPick;
             //  2D描画処理の初期化
             mDraw.drawWorldFrame();
             mDraw.draw();
@@ -103,32 +107,10 @@ namespace Mini3DCad
             cbGridSize.ItemsSource = mGridSizeMenu;
             cbColor.SelectedIndex = ylib.getBrushNo(mDataManage.mPrimitiveBrush);
             cbGridSize.SelectedIndex = mGridSizeMenu.FindIndex(Math.Abs(mDraw.mGridSize));
+            cbCommand.ItemsSource = mCommandOpe.mKeyCommand.mKeyCommandList;
             //  データファイルの設定
             mFileData.setBaseDataFolder();
-            cbGenreList.ItemsSource = mFileData.getGenreList();
-            int index = cbGenreList.Items.IndexOf(mFileData.mGenreName);
-            if (0 <= index) {
-                //  ジャンルを設定
-                cbGenreList.SelectedIndex = index;
-                index = lbCategoryList.Items.IndexOf(mFileData.mCategoryName);
-                if (0 <= index) {
-                    lbCategoryList.SelectedIndex = index;
-                    index = lbItemList.Items.IndexOf(mFileData.mDataName);
-                    if (0 <= index) {
-                        lbItemList.SelectedIndex = index;
-                    }
-                }
-            } else {
-                //  ジャンル不定
-                if (0 < cbGenreList.Items.Count) {
-                    mFileData.mGenreName = cbGenreList.Items[0].ToString() ?? "";
-                    lbCategoryList.ItemsSource = mFileData.getCategoryList();
-                    if (0 < lbCategoryList.Items.Count) {
-                        mFileData.mCategoryName = lbCategoryList.Items[0].ToString() ?? "";
-                        lbItemList.ItemsSource = mFileData.getItemFileList();
-                    }
-                }
-            }
+            setDataFileList();
         }
 
         /// <summary>
@@ -139,6 +121,7 @@ namespace Mini3DCad
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             mCommandOpe.saveFile();
+            mCommandOpe.saveKeycommnad();
             WindowFormSave();
         }
 
@@ -163,7 +146,6 @@ namespace Mini3DCad
                 mWindowState = WindowState;
                 return;
             }
-            System.Diagnostics.Debug.WriteLine("Window_LayoutUpdated");
             mWindowState = WindowState;
             if (mDraw != null) {
                 mDraw.drawWorldFrame();
@@ -227,21 +209,7 @@ namespace Mini3DCad
         /// <param name="e"></param>
         private void glControl_Load(object sender, EventArgs e)
         {
-            GL.Enable(EnableCap.DepthTest);         //  デプスバッファ
-            GL.Enable(EnableCap.ColorMaterial);     //  材質設定
-            GL.Enable(EnableCap.Lighting);          //  光源の使用
-
-            //m3Dlib.setLight();
-            //m3Dlib.setMaterial();
-            float[] position0 = new float[] { 1.0f, 1.0f, 2.0f, 0.0f };
-            float[] position1 = new float[] { -1.0f, 1.0f, 2.0f, 0.0f };
-            GL.Light(LightName.Light0, LightParameter.Position, position0);
-            GL.Light(LightName.Light1, LightParameter.Position, position1);
-            GL.Enable(EnableCap.Light0);
-            GL.Enable(EnableCap.Light1);
-
-            GL.PointSize(3.0f);                     //  点の大きさ
-            GL.LineWidth(1.5f);                     //  線の太さ
+            m3Dlib.initLight();
         }
 
         /// <summary>
@@ -316,6 +284,8 @@ namespace Mini3DCad
         /// </summary>
         private void renderFrame()
         {
+            m3Dlib.mWorldWidth = (int)glGraph.ActualWidth;
+            m3Dlib.mWorldHeight = (int)glGraph.ActualHeight;
             //if (mPositionList == null)
             //    return;
             m3Dlib.setBackColor(mBackColor);
@@ -375,9 +345,9 @@ namespace Mini3DCad
                 } else
                     return;
             } else
-            if (0 < mDataManage.mLocList.Count) {
+            if (0 < mLocPick.mLocList.Count) {
                 //  ドラッギング表示
-                mDraw.dragging(mCommandOpe.mOperation, mDataManage.mPickElement, mDataManage.mLocList, wpos);
+                mDraw.dragging(mCommandOpe.mOperation, mLocPick.mPickElement, mLocPick.mLocList, wpos);
             }
             dispStatus(wpos);
             mPreMousePos = pos;     //  スクリーン座標
@@ -403,10 +373,10 @@ namespace Mini3DCad
                 wpos.round(Math.Abs(mDraw.mGridSize));
             if (mOperationMode == OPEMODE.loc) {
                 //  ロケイトの追加
-                mDataManage.mLocList.Add(wpos);
+                mLocPick.mLocList.Add(wpos);
             }
             //  データ登録(データ数固定コマンド)
-            if (mDataManage.defineData(mCommandOpe.mOperation))
+            if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement))
                 commandClear();
             dispStatus(wpos);
         }
@@ -434,18 +404,18 @@ namespace Mini3DCad
                 return;
             //  2D表示
             PointD wpos = mDraw.mGDraw.cnvScreen2World(new PointD(pos));
-            List<int> picks = mDataManage.getPickNo(wpos, mDraw.mGDraw.screen2worldXlength(mPickBoxSize));
+            List<int> picks = mLocPick.getPickNo(wpos, mDraw.mGDraw.screen2worldXlength(mPickBoxSize));
             if (mOperationMode == OPEMODE.loc) {
-                mDataManage.autoLoc(wpos, picks);
+                mLocPick.autoLoc(wpos, picks);
                 //  データ登録(データ数不定コマンド)
-                if (mDataManage.defineData(mCommandOpe.mOperation, true))
+                if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement, true))
                     commandClear();
             } else {
-                mDataManage.pickElement(wpos, picks, mOperationMode);
+                mLocPick.pickElement(wpos, picks, mOperationMode);
                 //  ピック色表示
-                mDataManage.setPick();
+                mLocPick.setPick();
                 mDraw.draw();
-                mDataManage.pickReset();
+                mLocPick.pickReset();
             }
             dispStatus(wpos);
         }
@@ -458,6 +428,23 @@ namespace Mini3DCad
         private void Window_MouseRightButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             mMouseRightButtonDown = false;
+        }
+
+        /// <summary>
+        /// マウスのダブルクリック処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (mOperationMode != OPEMODE.loc) {
+                Point pos = e.GetPosition(mCurCanvas);
+                PointD wpos = mDraw.mGDraw.cnvScreen2World(new PointD(pos));
+                List<int> picks = mLocPick.getPickNo(wpos, mDraw.mGDraw.screen2worldXlength(mPickBoxSize));
+                if (0 < picks.Count &&
+                    mCommandOpe.execCommand(OPERATION.changeProperty, mLocPick.mPickElement) == OPEMODE.clear)
+                    commandClear();
+            }
         }
 
         /// <summary>
@@ -490,6 +477,7 @@ namespace Mini3DCad
             }
             if (mDraw != null)
                 mDraw.mBitmapOn = false;    //  切り替え直後はBitmapが作られていない
+            btDummy.Focus();         //  ダミーでフォーカスを外す
         }
 
         /// <summary>
@@ -509,7 +497,7 @@ namespace Mini3DCad
                 } else if (level == COMMANDLEVEL.sub) {
                     //  サブコマンド
                     OPERATION ope = mCommandData.getCommand(menu);
-                    mOperationMode = mCommandOpe.execCommand(ope, mDataManage.mPickElement);
+                    mOperationMode = mCommandOpe.execCommand(ope, mLocPick.mPickElement);
                     if (mOperationMode == OPEMODE.clear || mOperationMode == OPEMODE.non) {
                         commandClear();
                     }
@@ -526,8 +514,8 @@ namespace Mini3DCad
         {
             mCommandOpe.mOperation = OPERATION.non;
             mOperationMode = OPEMODE.non;
-            mDataManage.mLocList.Clear();
-            mDataManage.mPickElement.Clear();
+            mLocPick.mLocList.Clear();
+            mLocPick.mPickElement.Clear();
             lbCommand.ItemsSource = mCommandData.getMainCommand();
             lbCommand.SelectedIndex = -1;
             if (mDataManage.mFace != FACE3D.NON && dispFit) {
@@ -547,7 +535,7 @@ namespace Mini3DCad
                 return;
             if (wpos == null)
                 wpos = mPrePosition;
-            tbStatus.Text = $"Mode [{mOperationMode}] Pick [{mDataManage.mPickElement.Count}] Loc [{mDataManage.mLocList.Count}] Grid[{mDraw.mGridSize}] {wpos.ToString("f2")}";
+            tbStatus.Text = $"Mode [{mOperationMode}] Pick [{mLocPick.mPickElement.Count}] Loc [{mLocPick.mLocList.Count}] Grid[{mDraw.mGridSize}] {wpos.ToString("f2")}";
         }
 
         /// <summary>
@@ -719,9 +707,8 @@ namespace Mini3DCad
                 mDraw.mWorldList.Clear();
                 cbColor.SelectedIndex = ylib.getBrushNo(mDataManage.mPrimitiveBrush);
                 cbGridSize.SelectedIndex = mGridSizeMenu.FindIndex(Math.Abs(mDraw.mGridSize));
-                //mDataManage.mFace = (FACE3D)Enum.ToObject(typeof(FACE3D), tabCanvas.SelectedIndex);
-                mDataManage.mFace = FACE3D.XY;
-                tabCanvas.SelectedIndex = (int)mDataManage.mFace;
+                mDataManage.mFace = FACE3D.FRONT;
+                tabCanvas.SelectedIndex = 0;
                 commandClear(true);
             }
             dispTitle();
@@ -763,11 +750,35 @@ namespace Mini3DCad
             } else if (menuItem.Name.CompareTo("lbItemRemoveMenu") == 0 && itemName != null) {
                 //  図面の削除
                 if (mFileData.removeItem(itemName)) {
+                    if (mCommandOpe.mDataFilePath == mFileData.getItemFilePath(itemName))
+                        mDataManage.mElementList.Clear();
                     lbItemList.ItemsSource = mFileData.getItemFileList();
                     mCommandOpe.mDataFilePath = "";
                     if (0 < lbItemList.Items.Count)
                         lbItemList.SelectedIndex = 0;
                 }
+            } else if (menuItem.Name.CompareTo("lbItemCopyMenu") == 0 && itemName != null) {
+                //  図面のコピー
+                mFileData.copyItem(itemName);
+            } else if (menuItem.Name.CompareTo("lbItemMoveMenu") == 0 && itemName != null) {
+                //  図面の移動
+                if (mFileData.copyItem(itemName, true)) {
+                    mCommandOpe.mDataFilePath = "";
+                    lbItemList.ItemsSource = mFileData.getItemFileList();
+                    if (0 < lbItemList.Items.Count)
+                        lbItemList.SelectedIndex = 0;
+                }
+            } else if (menuItem.Name.CompareTo("lbItemImportMenu") == 0 && itemName != null) {
+                //  インポート
+                string item = mFileData.importAsFile();
+                mCommandOpe.mDataFilePath = "";
+                lbItemList.ItemsSource = mFileData.getItemFileList();
+                if (0 < lbItemList.Items.Count)
+                    lbItemList.SelectedIndex = lbItemList.Items.IndexOf(item);
+            } else if (menuItem.Name.CompareTo("lbItemPropertyMenu") == 0 && itemName != null) {
+                //  図面のプロパティ
+                string buf = mFileData.getItemFileProperty(itemName);
+                ylib.messageBox(this, buf, "ファイルプロパティ");
             }
             dispTitle();
         }
@@ -781,33 +792,6 @@ namespace Mini3DCad
         {
             keyCommand(e.Key, e.KeyboardDevice.Modifiers == ModifierKeys.Control, e.KeyboardDevice.Modifiers == ModifierKeys.Shift);
             //btDummy.Focus();         //  ダミーでフォーカスを外す
-        }
-
-        /// <summary>
-        /// キー入力処理
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="control"></param>
-        /// <param name="shift"></param>
-        private void keyCommand(Key key, bool control, bool shift)
-        {
-            if (mDraw.mFace == FACE3D.NON) {
-                // 3D表示
-            } else {
-                //  2D表示
-                if (control) {
-                    mDraw.key2DMove(key, control, shift);
-                } else {
-                    switch (key) {
-                        case Key.F2: mPrevOpeMode = mOperationMode; mOperationMode = OPEMODE.areaDisp; break;
-                        case Key.F7: mPrevOpeMode = mOperationMode; mOperationMode = OPEMODE.areaPick; break;
-                        default:
-                            mDraw.key2DMove(key, control, shift);
-                            break;
-                    }
-                }
-
-            }
         }
 
         /// <summary>
@@ -838,7 +822,7 @@ namespace Mini3DCad
         /// <param name="e"></param>
         private void btMenu_Click(object sender, RoutedEventArgs e)
         {
-
+            locMenu();
         }
 
         /// <summary>
@@ -874,7 +858,134 @@ namespace Mini3DCad
         /// <param name="e"></param>
         private void btSetting_Click(object sender, RoutedEventArgs e)
         {
+            mDataManage.setSystemProperty();
+        }
 
+        /// <summary>
+        /// ヘルプボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btHelp_Click(object sender, RoutedEventArgs e)
+        {
+            ylib.openUrl(mHelpFile);
+        }
+
+        /// <summary>
+        /// キー入力処理
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="control"></param>
+        /// <param name="shift"></param>
+        private void keyCommand(Key key, bool control, bool shift)
+        {
+            //  コマンド入力時は無効
+            if (cbCommand.IsKeyboardFocusWithin)
+                return;
+
+            if (mDataManage.mFace == FACE3D.NON) {
+                // 3D表示
+                m3Dlib.keyMove(key, control, shift);
+                renderFrame();
+            } else {
+                //  2D表示
+                if (control) {
+                    switch (key) {
+                        case Key.S: mCommandOpe.execCommand(OPERATION.save, null); break;
+                        case Key.Z: mCommandOpe.execCommand(OPERATION.undo, null); commandClear(); break;
+                        default: mDraw.key2DMove(key, control, shift); break;
+                    }
+                } else {
+                    switch (key) {
+                        case Key.Escape: commandClear(); break;                                                 //  ESCキーでキャンセル
+                        //case Key.F2: mPrevOpeMode = mOperationMode; mOperationMode = OPEMODE.areaDisp; break;   //  領域拡大
+                        //case Key.F7: mPrevOpeMode = mOperationMode; mOperationMode = OPEMODE.areaPick; break;   //  領域ピック
+                        case Key.Back:                                      //  ロケイト点を一つ戻す
+                            if (0 < mLocPick.mLocList.Count) {
+                                mLocPick.mLocList.RemoveAt(mLocPick.mLocList.Count - 1);
+                            }
+                            break;
+                        case Key.Apps: locMenu(); break;                    //  コンテキストメニューキー
+                        default:
+                            mDraw.key2DMove(key, control, shift);
+                            break;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 数値入力によるロケイトの選択メニュー
+        /// </summary>
+        private void locMenu()
+        {
+            mLocPick.locMenu(mCommandOpe.mOperation, mOperationMode);
+            if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement))
+                commandClear();
+        }
+
+        /// <summary>
+        /// データファイルのリストをリストビューに設定する
+        /// </summary>
+        public void setDataFileList()
+        {
+            cbGenreList.ItemsSource = mFileData.getGenreList();
+            int index = cbGenreList.Items.IndexOf(mFileData.mGenreName);
+            if (0 <= index) {
+                //  ジャンルを設定
+                cbGenreList.SelectedIndex = index;
+                index = lbCategoryList.Items.IndexOf(mFileData.mCategoryName);
+                if (0 <= index) {
+                    lbCategoryList.SelectedIndex = index;
+                    index = lbItemList.Items.IndexOf(mFileData.mDataName);
+                    if (0 <= index) {
+                        lbItemList.SelectedIndex = index;
+                    }
+                }
+            } else {
+                //  ジャンル不定
+                if (0 < cbGenreList.Items.Count) {
+                    mFileData.mGenreName = cbGenreList.Items[0].ToString() ?? "";
+                    lbCategoryList.ItemsSource = mFileData.getCategoryList();
+                    if (0 < lbCategoryList.Items.Count) {
+                        mFileData.mCategoryName = lbCategoryList.Items[0].ToString() ?? "";
+                        lbItemList.ItemsSource = mFileData.getItemFileList();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// データファイルのリストを読み直しする
+        /// </summary>
+        public void reloadDataFileList()
+        {
+            cbGenreList.SelectedIndex = -1;
+            cbGenreList.ItemsSource = mFileData.getGenreList();
+            if (0 < cbGenreList.Items.Count) {
+                mFileData.mGenreName = cbGenreList.Items[0].ToString() ?? "";
+                lbCategoryList.ItemsSource = mFileData.getCategoryList();
+                if (0 < lbCategoryList.Items.Count) {
+                    mFileData.mCategoryName = lbCategoryList.Items[0].ToString() ?? "";
+                    lbItemList.ItemsSource = mFileData.getItemFileList();
+                }
+                if (0 < lbCategoryList.Items.Count)
+                    cbGenreList.SelectedIndex = 0;
+                if (0 < lbItemList.Items.Count)
+                    lbItemList.SelectedIndex = 0;
+            }
+        }
+
+        /// <summary>
+        /// 作図領域の画面コピー
+        /// </summary>
+        public void screenCopy()
+        {
+            if (mDataManage.mFace == FACE3D.NON) {
+                m3Dlib.screenCopy();
+            } else {
+                mDraw.screenCopy();
+            }
         }
     }
 }

@@ -2,11 +2,12 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>Mini3DCad.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,6 +37,10 @@
     <None Remove="Icon\ZoomOut.png" />
     <None Remove="Icon\ZoomToFit.png" />
     <None Remove="Icon\ZoomToWidth.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Mini3DCad.ico" />
   </ItemGroup>
 
   <ItemGroup>

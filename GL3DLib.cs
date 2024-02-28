@@ -2,7 +2,10 @@
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
+using System.Drawing.Imaging;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Point3D = CoreLib.Point3D;
 
 namespace Mini3DCad
@@ -117,8 +120,11 @@ namespace Mini3DCad
         private float mZoom;                        //  拡大度
         public float mZoomMax = 2.0f;               //  最大拡大率
         public float mZoomMin = 0.5f;               //  最小拡大率
+        public int mWorldWidth;
+        public int mWorldHeight;
 
         private GLControl mGlControl;               //  OpenTK.GLcontrol
+        private YLib ylib = new YLib();
 
         /// <summary>
         /// コンストラクタ
@@ -153,6 +159,69 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// 光源の設定
+        /// </summary>
+        public void initLight()
+        {
+            GL.Enable(EnableCap.DepthTest);         //  デプスバッファ
+            GL.Enable(EnableCap.ColorMaterial);     //  材質設定
+            GL.Enable(EnableCap.Lighting);          //  光源の使用
+
+            //m3Dlib.setLight();
+            //m3Dlib.setMaterial();
+            float[] position0 = new float[] { 1.0f, 1.0f, 2.0f, 0.0f };
+            float[] position1 = new float[] { -1.0f, 1.0f, 2.0f, 0.0f };
+            GL.Light(LightName.Light0, LightParameter.Position, position0);
+            GL.Light(LightName.Light1, LightParameter.Position, position1);
+            GL.Enable(EnableCap.Light0);
+            GL.Enable(EnableCap.Light1);
+
+            GL.PointSize(3.0f);                     //  点の大きさ
+            GL.LineWidth(1.5f);                     //  線の太さ
+        }
+
+        /// <summary>
+        /// キーコントロール(実行後に rendeform()で描画更新要)
+        /// </summary>
+        /// <param name="key">キーコード</param>
+        /// <param name="control">Ctrlキー</param>
+        /// <param name="shift">Shiftキー</param>
+        public void keyMove(Key key, bool control, bool shift)
+        {
+            float translateStep = 0.1f;
+            float rotateStep = 5f / 180f * (float)Math.PI;
+            float scaleStep = 1 / 10f;
+            if (control) {
+                switch (key) {
+                    case Key.Left: translate(translateStep, 0, 0); break;
+                    case Key.Right: translate(-translateStep, 0, 0); break;
+                    case Key.Up: translate(0, -translateStep, 0); break;
+                    case Key.Down: translate(0, translateStep, 0); break;
+                    case Key.PageUp: translate(0, 0, translateStep); break;
+                    case Key.PageDown: translate(0, 0, -translateStep); break;
+                    case Key.End: mRotate = Matrix4.Identity; break;
+                    default: break;
+                }
+            } else if (shift) {
+                switch (key) {
+                    case Key.End: setZoom(scaleStep); break;
+                    default: break;
+                }
+            } else {
+                switch (key) {
+                    case Key.Left: rotateY(rotateStep); break;
+                    case Key.Right: rotateY(-rotateStep); break;
+                    case Key.Up: rotateX(-rotateStep); break;
+                    case Key.Down: rotateX(rotateStep); break;
+                    case Key.PageUp: rotateZ(-rotateStep); break;
+                    case Key.PageDown: rotateZ(rotateStep); break;
+                    case Key.End: setZoom(-scaleStep); break;
+                    default: break;
+                }
+            }
+        }
+
+        /// <summary>
         /// 移動の追加 
         /// </summary>
         /// <param name="x"></param>
@@ -167,7 +236,7 @@ namespace Mini3DCad
         /// X軸で回転
         /// </summary>
         /// <param name="rot">回転角(rad)</param>
-        public void roatateX(float rot)
+        public void rotateX(float rot)
         {
             mRotate *= Matrix4.CreateRotationX(rot);
         }
@@ -176,7 +245,7 @@ namespace Mini3DCad
         /// Y軸で回転
         /// </summary>
         /// <param name="rot">回転角(rad)</param>
-        public void roatateY(float rot)
+        public void rotateY(float rot)
         {
             mRotate *= Matrix4.CreateRotationY(rot);
         }
@@ -185,7 +254,7 @@ namespace Mini3DCad
         /// Z軸で回転
         /// </summary>
         /// <param name="rot">回転角(rad)</param>
-        public void roatateZ(float rot)
+        public void rotateZ(float rot)
         {
             mRotate *= Matrix4.CreateRotationZ(rot);
         }
@@ -618,6 +687,7 @@ namespace Mini3DCad
         {
             PrimitiveType primType = PrimitiveType.Points;
             switch (drawType) {
+                case DRAWTYPE.POINTS:         primType = PrimitiveType.Points;        break;
                 case DRAWTYPE.LINES:          primType = PrimitiveType.Lines;         break;
                 case DRAWTYPE.LINE_STRIP:     primType = PrimitiveType.LineStrip;     break;
                 case DRAWTYPE.LINE_LOOP:      primType = PrimitiveType.LineLoop;      break;
@@ -956,6 +1026,38 @@ namespace Mini3DCad
                 col.G = 2.0f - nVal * 2.0f;
             }
             return col;
+        }
+
+        /// <summary>
+        /// 3D表示の画面コピー
+        /// </summary>
+        public void screenCopy()
+        {
+            BitmapSource bitmapSource = ylib.bitmap2BitmapSource(ToBitmap());
+            System.Windows.Clipboard.SetImage(bitmapSource);
+        }
+
+        /// <summary>
+        /// OpenGL画面の画面コピー
+        /// </summary>
+        /// <returns>Bitmap</returns>
+        public Bitmap ToBitmap()
+        {
+            //formhostをWindowで表示した時は描画される
+            try {
+                mGlControl.Refresh();
+                Bitmap bmp = new Bitmap(mWorldWidth, mWorldHeight);
+                var bmpData = bmp.LockBits(new System.Drawing.Rectangle(0, 0, bmp.Width, bmp.Height),
+                    ImageLockMode.ReadWrite, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                GL.ReadPixels(0, 0, mWorldWidth, mWorldHeight, OpenTK.Graphics.OpenGL.PixelFormat.Bgra,
+                    PixelType.UnsignedByte, bmpData.Scan0);
+                bmp.UnlockBits(bmpData);
+                bmp.RotateFlip(RotateFlipType.RotateNoneFlipY);
+                return bmp;
+            } catch (Exception e) {
+                System.Diagnostics.Debug.WriteLine($"GL3DLib ToBitmap : {e.Message}");
+            }
+            return null;
         }
 
         /// <summary>

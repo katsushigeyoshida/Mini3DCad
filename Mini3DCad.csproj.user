@@ -5,9 +5,21 @@
     <Compile Update="PropertyDlg.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="SelectCategory.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="SysPropertyDlg.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Update="PropertyDlg.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="SelectCategory.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="SysPropertyDlg.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>

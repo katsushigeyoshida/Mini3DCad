@@ -24,6 +24,7 @@ namespace Mini3DCad
         };
         public Dictionary<FACE3D, Box> mWorldList = new Dictionary<FACE3D, Box>();
 
+        public LocPick mLocPick;
         public DataManage mDataManage;
         public YWorldDraw mGDraw;                                  //  2D/3D表示ライブラリ
 
@@ -170,7 +171,6 @@ namespace Mini3DCad
                     if (locList.Count == 2) {
                         double ang = locList[0].angle2(locList[1], lastPoint);
                         Point3D cp = new Point3D(locList[0], mFace);
-                        System.Diagnostics.Debug.WriteLine($"{cp.ToString("F2")} {ang.ToString("f3")} {locList[0].ToString("F3")} {locList[1].ToString("F3")} {lastPoint.ToString("F3")}");
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
                             primitive.rotateVertexList(cp, -ang, mFace);
@@ -184,6 +184,26 @@ namespace Mini3DCad
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
                             primitive.offset(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), mFace);
+                            primitive.draw2D(mGDraw, mFace);
+                        }
+                    }
+                    break;
+                case OPERATION.mirror:
+                case OPERATION.copyMirror:
+                    if (locList.Count == 1) {
+                        foreach (var pick in pickData) {
+                            primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
+                            primitive.mirror(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), mFace);
+                            primitive.draw2D(mGDraw, mFace);
+                        }
+                    }
+                    break;
+                case OPERATION.trim:
+                case OPERATION.copyTrim:
+                    if (locList.Count == 1) {
+                        foreach (var pick in pickData) {
+                            primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
+                            primitive.trim(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), mFace);
                             primitive.draw2D(mGDraw, mFace);
                         }
                     }
@@ -282,9 +302,9 @@ namespace Mini3DCad
         /// <summary>
         /// キー操作による2D表示処理
         /// </summary>
-        /// <param name="key"></param>
-        /// <param name="control"></param>
-        /// <param name="shift"></param>
+        /// <param name="key">キーコード</param>
+        /// <param name="control">Ctrlキー</param>
+        /// <param name="shift">Shiftキー</param>
         public void key2DMove(Key key, bool control, bool shift)
         {
             if (control) {
@@ -314,6 +334,10 @@ namespace Mini3DCad
                     case Key.F4: zoom(mGDraw.mWorld.getCenter(), 1.2); break;       //  拡大表示
                     case Key.F5: zoom(mGDraw.mWorld.getCenter(), 1 / 1.2); break;   //  縮小表示
                     //case Key.F6: dispWidthFit(); break;                           //  全幅表示
+                    case Key.F7:
+                        mMainWindow.mPrevOpeMode = mMainWindow.mOperationMode;
+                        mMainWindow.mOperationMode = OPEMODE.areaPick;
+                        break;
                     default: break;
                 }
             }
@@ -342,12 +366,12 @@ namespace Mini3DCad
                         } else if (opeMode == OPEMODE.areaPick) {
                             //  領域ピック
                             PointD pickPos = dispArea.getCenter();
-                            List<int> picks = mDataManage.getPickNo(dispArea);
-                            mDataManage.pickElement(dispArea.getCenter(), picks, opeMode);
+                            List<int> picks = mLocPick.getPickNo(dispArea);
+                            mLocPick.pickElement(dispArea.getCenter(), picks, opeMode);
                             //  ピック色表示
-                            mDataManage.setPick();
+                            mLocPick.setPick();
                             draw();
-                            mDataManage.pickReset();
+                            mLocPick.pickReset();
                         }
                     }
                     mAreaLoc[0] = new PointD();
@@ -357,6 +381,7 @@ namespace Mini3DCad
             }
             return false;
         }
+
         /// <summary>
         /// 2D表示の上下左右スクロール
         /// </summary>
@@ -367,7 +392,7 @@ namespace Mini3DCad
             PointD v = new PointD(mGDraw.screen2worldXlength(dx), mGDraw.screen2worldYlength(dy));
             mGDraw.mWorld.offset(v.inverse());
 
-            if (mImScreen == null || mBitmapSource == null) {
+            if (mImScreen == null || mBitmapSource == null || !mBitmapOn) {
                 //  全体再表示
                 mGDraw.mClipBox = mGDraw.mWorld;
                 draw(true, true);
@@ -575,6 +600,20 @@ namespace Mini3DCad
                 }
             }
             return sp;
+        }
+
+        /// <summary>
+        /// 画面コピー
+        /// </summary>
+        public void screenCopy()
+        {
+            Brush tmpColor = mBaseBackColor;
+            mBaseBackColor = Brushes.White;
+            dispInit();
+            draw2D(false, false);
+            BitmapSource bitmapSource = ylib.canvas2Bitmap(mCanvas);
+            System.Windows.Clipboard.SetImage(bitmapSource);
+            mBaseBackColor = tmpColor;
         }
     }
 }

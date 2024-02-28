@@ -34,17 +34,17 @@ namespace Mini3DCad
     /// </summary>
     public class DataManage
     {
-        public double mArcDivideAng = Math.PI / 16;
-        public double mRevolutionDivideAng = Math.PI / 18;
-        public double mSweepDivideAng = Math.PI / 9;
+        public double mArcDivideAng = Math.PI / 12;                 //  円弧の分割角度
+        public double mRevolutionDivideAng = Math.PI / 18;          //  回転体の分割角度
+        public double mSweepDivideAng = Math.PI / 9;                //  掃引(スィープ)の回転分割角度
 
         public FACE3D mFace = FACE3D.XY;                            //  Primitive 作成面
         public Brush mPrimitiveBrush = Brushes.Green;               //  Primitiveの色設定
-        public List<PointD> mLocList = new();                       //  ロケイトの保存
-        public List<PickData> mPickElement = new List<PickData>();  //  ピックエレメント
         public List<Element> mElementList = new List<Element>();    //  エレメントリスト
         public Box3D mArea;                                         //  要素領域
         public int mOperationCount = 0;                             //  操作回数
+        public List<string> mCommandHistory = new List<string>();
+        public int mFirstEntityCount = 0;       //  編集開始時の要素数
 
         //  XYZ軸データ
         private List<Point3D> mXAxis = new List<Point3D>() { new Point3D(0, 0, 0), new Point3D(1, 0, 0) };
@@ -77,112 +77,147 @@ namespace Mini3DCad
         /// <param name="ope">処理の種別</param>
         /// <param name="last">ロケイトの完了</param>
         /// <returns></returns>
-        public bool defineData(OPERATION ope, bool last = false)
+        public bool defineData(OPERATION ope, List<PointD> locList, List<PickData> pickElement, bool last = false)
         {
             mOperationCount++;
             switch (ope) {
+                case OPERATION.point:
+                    if (locList.Count == 1) {
+                        addPoint(locList[0]);
+                        locList.Clear();
+                    } else
+                        return false;
+                    break;
                 case OPERATION.line:
-                    if (mLocList.Count == 2) {
-                        addLine(mLocList[0], mLocList[1]);
-                        mLocList.Clear();
+                    if (locList.Count == 2) {
+                        addLine(locList[0], locList[1]);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.circle:
-                    if (mLocList.Count == 2) {
-                        addCircle(mLocList[0], mLocList[1]);
-                        mLocList.Clear();
+                    if (locList.Count == 2) {
+                        addCircle(locList[0], locList[1]);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.arc:
-                    if (mLocList.Count == 3) {
-                        addArc(mLocList[0], mLocList[2], mLocList[1]);
-                        mLocList.Clear();
+                    if (locList.Count == 3) {
+                        addArc(locList[0], locList[2], locList[1]);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.polyline:
-                    if (1 < mLocList.Count && last) {
-                        addPolyline(mLocList);
-                        mLocList.Clear();
+                    if (1 < locList.Count && last) {
+                        addPolyline(locList);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.rect:
-                    if (mLocList.Count == 2) {
-                        addRect(mLocList[0], mLocList[1]);
-                        mLocList.Clear();
+                    if (locList.Count == 2) {
+                        addRect(locList[0], locList[1]);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.polygon:
-                    if (2 < mLocList.Count && last) {
-                        addPolygon(mLocList);
-                        mLocList.Clear();
+                    if (2 < locList.Count && last) {
+                        addPolygon(locList);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.translate:
-                    if (mLocList.Count == 2 && 0 < mPickElement.Count) {
-                        translate(mPickElement, mLocList[0], mLocList[1]);
-                        mLocList.Clear();
+                    if (locList.Count == 2 && 0 < pickElement.Count) {
+                        translate(pickElement, locList[0], locList[1]);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.copyTranslate:
-                    if (mLocList.Count == 2 && 0 < mPickElement.Count) {
-                        translate(mPickElement, mLocList[0], mLocList[1], true);
-                        mLocList.Clear();
+                    if (locList.Count == 2 && 0 < pickElement.Count) {
+                        translate(pickElement, locList[0], locList[1], true);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.rotate:
-                    if (mLocList.Count == 3 && 0 < mPickElement.Count) {
-                        rotate(mPickElement, mLocList);
-                        mLocList.Clear();
+                    if (locList.Count == 3 && 0 < pickElement.Count) {
+                        rotate(pickElement, locList);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.copyRotate:
-                    if (mLocList.Count == 3 && 0 < mPickElement.Count) {
-                        rotate(mPickElement, mLocList, true);
-                        mLocList.Clear();
+                    if (locList.Count == 3 && 0 < pickElement.Count) {
+                        rotate(pickElement, locList, true);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.offset:
-                    if (mLocList.Count == 2 && 0 < mPickElement.Count) {
-                        offset(mPickElement, mLocList[0], mLocList[1]);
-                        mLocList.Clear();
+                    if (locList.Count == 2 && 0 < pickElement.Count) {
+                        offset(pickElement, locList[0], locList[1]);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.copyOffset:
-                    if (mLocList.Count == 2 && 0 < mPickElement.Count) {
-                        offset(mPickElement, mLocList[0], mLocList[1], true);
-                        mLocList.Clear();
+                    if (locList.Count == 2 && 0 < pickElement.Count) {
+                        offset(pickElement, locList[0], locList[1], true);
+                        locList.Clear();
+                    } else
+                        return false;
+                    break;
+                case OPERATION.mirror:
+                    if (locList.Count == 2 && 0 < pickElement.Count) {
+                        mirror(pickElement, locList[0], locList[1]);
+                        locList.Clear();
+                    } else
+                        return false;
+                    break;
+                case OPERATION.copyMirror:
+                    if (locList.Count == 2 && 0 < pickElement.Count) {
+                        mirror(pickElement, locList[0], locList[1], true);
+                        locList.Clear();
+                    } else
+                        return false;
+                    break;
+                case OPERATION.trim:
+                    if (locList.Count == 2 && 0 < pickElement.Count) {
+                        trim(pickElement, locList[0], locList[1]);
+                        locList.Clear();
+                    } else
+                        return false;
+                    break;
+                case OPERATION.copyTrim:
+                    if (locList.Count == 2 && 0 < pickElement.Count) {
+                        trim(pickElement, locList[0], locList[1], true);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.divide:
-                    if (mLocList.Count == 1 && 0 < mPickElement.Count) {
-                        divide(mPickElement, mLocList);
-                        mLocList.Clear();
+                    if (locList.Count == 1 && 0 < pickElement.Count) {
+                        divide(pickElement, locList);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.extrusion:
-                    if (mLocList.Count == 2 && 0 < mPickElement.Count) {
-                        extrusion(mPickElement, mLocList[0], mLocList[1]);
-                        mLocList.Clear();
+                    if (locList.Count == 2 && 0 < pickElement.Count) {
+                        extrusion(pickElement, locList[0], locList[1]);
+                        locList.Clear();
                     } else
                         return false;
                     break;
                 case OPERATION.revolution:
-                    if (1 < mPickElement.Count) {
-                        revolution(mPickElement);
-                        mLocList.Clear();
+                    if (1 < pickElement.Count) {
+                        revolution(pickElement);
+                        locList.Clear();
                     } else
                         return false;
                     break;
@@ -191,6 +226,36 @@ namespace Mini3DCad
             }
             updateData();
             return true;
+        }
+
+        /// <summary>
+        /// 点要素の追加
+        /// </summary>
+        /// <param name="p">点座標</param>
+        public void addPoint(PointD p)
+        {
+            Element element = new Element();
+            element.mName = "点";
+            element.mPrimitive = createPoint(p);
+            element.mOperationNo = mOperationCount;
+            element.update3DData();
+            mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
+        }
+
+        /// <summary>
+        /// 点要素の追加
+        /// </summary>
+        /// <param name="p">点座標</param>
+        public void addPoint(Point3D p)
+        {
+            Element element = new Element();
+            element.mName = "点";
+            element.mPrimitive = createPoint(p);
+            element.mOperationNo = mOperationCount;
+            element.update3DData();
+            mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
         }
 
         /// <summary>
@@ -206,6 +271,23 @@ namespace Mini3DCad
             element.mOperationNo = mOperationCount;
             element.update3DData();
             mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
+        }
+
+        /// <summary>
+        /// 線分追加
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        public void addLine(Point3D sp, Point3D ep)
+        {
+            Element element = new Element();
+            element.mName = "線分";
+            element.mPrimitive = createLine(new Line3D(sp, ep));
+            element.mOperationNo = mOperationCount;
+            element.update3DData();
+            mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
         }
 
         /// <summary>
@@ -226,6 +308,7 @@ namespace Mini3DCad
             element.mOperationNo = mOperationCount;
             element.update3DData();
             mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
         }
 
         /// <summary>
@@ -241,7 +324,10 @@ namespace Mini3DCad
             element.mOperationNo = mOperationCount;
             element.update3DData();
             mElementList.Add(element);
+            double r = cp.length(ep);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
         }
+
         /// <summary>
         /// 円弧の追加
         /// </summary>
@@ -257,6 +343,7 @@ namespace Mini3DCad
                 element.mOperationNo = mOperationCount;
                 element.update3DData();
                 mElementList.Add(element);
+                mCommandHistory.Add(element.mPrimitive.toCommand());
             } catch (Exception e) {
                 System.Diagnostics.Debug.WriteLine($"addArc: {e.Message}");
             }
@@ -274,6 +361,7 @@ namespace Mini3DCad
             element.mOperationNo = mOperationCount;
             element.update3DData();
             mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
         }
 
         /// <summary>
@@ -294,6 +382,7 @@ namespace Mini3DCad
             element.mOperationNo = mOperationCount;
             element.update3DData();
             mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
         }
 
         /// <summary>
@@ -314,6 +403,7 @@ namespace Mini3DCad
             element.mOperationNo = mOperationCount;
             element.update3DData();
             mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
         }
 
         /// <summary>
@@ -333,6 +423,7 @@ namespace Mini3DCad
             element.mOperationNo = mOperationCount;
             element.update3DData();
             mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
         }
 
         /// <summary>
@@ -347,6 +438,22 @@ namespace Mini3DCad
             element.mOperationNo = mOperationCount;
             element.update3DData();
             mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
+        }
+
+        /// <summary>
+        /// ポリゴンの追加
+        /// </summary>
+        /// <param name="pist"></param>
+        public void addPolygon(List<Point3D> pist)
+        {
+            Element element = new Element();
+            element.mName = "ポリゴン";
+            element.mPrimitive = createPolygon(pist);
+            element.mOperationNo = mOperationCount;
+            element.update3DData();
+            mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
         }
 
         /// <summary>
@@ -367,6 +474,7 @@ namespace Mini3DCad
             element.mOperationNo = mOperationCount;
             element.update3DData();
             mElementList.Add(element);
+            mCommandHistory.Add(element.mPrimitive.toCommand());
         }
 
         /// <summary>
@@ -451,6 +559,54 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// ミラー(反転)
+        /// </summary>
+        /// <param name="picks">ピック要素</param>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        /// <param name="copy">コピーの有無</param>
+        public void mirror(List<PickData> picks, PointD sp, PointD ep, bool copy = false)
+        {
+            Point3D ps = new Point3D(sp, mFace);
+            Point3D pe = new Point3D(ep, mFace);
+            foreach (var pick in picks) {
+                Element element = mElementList[pick.mElementNo].toCopy();
+                element.mPrimitive.mirror(ps, pe, mFace);
+                element.mOperationNo = mOperationCount;
+                element.update3DData();
+                mElementList.Add(element);
+                if (!copy) {
+                    mElementList[pick.mElementNo].mRemove = true;
+                    addLink(pick.mElementNo);
+                }
+            }
+        }
+
+        /// <summary>
+        /// トリム
+        /// </summary>
+        /// <param name="picks">ピック要素</param>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        /// <param name="copy">コピーの有無</param>
+        public void trim(List<PickData> picks, PointD sp, PointD ep, bool copy = false)
+        {
+            Point3D ps = new Point3D(sp, mFace);
+            Point3D pe = new Point3D(ep, mFace);
+            foreach (var pick in picks) {
+                Element element = mElementList[pick.mElementNo].toCopy();
+                element.mPrimitive.trim(ps, pe, mFace);
+                element.mOperationNo = mOperationCount;
+                element.update3DData();
+                mElementList.Add(element);
+                if (!copy) {
+                    mElementList[pick.mElementNo].mRemove = true;
+                    addLink(pick.mElementNo);
+                }
+            }
+        }
+
+        /// <summary>
         /// 分割処理
         /// </summary>
         /// <param name="picks">ピックリスト</param>
@@ -482,27 +638,25 @@ namespace Mini3DCad
         /// <param name="picks">ピックリスト</param>
         public void connect(List<PickData> picks)
         {
-            if (picks.Count < 2)
+            if (picks.Count < 1)
                 return;
 
             Element ele0 = mElementList[picks[0].mElementNo];
-            if (picks[0].mElementNo == picks[1].mElementNo) {
+            if (picks.Count == 1 || picks[0].mElementNo == picks[1].mElementNo) {
                 //  同一要素をピック ポリゴン化
-                if (ele0.mPrimitive.mPrimitiveId == PrimitiveId.Polyline ||
-                    ele0.mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
-                    Polyline3D polyline = ele0.mPrimitive.getVertexList();
-                    Element element = new Element();
-                    element.mName = "ポリゴン化";
-                    element.mPrimitive = new PolygonPrimitive(polyline, ele0.mPrimitive.mLineColor, mFace);
-                    element.mPrimitive.copyProperty(ele0.mPrimitive);
-                    element.mPrimitive.mPrimitiveId = PrimitiveId.Polygon;
-                    element.mOperationNo = mOperationCount;
-                    element.update3DData();
-                    mElementList.Add(element);
-                    ele0.mRemove = true;
-                    addLink(picks[0].mElementNo);
-                }
-            } else {
+                Polyline3D polyline = new Polyline3D();
+                if (ele0.mPrimitive.mPrimitiveId == PrimitiveId.Polyline) {
+                    PolylinePrimitive polylinePrimitive = (PolylinePrimitive)ele0.mPrimitive;
+                    polyline = polylinePrimitive.mPolyline;
+                } else if (ele0.mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
+                    ArcPrimitive arcPrimitive = (ArcPrimitive)ele0.mPrimitive;
+                    polyline = arcPrimitive.mArc.toPolyline3D(mArcDivideAng);
+                } else
+                    return;
+
+                polyline.squeeze();
+                addPolygon(new Polygon3D(polyline), ele0.mPrimitive.mLineColor, ele0.mPrimitive.mFaceColors[0]);
+            } else if (picks.Count == 2) {
                 Element ele1 = mElementList[picks[1].mElementNo];
                 if ((ele0.mPrimitive.mPrimitiveId == PrimitiveId.Line ||
                     ele0.mPrimitive.mPrimitiveId == PrimitiveId.Arc ||
@@ -511,26 +665,21 @@ namespace Mini3DCad
                     ele1.mPrimitive.mPrimitiveId == PrimitiveId.Arc ||
                     ele1.mPrimitive.mPrimitiveId == PrimitiveId.Polyline)) {
 
-                    Polyline3D polyline = new Polyline3D();
-                    Polyline3D pl0 = ele0.mPrimitive.getVertexList();
+                    Polyline3D polyline = ele0.mPrimitive.getVertexList();
                     Polyline3D pl1 = ele1.mPrimitive.getVertexList();
-                    polyline.add(pl0.toPoint3D(), picks[0].mPos, mFace, false);
-                    polyline.add(pl1.toPoint3D(), picks[1].mPos, mFace, true);
+                    if (polyline.nearStart(picks[0].mPos, mFace))               //  ピック位置に近い方を終点にする
+                        polyline.mPolyline.Reverse();
+                    polyline.add(pl1.toPoint3D(), picks[1].mPos, mFace, true);  //  ピック位置に近い方を始点にして追加
                     polyline.squeeze();
-                    Element element = new Element();
-                    element.mName = "結合ポリライン";
-                    element.mPrimitive = new PolylinePrimitive(polyline, ele1.mPrimitive.mLineColor);
-                    element.mPrimitive.copyProperty(ele1.mPrimitive);
-                    element.mPrimitive.mPrimitiveId = PrimitiveId.Polyline;
-                    element.mOperationNo = mOperationCount;
-                    element.update3DData();
-                    mElementList.Add(element);
-
-                    ele0.mRemove = true;
-                    addLink(picks[0].mElementNo);
-                    ele1.mRemove = true;
-                    addLink(picks[1].mElementNo);
+                    addPolyline(polyline, ele0.mPrimitive.mLineColor, ele0.mPrimitive.mFaceColors[0]);
                 }
+            } else
+                return;
+
+            //  undo用のリンクエレメント作成
+            for (int i = 0; i < picks.Count; i++) {
+                mElementList[picks[i].mElementNo].mRemove = true;
+                addLink(picks[i].mElementNo);
             }
         }
 
@@ -593,7 +742,8 @@ namespace Mini3DCad
             } else
                 return;
 
-            RevolutionPrimitive revolution = new RevolutionPrimitive(centerLine, outline, color, true, mFace);
+            RevolutionPrimitive revolution = new RevolutionPrimitive(centerLine, outline, color, 
+                mRevolutionDivideAng, true, mFace);
             if (revolution == null)
                 return;
             revolution.copyProperty(outlinePrimitive);
@@ -646,7 +796,7 @@ namespace Mini3DCad
             } else
                 return;
             //  Sweepデータを作成
-            SweepPrimitive sweep = new SweepPrimitive(outline1, outline2, color, true, mFace);
+            SweepPrimitive sweep = new SweepPrimitive(outline1, outline2, color, mSweepDivideAng, true, mFace);
             if (sweep == null)
                 return;
             sweep.copyProperty(outline1Primitive);
@@ -667,7 +817,7 @@ namespace Mini3DCad
         }
 
         /// <summary>
-        /// 押出や回転体を解除して元のポリゴンや線分に戻す
+        /// 解除(押出や回転体を解除して元のポリゴンや線分に戻す)
         /// </summary>
         /// <param name="picks"></param>
         public void release(List<PickData> picks)
@@ -702,7 +852,7 @@ namespace Mini3DCad
         /// <summary>
         /// Elementの属性変更
         /// </summary>
-        /// <param name="picks"></param>
+        /// <param name="picks">ピック要素</param>
         public void changeProperty(List<PickData> picks)
         {
             for (int i = 0; i < picks.Count; i++) {
@@ -719,7 +869,11 @@ namespace Mini3DCad
                 dlg.mDisp3D = element.mDisp3D;
                 dlg.mBothShading = element.mBothShading;
                 if (element.mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
+                    dlg.mArcOn = true;
                     ArcPrimitive arc = (ArcPrimitive)element.mPrimitive;
+                    dlg.mArcRadius = arc.mArc.mR;
+                    dlg.mArcStartAngle = ylib.R2D(arc.mArc.mSa);
+                    dlg.mArcEndAngle = ylib.R2D(arc.mArc.mEa);
                     dlg.mDivideAngOn = true;
                     dlg.mDivideAng = ylib.R2D(arc.mDivideAngle);
                 }
@@ -756,6 +910,9 @@ namespace Mini3DCad
                     element.mOperationNo = mOperationCount;
                     if (element.mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
                         ArcPrimitive arc = (ArcPrimitive)element.mPrimitive;
+                        arc.mArc.mR = dlg.mArcRadius;
+                        arc.mArc.mSa = ylib.D2R(dlg.mArcStartAngle);
+                        arc.mArc.mEa = ylib.D2R(dlg.mArcEndAngle);
                         arc.mDivideAngle = ylib.D2R(dlg.mDivideAng);
                     }
                     if (element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
@@ -783,6 +940,102 @@ namespace Mini3DCad
                     addLink(picks[i].mElementNo);
                 }
             }
+        }
+
+        /// <summary>
+        /// 属性の一括変更
+        /// </summary>
+        /// <param name="picks">ピック要素</param>
+        public void changePropertyAll(List<PickData> picks)
+        {
+            if (picks.Count == 0) return;
+            PropertyDlg dlg = new PropertyDlg();
+            dlg.Owner = mMainWindow;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            dlg.Title = "一括属性変更 ";
+            dlg.mPropertyAll = true;
+            if (dlg.ShowDialog() != true) return;
+            for (int i = 0; i < picks.Count; i++) {
+                Element element = mElementList[picks[i].mElementNo].toCopy();
+                if (dlg.mNameEnable)
+                    element.mName = dlg.mName;
+                if (dlg.mLineColoeEnable)
+                    element.mPrimitive.mLineColor = dlg.mLineColor;
+                if (dlg.mLineFontEnable)
+                    element.mPrimitive.mLineType = dlg.mLineFont;
+                if (dlg.mFaceColorEnable) {
+                    if (dlg.mFaceColorNull)
+                        element.mPrimitive.mFaceColors[0] = null;
+                    else
+                        element.mPrimitive.mFaceColors[0] = dlg.mFaceColor;
+                }
+                if (dlg.mDisp3DEnable)
+                    element.mDisp3D = dlg.mDisp3D;
+                if (dlg.mBothShadingEnable)
+                    element.mBothShading = dlg.mBothShading;
+                element.mOperationNo = mOperationCount;
+                if (element.mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
+                    ArcPrimitive arc = (ArcPrimitive)element.mPrimitive;
+                    if (dlg.mArcRadiusEnable)
+                        arc.mArc.mR = dlg.mArcRadius;
+                    if (dlg.mArcStartAngleEnable)
+                        arc.mArc.mSa = ylib.D2R(dlg.mArcStartAngle);
+                    if (dlg.mArcEndAngleEnable)
+                        arc.mArc.mEa = ylib.D2R(dlg.mArcEndAngle);
+                    if (dlg.mDivideAngEnable)
+                        arc.mDivideAngle = ylib.D2R(dlg.mDivideAng);
+                }
+                if (dlg.mDivideAngEnable && element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
+                    RevolutionPrimitive revolution = (RevolutionPrimitive)element.mPrimitive;
+                    revolution.mDivideAngle = ylib.D2R(dlg.mDivideAng);
+                }
+                if (dlg.mDivideAngEnable && element.mPrimitive.mPrimitiveId == PrimitiveId.Sweep) {
+                    SweepPrimitive sweep = (SweepPrimitive)element.mPrimitive;
+                    sweep.mDivideAngle = ylib.D2R(dlg.mDivideAng);
+                }
+                if (dlg.mReverse && dlg.mReverseEnable) {
+                    if (element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
+                        PolygonPrimitive polygon = (PolygonPrimitive)element.mPrimitive;
+                        polygon.mPolygon.mPolygon.Reverse();
+                    } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
+                        RevolutionPrimitive revolution = (RevolutionPrimitive)element.mPrimitive;
+                        revolution.mOutLine.mPolyline.Reverse();
+                    }
+                }
+                element.mPrimitive.createSurfaceData();
+                element.mPrimitive.createVertexData();
+                element.update3DData();
+                mElementList.Add(element);
+                mElementList[picks[i].mElementNo].mRemove = true;
+                addLink(picks[i].mElementNo);
+            }
+        }
+
+
+        /// <summary>
+        /// 点プリミティブの作成
+        /// </summary>
+        /// <param name="p">座標</param>
+        /// <returns>プリミティブ</returns>
+        public Primitive createPoint(PointD p)
+        {
+            PointPrimitive point = new PointPrimitive(p, mFace);
+            point.mLineColor = mPrimitiveBrush;
+            point.mFaceColors[0] = mPrimitiveBrush;
+            return point;
+        }
+
+        /// <summary>
+        /// 点プリミティブの作成
+        /// </summary>
+        /// <param name="p">座標</param>
+        /// <returns>プリミティブ</returns>
+        public Primitive createPoint(Point3D p)
+        {
+            PointPrimitive point = new PointPrimitive(p, mFace);
+            point.mLineColor = mPrimitiveBrush;
+            point.mFaceColors[0] = mPrimitiveBrush;
+            return point;
         }
 
         /// <summary>
@@ -820,7 +1073,7 @@ namespace Mini3DCad
         /// <returns></returns>
         public Primitive createCircle(PointD sp, PointD ep)
         {
-            ArcPrimitive arc = new ArcPrimitive(sp, sp.length(ep), mPrimitiveBrush, mFace);
+            ArcPrimitive arc = new ArcPrimitive(sp, sp.length(ep), mPrimitiveBrush, mFace, mArcDivideAng);
             return arc;
         }
 
@@ -834,7 +1087,7 @@ namespace Mini3DCad
         public Primitive createArc(PointD sp, PointD mp, PointD ep)
         {
             ArcD arc2D = new ArcD(sp, mp, ep);
-            ArcPrimitive arc = new ArcPrimitive(arc2D, mPrimitiveBrush, mFace);
+            ArcPrimitive arc = new ArcPrimitive(arc2D, mPrimitiveBrush, mFace, mArcDivideAng);
             return arc;
         }
 
@@ -877,6 +1130,17 @@ namespace Mini3DCad
         /// <param name="plist">2D座標点リスト</param>
         /// <returns>プリミティブ</returns>
         public Primitive createPolygon(List<PointD> plist)
+        {
+            PolygonPrimitive polygon = new PolygonPrimitive(plist, mPrimitiveBrush, mFace);
+            return polygon;
+        }
+
+        /// <summary>
+        /// ポリゴンプリミティブの作成
+        /// </summary>
+        /// <param name="plist">3D座標点リスト</param>
+        /// <returns>プリミティブ</returns>
+        public Primitive createPolygon(List<Point3D> plist)
         {
             PolygonPrimitive polygon = new PolygonPrimitive(plist, mPrimitiveBrush, mFace);
             return polygon;
@@ -1014,11 +1278,13 @@ namespace Mini3DCad
         public bool divideArc(Element element, PointD locPos)
         {
             ArcPrimitive arcPrimitive = (ArcPrimitive)element.mPrimitive;
+            FACE3D face = arcPrimitive.mPrimitiveFace;
+            double divideAng = arcPrimitive.mDivideAngle;
             List<Arc3D> arcs = arcPrimitive.mArc.divide(locPos, mFace);
             if (1 < arcs.Count) {
                 Element ele1 = new Element();
                 ele1.mName = "分割円弧";
-                ele1.mPrimitive = new ArcPrimitive(arcs[1], mPrimitiveBrush);
+                ele1.mPrimitive = new ArcPrimitive(arcs[1], mPrimitiveBrush, face, divideAng);
                 ele1.mPrimitive.copyProperty(arcPrimitive);
                 ele1.mOperationNo = mOperationCount;
                 ele1.update3DData();
@@ -1027,7 +1293,7 @@ namespace Mini3DCad
             if (0 < arcs.Count) {
                 Element ele1 = new Element();
                 ele1.mName = "分割円弧";
-                ele1.mPrimitive = new ArcPrimitive(arcs[0], mPrimitiveBrush);
+                ele1.mPrimitive = new ArcPrimitive(arcs[0], mPrimitiveBrush, face, divideAng);
                 ele1.mPrimitive.copyProperty(arcPrimitive);
                 ele1.mOperationNo = mOperationCount;
                 ele1.update3DData();
@@ -1088,6 +1354,7 @@ namespace Mini3DCad
         {
             if (mElementList == null || mElementList.Count == 0) return;
             int n = 0;
+            mArea = new Box3D();
             for (int i = 0; i < mElementList.Count; i++) {
                 if (!mElementList[i].mRemove && 0 > mElementList[i].mLinkNo) {
                     mArea = mElementList[i].mArea;
@@ -1117,123 +1384,6 @@ namespace Mini3DCad
             return surfaveDataList;
         }
 
-        public void autoLoc(PointD pickPos, List<int> picks)
-        {
-            PointD? wp = null;
-            if (ylib.onControlKey()) {
-                //  Ctrlキーでのメニュー表示で位置を選定
-                //wp = locSelect(pickPos, picks);
-            } else {
-                //  ピックされているときは位置を自動判断
-                if (picks.Count == 1) {
-                    //  ピックされているときは位置を自動判断
-                    wp = autoLoc(pickPos, picks[0]);
-                } else if (2 <= picks.Count) {
-                    //  2要素の時は交点位置
-                    wp = intersectionLoc(picks[0], picks[1], pickPos);
-                    if (wp == null)
-                        wp = autoLoc(pickPos, picks[0]);
-                    if (wp == null)
-                        wp = autoLoc(pickPos, picks[1]);
-                }
-            }
-            if (wp != null)
-                mLocList.Add(wp);
-        }
-
-        private PointD autoLoc(PointD pos, int entNo = -1)
-        {
-            return mElementList[entNo].mPrimitive.nearPoint(pos, 4, mFace);
-        }
-
-        private PointD intersectionLoc(int entNo0, int entNo1, PointD pos)
-        {
-            return null;
-        }
-
-        /// <summary>
-        /// ピック要素番号の取得
-        /// </summary>
-        /// <param name="pickPos">ピック位置</param>
-        /// <param name="pickSize">ピックボックスサイズ</param>
-        /// <returns></returns>
-        public List<int> getPickNo(PointD pickPos, double pickSize)
-        {
-            Box b = new Box(pickPos, pickSize);
-            return findIndex(b, mFace);
-        }
-
-        /// <summary>
-        /// 領域指定のピック処理
-        /// </summary>
-        /// <param name="pickArea">ピック領域</param>
-        /// <returns>ピックリスト</returns>
-        public List<int> getPickNo(Box pickArea)
-        {
-            return findIndex(pickArea, mFace);
-        }
-
-        /// <summary>
-        /// 要素ピック(ピックした要素を登録)
-        /// </summary>
-        /// <param name="wpos">ピック位置</param>
-        /// <param name="face">表示面</param>
-        public void pickElement(PointD wpos, List<int> picks, OPEMODE opeMode)
-        {
-            if (0 < picks.Count) {
-                //  要素選択
-                if (opeMode == OPEMODE.areaPick) {
-                    for (int i = 0; i < picks.Count; i++)
-                        addPickList(picks[i], wpos, mFace);
-                } else {
-                    int pickNo = pickSelect(picks);
-                    if (0 <= pickNo) {
-                        //  ピック要素の登録
-                        addPickList(pickNo, wpos, mFace);
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// 複数ピック時の選択
-        /// </summary>
-        /// <param name="picks">ピックリスト</param>
-        /// <returns>要素番号</returns>
-        private int pickSelect(List<int> picks)
-        {
-            if (picks.Count == 1)
-                return picks[0];
-            List<int> sqeezePicks = picks.Distinct().ToList();
-            List<string> menu = new List<string>();
-            for (int i = 0; i < sqeezePicks.Count; i++) {
-                Element ele = mElementList[sqeezePicks[i]];
-                menu.Add($"{sqeezePicks[i]} {ele.getSummary()}");
-            }
-            MenuDialog dlg = new MenuDialog();
-            dlg.mMainWindow = mMainWindow;
-            dlg.mHorizontalAliment = 1;
-            dlg.mVerticalAliment = 1;
-            dlg.mOneClick = true;
-            dlg.mMenuList = menu;
-            dlg.ShowDialog();
-            if (dlg.mResultMenu == "")
-                return -1;
-            else
-                return ylib.string2int(dlg.mResultMenu);
-        }
-
-        /// <summary>
-        /// ピック要素をピックリストに追加
-        /// </summary>
-        /// <param name="pickNo">要素番号</param>
-        /// <param name="pickPos">ピック位置</param>
-        /// <param name="face">表示面</param>
-        public void addPickList(int pickNo, PointD pickPos, FACE3D face)
-        {
-            mPickElement.Add(new PickData(pickNo, pickPos, face));
-        }
-
         /// <summary>
         /// エレメントの検索
         /// </summary>
@@ -1255,21 +1405,26 @@ namespace Mini3DCad
         }
 
         /// <summary>
-        /// ピックフラグの設定
+        /// システム設定
         /// </summary>
-        public void setPick()
+        public void setSystemProperty()
         {
-            for (int i = 0; i < mPickElement.Count; i++)
-                mElementList[mPickElement[i].mElementNo].mPrimitive.mPick = true;
-        }
-
-        /// <summary>
-        /// ピックフラグの全解除
-        /// </summary>
-        public void pickReset()
-        {
-            for (int i = 0; i < mPickElement.Count; i++)
-                mElementList[mPickElement[i].mElementNo].mPrimitive.mPick = false;
+            SysPropertyDlg dlg = new SysPropertyDlg();
+            dlg.Owner = mMainWindow;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            dlg.mArcDivideAngle = mArcDivideAng;
+            dlg.mRevolutionDivideAngle = mRevolutionDivideAng;
+            dlg.mSweepDivideAngle = mSweepDivideAng;
+            dlg.mDataFolder = mMainWindow.mFileData.mBaseDataFolder;
+            if (dlg.ShowDialog() == true) {
+                mArcDivideAng = dlg.mArcDivideAngle;
+                mRevolutionDivideAng = dlg.mRevolutionDivideAngle;
+                mSweepDivideAng = dlg.mSweepDivideAngle;
+                if (mMainWindow.mFileData.mBaseDataFolder != dlg.mDataFolder) {
+                    mMainWindow.mFileData.setBaseDataFolder(dlg.mDataFolder, false);
+                    mMainWindow.reloadDataFileList();
+                }
+            }
         }
 
         /// <summary>
@@ -1284,6 +1439,12 @@ namespace Mini3DCad
             buf = new string[] { "PrimitiveBrush", ylib.getBrushName(mPrimitiveBrush) };
             list.Add(buf);
             buf = new string[] { "Face", mFace.ToString() };
+            list.Add(buf);
+            buf = new string[] { "ArcDivideAngle", mArcDivideAng.ToString() };
+            list.Add(buf);
+            buf = new string[] { "RevolutionDivideAngle", mRevolutionDivideAng.ToString() };
+            list.Add(buf);
+            buf = new string[] { "SweepDivideAngle", mSweepDivideAng.ToString() };
             list.Add(buf);
             if (mArea != null) {
                 buf = new string[] { "Area",
@@ -1311,6 +1472,12 @@ namespace Mini3DCad
                     mPrimitiveBrush = ylib.getBrsh(buf[1]);
                 } else if (buf[0] == "Face") {
                     mFace = (FACE3D)Enum.Parse(typeof(FACE3D), buf[1]);
+                } else if (buf[0] == "ArcDivideAngle") {
+                    mArcDivideAng = ylib.doubleParse(buf[1]);
+                } else if (buf[0] == "RevolutionDivideAngle") {
+                    mRevolutionDivideAng = ylib.doubleParse(buf[1]);
+                } else if (buf[0] == "SweepDivideAngle") {
+                    mSweepDivideAng = ylib.doubleParse(buf[1]);
                 } else if (buf[0] == "Area" && buf.Length == 7) {
                     mArea = new Box3D();
                     mArea.mMin.x = ylib.doubleParse(buf[1]);
@@ -1356,6 +1523,7 @@ namespace Mini3DCad
                 }
             }
             updateData();
+            mFirstEntityCount = mElementList.Count;
         }
 
         /// <summary>
@@ -1364,7 +1532,7 @@ namespace Mini3DCad
         /// <param name="path">ファイルパス</param>
         public void saveData(string path)
         {
-            if (path.Length == 0)
+            if (path.Length == 0 || mFirstEntityCount == mElementList.Count)
                 return;
             List<string[]> dataList = new List<string[]>();
             dataList.AddRange(toDataList());

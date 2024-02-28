@@ -30,19 +30,21 @@ namespace Mini3DCad
         /// ベースフォルダの設定
         /// </summary>
         /// <param name="baseDataFolder">ベースフォルダ</param>
-        public void setBaseDataFolder(string baseDataFolder = "")
+        public void setBaseDataFolder(string baseDataFolder = "", bool init = true)
         {
             try {
                 if (baseDataFolder != "")
                     mBaseDataFolder = baseDataFolder;
                 if (!Directory.Exists(mBaseDataFolder))
                     Directory.CreateDirectory(mBaseDataFolder);
-                string genreFolder = Path.Combine(mBaseDataFolder, mGenreName);
-                if (!Directory.Exists(genreFolder))
-                    Directory.CreateDirectory(genreFolder);
-                string categoryFolder = Path.Combine(genreFolder, mCategoryName);
-                if (!Directory.Exists(categoryFolder))
-                    Directory.CreateDirectory(categoryFolder);
+                if (init) {
+                    string genreFolder = Path.Combine(mBaseDataFolder, mGenreName);
+                    if (!Directory.Exists(genreFolder))
+                        Directory.CreateDirectory(genreFolder);
+                    string categoryFolder = Path.Combine(genreFolder, mCategoryName);
+                    if (!Directory.Exists(categoryFolder))
+                        Directory.CreateDirectory(categoryFolder);
+                }
             } catch (Exception e) {
                 ylib.messageBox(mMainWindow, e.Message);
             }
@@ -293,31 +295,31 @@ namespace Mini3DCad
         /// <param name="itemName">図面名</param>
         /// <param name="move">移動の可否</param>
         /// <returns></returns>
-        //public bool copyItem(string itemName, bool move = false)
-        //{
-        //    SelectCategory dlg = new SelectCategory();
-        //    dlg.Owner = mMainWindow;
-        //    dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        //    dlg.mRootFolder = mBaseDataFolder;
-        //    if (dlg.ShowDialog() == true) {
-        //        string oldItemPath = getItemFilePath(itemName);
-        //        string newItemPath = getItemFilePath(itemName, dlg.mSelectCategory, dlg.mSelectGenre);
-        //        string item = Path.GetFileNameWithoutExtension(itemName);
-        //        string ext = Path.GetExtension(itemName);
-        //        int opt = 1;
-        //        while (File.Exists(newItemPath)) {
-        //            newItemPath = getItemFilePath(item + "(" + opt + ")", dlg.mSelectCategory, dlg.mSelectGenre);
-        //            opt++;
-        //        }
-        //        if (move) {
-        //            File.Move(oldItemPath, newItemPath);
-        //        } else {
-        //            File.Copy(oldItemPath, newItemPath);
-        //        }
-        //        return true;
-        //    }
-        //    return false;
-        //}
+        public bool copyItem(string itemName, bool move = false)
+        {
+            SelectCategory dlg = new SelectCategory();
+            dlg.Owner = mMainWindow;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            dlg.mRootFolder = mBaseDataFolder;
+            if (dlg.ShowDialog() == true) {
+                string oldItemPath = getItemFilePath(itemName);
+                string newItemPath = getItemFilePath(itemName, dlg.mSelectCategory, dlg.mSelectGenre);
+                string item = Path.GetFileNameWithoutExtension(itemName);
+                string ext = Path.GetExtension(itemName);
+                int opt = 1;
+                while (File.Exists(newItemPath)) {
+                    newItemPath = getItemFilePath(item + "(" + opt + ")", dlg.mSelectCategory, dlg.mSelectGenre);
+                    opt++;
+                }
+                if (move) {
+                    File.Move(oldItemPath, newItemPath);
+                } else {
+                    File.Copy(oldItemPath, newItemPath);
+                }
+                return true;
+            }
+            return false;
+        }
 
         /// <summary>
         /// ジャンルリストの取得
@@ -464,6 +466,45 @@ namespace Mini3DCad
         {
             string curDataFilePath = genreName + "\\" + categoryName + "\\" + dataName + mDataExt;
             return Path.Combine(mBaseDataFolder, curDataFilePath);
+        }
+
+        /// <summary>
+        /// 図面データのプロパティ
+        /// </summary>
+        /// <param name="itemName">図面名</param>
+        /// <returns>プロパティデータ</returns>
+        public string getItemFileProperty(string itemName)
+        {
+            string itemPath = getItemFilePath(itemName);
+            //EntityData entityData = new EntityData();
+            //entityData.loadData(itemPath);
+            string buf = "■ファイルデータ\n";
+            buf += "項目名: " + itemName + "\n";
+            buf += "分類名: " + mCategoryName + "\n";
+            buf += "大分類名: " + mGenreName + "\n";
+            buf += "パス: " + itemPath + "\n";
+            FileInfo fileInfo = new FileInfo(itemPath);
+            buf += "ファイルサイズ: " + fileInfo.Length.ToString("#,###") + "\n";
+            buf += "作成日: " + fileInfo.CreationTime + "\n";
+            buf += "更新日: " + fileInfo.LastWriteTime + "\n";
+            buf += "■図面データ\n";
+            //buf += entityData.getDataInfo();
+
+            return buf;
+        }
+
+        public string importAsFile()
+        {
+            List<string[]> filters = new List<string[]>() {
+                    new string[] { "図面ファイル", "*.csv" },
+                    //new string[] { "DXFファイル", "*.dxf" },
+                    new string[] { "すべてのファイル", "*.*"}
+                };
+            string filePath = ylib.fileOpenSelectDlg("データ読込", ".", filters);
+            if (filePath == null || filePath.Length == 0)
+                return "";
+            //return importDxf(filePath);
+            return "";
         }
     }
 }

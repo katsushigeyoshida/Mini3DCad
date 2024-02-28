@@ -12,7 +12,7 @@ namespace Mini3DCad
         public bool mRemove = false;            //  削除フラグ
         public Box3D mArea;                     //  要素領域
         public int mOperationNo = -1;           //  操作位置
-        public int mLinkNo = -1;
+        public int mLinkNo = -1;                //  リンク先要素番号
 
         private YLib ylib = new YLib();
         public Element()
@@ -206,7 +206,7 @@ namespace Mini3DCad
                         break;
                     }
                 } catch (Exception e) {
-                    System.Diagnostics.Debug.WriteLine($"setDataList: {sp} : {e.Message}");
+                    System.Diagnostics.Debug.WriteLine($"Element setDataList: {sp} : {e.Message}");
                 }
             }
             if (mPrimitive != null)

@@ -1,4 +1,5 @@
 ﻿using CoreLib;
+using System.Globalization;
 
 namespace Mini3DCad
 {
@@ -13,12 +14,15 @@ namespace Mini3DCad
         public Box3D mArea;                     //  要素領域
         public int mOperationNo = -1;           //  操作位置
         public int mLinkNo = -1;                //  リンク先要素番号
+        public byte[] mLayerBit;                //  レイヤーBit
 
         private YLib ylib = new YLib();
-        public Element()
+
+        public Element(int layersize)
         {
             mSurfaceList = new List<Surface>();
             mName = "要素名";
+            mLayerBit = new byte[layersize / 8];
         }
 
         /// <summary>
@@ -46,7 +50,7 @@ namespace Mini3DCad
         /// <returns></returns>
         public Element toCopy()
         {
-            Element element = new Element();
+            Element element = new Element(mLayerBit.Length * 8);
             element.mName = mName;
             element.mPrimitive = mPrimitive.toCopy();
             element.mSurfaceList = mSurfaceList.ConvertAll(p => p.toCopy());
@@ -56,8 +60,54 @@ namespace Mini3DCad
             element.mArea = mArea.toCopy();
             element.mOperationNo = mOperationNo;
             element.mLinkNo = mLinkNo;
+            Array.Copy(mLayerBit, element.mLayerBit, mLayerBit.Length);
             return element;
         }
+
+        /// <summary>
+        /// レイヤーBitをコピー
+        /// </summary>
+        /// <param name="element">エレメント</param>
+        public void copyLayer(Element element)
+        {
+            Array.Copy(element.mLayerBit, mLayerBit, mLayerBit.Length);
+        }
+
+
+        /// <summary>
+        /// 表示条件の判定
+        /// </summary>
+        /// <returns>表示</returns>
+        public bool drawChk(Layer layer)
+        {
+            if (!mRemove && mPrimitive != null &&
+                mPrimitive.mPrimitiveId != PrimitiveId.Non &&
+                mPrimitive.mPrimitiveId != PrimitiveId.Link &&
+                (layer.bitAnd(mLayerBit) || layer.mLayerAll || layer.IsEmpty(mLayerBit)))
+                return true;
+            else
+                return false;
+        }
+
+        /// <summary>
+        /// ピックの絞り込み
+        /// </summary>
+        /// <param name="layer">レイヤ</param>
+        /// <param name="b">ピック領域</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>ピックの有無</returns>
+        public bool pickChk(Layer layer, Box b, FACE3D face)
+        {
+            if (!mRemove && mLinkNo < 0 &&
+                (layer.bitAnd(mLayerBit) || layer.mLayerAll || layer.IsEmpty(mLayerBit))) {
+                if (!b.outsideChk(mArea.toBox(face))) {
+                    if (mPrimitive.pickChk(b, face))
+                        return true;
+                }
+            }
+            return false;
+        }
+
 
         /// <summary>
         /// エレメント情報
@@ -65,8 +115,8 @@ namespace Mini3DCad
         /// <returns>文字列</returns>
         public string propertyInfo()
         {
-            string buf = $"名称: {mName} プリミティブ: {mPrimitive}";
-            buf += $" 両面表示: {mBothShading} 3D表示: {mDisp3D}";
+            string buf = $"名称 : {mName} プリミティブ : {mPrimitive}";
+            buf += $" 両面表示 : {mBothShading} 3D表示 : {mDisp3D}";
             return buf;
         }
 
@@ -88,10 +138,11 @@ namespace Mini3DCad
             string buf = mPrimitive.propertyInfo();
             buf += "\n" + ylib.insertLinefeed(mPrimitive.dataInfo("F2"), ",", 100);
             int count = mPrimitive.mSurfaceDataList.Select(x => x.mVertexList.Count).Sum();
-            buf += $"\nVertexList {count}";
+            int vertexCount = mPrimitive.mVertexList.Select(x => x.Count).Sum();
+            buf += $"\nSurfaceList {count} VertexList {vertexCount}";
             //List<string> list = mPrimitive.vertexInfo();
-            //foreach (string s in list)
-            //    buf += $"\n{ylib.insertLinefeed(s, ",", 100)}";
+            //string s = string.Join(",", list);
+            //buf += $"\n{ylib.insertLinefeed(s, ",", 100)}";
             return buf;
         }
 
@@ -121,6 +172,13 @@ namespace Mini3DCad
             list.Add(buf);
             buf = new string[] { "Disp3D", mDisp3D.ToString() };
             list.Add(buf);
+            buf = new string[] { "LayerSize", mLayerBit.Length.ToString() };
+            list.Add(buf);
+            List<string> strings = new List<string> { "DispLayerBit" };
+            for (int i = 0; i < mLayerBit.Length; i++) {
+                strings.Add(mLayerBit[i].ToString("X2"));
+            }
+            list.Add(strings.ToArray());
             buf = new string[] { "ElementEnd" };
             list.Add(buf);
             return list;
@@ -202,6 +260,13 @@ namespace Mini3DCad
                         mBothShading = ylib.boolParse(buf[1]);
                     } else if (buf[0] == "Disp3D") {
                         mDisp3D = ylib.boolParse(buf[1]);
+                    } else if (buf[0] == "LayerSize") {
+                        int layerSize = ylib.intParse(buf[1]);
+                    } else if (buf[0] == "DispLayerBit") {
+                        //mDispLayerBit = new byte[mLayerSize / 8];
+                        for (int i = 0; i < mLayerBit.Length && i < buf.Length - 1; i++) {
+                            mLayerBit[i] = byte.Parse(buf[i + 1], NumberStyles.HexNumber);
+                        }
                     } else if (buf[0] == "ElementEnd") {
                         break;
                     }

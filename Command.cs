@@ -18,11 +18,12 @@ namespace Mini3DCad
     {
         non, loc, pick,
         point, line, circle, arc, rect, polyline, polygon,
-        translate, rotate, offset, mirror, trim, strach,
-        copyTranslate, copyRotate, copyOffset, copyMirror, copyTrim,
+        translate, rotate, offset, mirror, trim, strach, scale,
+        copyTranslate, copyRotate, copyOffset, copyMirror, copyTrim, copyScale, copyElement, pasteElement,
         connect, divide, changeProperty, changePropertyAll,
         extrusion, revolution, sweep, release,
-        info, remove, undo, screenCopy,
+        measure, measureDistance, measureAngle,
+        dispLayer, addLayer, removeLayer, info, remove, undo, screenCopy,
         save, load, back, cancel, close
     }
 
@@ -70,6 +71,7 @@ namespace Mini3DCad
             new Command("2D編集",     "オフセット",   OPERATION.offset),
             new Command("2D編集",     "反転",         OPERATION.mirror),
             new Command("2D編集",     "トリム",       OPERATION.trim),
+            new Command("2D編集",     "拡大縮小",     OPERATION.scale),
             new Command("2D編集",     "分割",         OPERATION.divide),
             new Command("2D編集",     "接続",         OPERATION.connect),
             new Command("2D編集",     "属性変更",     OPERATION.changeProperty),
@@ -77,24 +79,35 @@ namespace Mini3DCad
             new Command("2D編集",     "戻る",         OPERATION.back),
             new Command("2Dコピー",   "移動",         OPERATION.copyTranslate),
             new Command("2Dコピー",   "回転",         OPERATION.copyRotate),
-            new Command("2Dコピー",   "オフセット", OPERATION.copyOffset),
-            new Command("2Dコピー",   "反転",       OPERATION.copyMirror),
-            new Command("2Dコピー",   "トリム",     OPERATION.copyTrim),
-            new Command("2Dコピー",   "戻る",       OPERATION.back),
-            new Command("3D編集",     "押出",       OPERATION.extrusion),
-            new Command("3D編集",     "回転体",     OPERATION.revolution),
-            new Command("3D編集",     "掃引",     OPERATION.sweep),
-            new Command("3D編集",     "解除",       OPERATION.release),
-            new Command("3D編集",     "戻る",       OPERATION.back),
-            new Command("情報",       "情報",       OPERATION.info),
-            new Command("削除",       "削除",       OPERATION.remove),
-            new Command("アンドゥ",   "アンドゥ",   OPERATION.undo),
+            new Command("2Dコピー",   "オフセット",   OPERATION.copyOffset),
+            new Command("2Dコピー",   "反転",         OPERATION.copyMirror),
+            new Command("2Dコピー",   "トリム",       OPERATION.copyTrim),
+            new Command("2Dコピー",   "拡大縮小",     OPERATION.copyScale),
+            new Command("2Dコピー",   "要素コピー",   OPERATION.copyElement),
+            new Command("2Dコピー",   "要素貼付け",   OPERATION.pasteElement),
+            new Command("2Dコピー",   "戻る",         OPERATION.back),
+            new Command("3D編集",     "押出",         OPERATION.extrusion),
+            new Command("3D編集",     "回転体",       OPERATION.revolution),
+            new Command("3D編集",     "掃引",         OPERATION.sweep),
+            new Command("3D編集",     "解除",         OPERATION.release),
+            new Command("3D編集",     "戻る",         OPERATION.back),
+            new Command("設定",       "表示レイヤ",   OPERATION.dispLayer),
+            //new Command("設定",       "レイヤ追加",   OPERATION.addLayer),
+            //new Command("設定",       "レイヤ削除",   OPERATION.removeLayer),
+            new Command("設定",       "戻る",         OPERATION.back),
+            new Command("計測",       "距離",         OPERATION.measureDistance),
+            new Command("計測",       "角度",         OPERATION.measureAngle),
+            new Command("計測",       "距離・角度",   OPERATION.measure),
+            new Command("計測",       "戻る",         OPERATION.back),
+            new Command("情報",       "情報",         OPERATION.info),
+            new Command("削除",       "削除",         OPERATION.remove),
+            new Command("アンドゥ",   "アンドゥ",     OPERATION.undo),
             //new Command("ファイル", "保存",         OPERATION.save),
             //new Command("ファイル", "読込",         OPERATION.load),
-            new Command("ツール",     "画面コピー", OPERATION.screenCopy),
-            new Command("ツール",     "戻る",       OPERATION.back),
-            new Command("キャンセル", "キャンセル", OPERATION.cancel),
-            new Command("終了",       "終了",       OPERATION.close),
+            new Command("ツール",     "画面コピー",   OPERATION.screenCopy),
+            new Command("ツール",     "戻る",         OPERATION.back),
+            new Command("キャンセル", "キャンセル",   OPERATION.cancel),
+            new Command("終了",       "終了",         OPERATION.close),
         };
         private string mMainCommand = "";
 
@@ -174,10 +187,15 @@ namespace Mini3DCad
         public OPERATION mOperation = OPERATION.non;
         public FACE3D mDispMode = FACE3D.XY;
         public string mDataFilePath = "";
+        public ChkListDialog mLayerChkListDlg = null;           //  表示レイヤー設定ダイヤログ
         public MainWindow mMainWindow;
-
         private YLib ylib = new YLib();
 
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="mainWindow">MainWindow</param>
+        /// <param name="dataManage">DataManage</param>
         public CommandOpe(MainWindow mainWindow, DataManage dataManage)
         {
             mMainWindow = mainWindow;
@@ -209,11 +227,13 @@ namespace Mini3DCad
                 case OPERATION.offset: break;
                 case OPERATION.mirror: break;
                 case OPERATION.trim: break;
+                case OPERATION.scale: break;
                 case OPERATION.copyTranslate: break;
                 case OPERATION.copyRotate: break;
                 case OPERATION.copyOffset: break;
                 case OPERATION.copyMirror: break;
                 case OPERATION.copyTrim: break;
+                case OPERATION.copyScale: break;
                 case OPERATION.divide: break;
                 case OPERATION.connect:
                     mDataManage.connect(picks);
@@ -226,6 +246,13 @@ namespace Mini3DCad
                 case OPERATION.changePropertyAll:
                     mDataManage.changePropertyAll(picks);
                     opeMode = OPEMODE.clear;
+                    break;
+                case OPERATION.copyElement:
+                    mDataManage.copyElement(picks);
+                    opeMode = OPEMODE.clear;
+                    break;
+                case OPERATION.pasteElement:
+                    mDataManage.getPasteElement();
                     break;
                 case OPERATION.extrusion: break;
                 case OPERATION.revolution:
@@ -240,6 +267,22 @@ namespace Mini3DCad
                     break;
                 case OPERATION.release:
                     mDataManage.release(picks);
+                    opeMode = OPEMODE.clear;
+                    break;
+                case OPERATION.dispLayer:
+                    setDispLayer();
+                    opeMode = OPEMODE.clear;
+                    break;
+                case OPERATION.addLayer:
+                    addLayer(); ;
+                    opeMode = OPEMODE.clear;
+                    break;
+                case OPERATION.measureAngle:
+                    break;
+                case OPERATION.measureDistance:
+                    break;
+                case OPERATION.measure:
+                    mDataManage.measure(picks);
                     opeMode = OPEMODE.clear;
                     break;
                 case OPERATION.info:
@@ -274,8 +317,11 @@ namespace Mini3DCad
                     break;
                 default: opeMode = OPEMODE.non; break;
             }
+            if (opeMode != OPEMODE.loc)
+                mDataManage.updateData();
             if (mDataManage.mOperationCount % mSaveOperationCount == 0)
                 saveFile();
+            mMainWindow.dispTitle();
             return opeMode;
         }
 
@@ -296,6 +342,65 @@ namespace Mini3DCad
         public void saveKeycommnad()
         {
             mKeyCommand.saveFile();
+        }
+
+        /// <summary>
+        /// 表示レイヤの設定
+        /// </summary>
+        public void setDispLayer()
+        {
+            if (mLayerChkListDlg != null)
+                mLayerChkListDlg.Close();
+            mLayerChkListDlg = new ChkListDialog();
+            mLayerChkListDlg.Topmost = true;
+            mLayerChkListDlg.mTitle = "表示レイヤー";
+            mLayerChkListDlg.mAddMenuEnable    = true;
+            mLayerChkListDlg.mEditMenuEnable   = true;
+            mLayerChkListDlg.mDeleteMenuEnable = true;
+            mLayerChkListDlg.mLayerAllEnable   = true;
+            mLayerChkListDlg.mChkList  = mDataManage.mLayer.getLayerChkList();
+            mLayerChkListDlg.mLayerAll = mDataManage.mLayer.mLayerAll;
+            mLayerChkListDlg.mCallBackOn    = true;
+            mLayerChkListDlg.callback       = setLayerChk;
+            mLayerChkListDlg.callbackRename = layerRename;
+            mLayerChkListDlg.Show();
+            mDataManage.mOperationCount++;
+        }
+
+        /// <summary>
+        /// レイヤーチェックリストに表示を更新(コールバック)
+        /// </summary>
+        public void setLayerChk()
+        {
+            mDataManage.mLayer.setLayerChkList(mLayerChkListDlg.mChkList);
+            mDataManage.mLayer.mLayerAll = mLayerChkListDlg.mLayerAll;
+            if (mDataManage.mFace == FACE3D.NON)
+                mMainWindow.renderFrame();
+            else
+                mMainWindow.mDraw.draw(true);
+            mMainWindow.dispTitle();
+        }
+
+        /// <summary>
+        /// レイヤ名の変更(コールバック)
+        /// </summary>
+        public void layerRename()
+        {
+            mDataManage.mLayer.rename(mLayerChkListDlg.mSrcName, mLayerChkListDlg.mDestName);
+            setDispLayer();
+        }
+
+        /// <summary>
+        /// レイヤーの追加
+        /// </summary>
+        public void addLayer()
+        {
+            InputBox dlg = new InputBox();
+            dlg.Owner = mMainWindow;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            if (dlg.ShowDialog() == true) {
+                mDataManage.mLayer.add(dlg.mEditText);
+            }
         }
 
         /// <summary>

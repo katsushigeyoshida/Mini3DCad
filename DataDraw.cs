@@ -99,7 +99,7 @@ namespace Mini3DCad
             mGDraw.mThickness = 1;
 
             mGDraw.clear();
-            if (mBitmapSource != null && mBitmapOn) {
+            if (mImScreen != null && mBitmapSource != null && mBitmapOn) {
                 mImScreen.Source = mBitmapSource;
                 mCanvas.Children.Add(mImScreen);
             } else {
@@ -161,7 +161,8 @@ namespace Mini3DCad
                         Point3D v = new Point3D(lastPoint, mFace) - new Point3D(locList[0], mFace);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.translateVertexList(v);
+                            primitive.translate(v);
+                            primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
                     }
@@ -173,7 +174,8 @@ namespace Mini3DCad
                         Point3D cp = new Point3D(locList[0], mFace);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.rotateVertexList(cp, -ang, mFace);
+                            primitive.rotate(cp, -ang, mFace);
+                            primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
                     }
@@ -184,6 +186,7 @@ namespace Mini3DCad
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
                             primitive.offset(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), mFace);
+                            primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
                     }
@@ -194,6 +197,7 @@ namespace Mini3DCad
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
                             primitive.mirror(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), mFace);
+                            primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
                     }
@@ -204,6 +208,19 @@ namespace Mini3DCad
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
                             primitive.trim(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), mFace);
+                            primitive.createVertexData();
+                            primitive.draw2D(mGDraw, mFace);
+                        }
+                    }
+                    break;
+                case OPERATION.scale:
+                case OPERATION.copyScale:
+                    if (locList.Count == 2) {
+                        double scale = locList[0].length(lastPoint) / locList[0].length(locList[1]);
+                        foreach (var pick in pickData) {
+                            primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
+                            primitive.scale(new Point3D(locList[0], mFace), scale, mFace);
+                            primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
                     }
@@ -215,6 +232,14 @@ namespace Mini3DCad
                             primitive = mDataManage.createExtrusion(mDataManage.mElementList[pick.mElementNo].mPrimitive, v);
                             primitive.draw2D(mGDraw, mFace);
                         }
+                    }
+                    break;
+                case OPERATION.pasteElement:
+                    if (locList.Count == 0 && mDataManage.mCopyArea != null) {
+                        Point3D v = new Point3D(lastPoint, mFace) - mDataManage.mCopyArea.mMin;
+                        Box b = mDataManage.mCopyArea.toBox(mFace);
+                        b.offset(v.toPoint(mFace));
+                        mGDraw.drawWRectangle(b);
                     }
                     break;
             }
@@ -286,9 +311,7 @@ namespace Mini3DCad
             if (grid)
                 dispGrid(mGridSize);
             for (int i = 0; i < mDataManage.mElementList.Count; i++) {
-                if (!mDataManage.mElementList[i].mRemove &&
-                    !(mDataManage.mElementList[i].mPrimitive == null) &&
-                    !(mDataManage.mElementList[i].mPrimitive.mPrimitiveId == PrimitiveId.Non))
+                if (mDataManage.mElementList[i].drawChk(mDataManage.mLayer))
                     mDataManage.mElementList[i].draw2D(mGDraw, mFace);
             }
             if (bitmap && mCanvas != null) {

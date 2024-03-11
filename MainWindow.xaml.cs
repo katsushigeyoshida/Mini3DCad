@@ -94,13 +94,12 @@ namespace Mini3DCad
             //  Canvas,Image,Faceの初期値設定
             mCurCanvas = cvCanvasFRONT;
             mCurImage = imScreenFRONT;
-            mDataManage.mFace = FACE3D.XY;
+            mDataManage.mFace = FACE3D.FRONT;
             mDraw = new DataDraw(mCurCanvas, mCurImage, this);
             mDraw.mDataManage = mDataManage;
             mDraw.mLocPick = mLocPick;
             //  2D描画処理の初期化
             mDraw.drawWorldFrame();
-            mDraw.draw();
             //  コントロールの初期化
             lbCommand.ItemsSource = mCommandData.getMainCommand();
             cbColor.DataContext = ylib.mBrushList;
@@ -120,6 +119,8 @@ namespace Mini3DCad
         /// <param name="e"></param>
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (mCommandOpe.mLayerChkListDlg != null)
+                mCommandOpe.mLayerChkListDlg.Close();
             mCommandOpe.saveFile();
             mCommandOpe.saveKeycommnad();
             WindowFormSave();
@@ -282,12 +283,12 @@ namespace Mini3DCad
         /// <summary>
         /// 三次元データ表示
         /// </summary>
-        private void renderFrame()
+        public void renderFrame()
         {
             m3Dlib.mWorldWidth = (int)glGraph.ActualWidth;
             m3Dlib.mWorldHeight = (int)glGraph.ActualHeight;
-            //if (mPositionList == null)
-            //    return;
+            if (m3Dlib.mWorldWidth == 0 || m3Dlib.mWorldHeight == 0)
+                return;
             m3Dlib.setBackColor(mBackColor);
             m3Dlib.renderFrameStart();
             //  Surfaceデータの取得
@@ -344,8 +345,7 @@ namespace Mini3DCad
                     mDraw.scroll(pos.X - mPreMousePos.X, pos.Y - mPreMousePos.Y);
                 } else
                     return;
-            } else
-            if (0 < mLocPick.mLocList.Count) {
+            } else if (0 <= mLocPick.mLocList.Count) {
                 //  ドラッギング表示
                 mDraw.dragging(mCommandOpe.mOperation, mLocPick.mPickElement, mLocPick.mLocList, wpos);
             }
@@ -455,6 +455,7 @@ namespace Mini3DCad
         private void TabControl_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             var item = (TabItem)tabCanvas.SelectedItem;
+            if (item == null) return;
             if (item.Name == "CanvasFRONT") {
                 mDataManage.mFace = FACE3D.FRONT;
                 mCurCanvas = cvCanvasFRONT;
@@ -477,7 +478,7 @@ namespace Mini3DCad
             }
             if (mDraw != null)
                 mDraw.mBitmapOn = false;    //  切り替え直後はBitmapが作られていない
-            btDummy.Focus();         //  ダミーでフォーカスを外す
+            btDummy.Focus();                //  ダミーでフォーカスを外す
         }
 
         /// <summary>
@@ -518,6 +519,8 @@ namespace Mini3DCad
             mLocPick.mPickElement.Clear();
             lbCommand.ItemsSource = mCommandData.getMainCommand();
             lbCommand.SelectedIndex = -1;
+            if (mDataManage.mFace == FACE3D.NON)
+                renderFrame();
             if (mDataManage.mFace != FACE3D.NON && dispFit) {
                 mDraw.dispFit();
             } else {
@@ -529,7 +532,7 @@ namespace Mini3DCad
         /// 操作モードとマウス位置の表示
         /// </summary>
         /// <param name="wpos"></param>
-        private void dispStatus(PointD wpos)
+        public void dispStatus(PointD wpos)
         {
             if (mPrePosition == null)
                 return;
@@ -541,10 +544,10 @@ namespace Mini3DCad
         /// <summary>
         /// 編集中の部品名の表示
         /// </summary>
-        private void dispTitle()
+        public void dispTitle()
         {
             string filename = Path.GetFileNameWithoutExtension(mCommandOpe.mDataFilePath);
-            Title = $"{mAppName}[{filename}][{mDataManage.mElementList.Count}]";
+            Title = $"{mAppName}[{filename}][{mDataManage.getElementCount()}]";
         }
 
         /// <summary>
@@ -700,16 +703,22 @@ namespace Mini3DCad
         {
             int index = lbItemList.SelectedIndex;
             if (0 <= index) {
+                //  カレントデータ終了処理
                 mCommandOpe.saveFile(true);
+                if (mCommandOpe.mLayerChkListDlg != null)
+                    mCommandOpe.mLayerChkListDlg.Close();
+                //  新規データ読込
                 mFileData.mDataName = lbItemList.Items[index].ToString() ?? "";
                 mCommandOpe.mDataFilePath = mFileData.getCurItemFilePath();
                 mCommandOpe.loadFile();
+                //  パラメータ設定
+                tabCanvas.SelectedIndex = -1;
                 mDraw.mWorldList.Clear();
                 cbColor.SelectedIndex = ylib.getBrushNo(mDataManage.mPrimitiveBrush);
                 cbGridSize.SelectedIndex = mGridSizeMenu.FindIndex(Math.Abs(mDraw.mGridSize));
-                mDataManage.mFace = FACE3D.FRONT;
                 tabCanvas.SelectedIndex = 0;
                 commandClear(true);
+                mDraw.mBitmapOn = false;
             }
             dispTitle();
         }
@@ -847,7 +856,9 @@ namespace Mini3DCad
                 if (mCommandOpe.keyCommand(cbCommand.Text)) {
                     cbCommand.ItemsSource = mCommandOpe.mKeyCommand.keyCommandList(cbCommand.Text);
                     commandClear();
+                    dispTitle();
                 }
+                btDummy.Focus();         //  ダミーでフォーカスを外す
             }
         }
 
@@ -898,8 +909,6 @@ namespace Mini3DCad
                 } else {
                     switch (key) {
                         case Key.Escape: commandClear(); break;                                                 //  ESCキーでキャンセル
-                        //case Key.F2: mPrevOpeMode = mOperationMode; mOperationMode = OPEMODE.areaDisp; break;   //  領域拡大
-                        //case Key.F7: mPrevOpeMode = mOperationMode; mOperationMode = OPEMODE.areaPick; break;   //  領域ピック
                         case Key.Back:                                      //  ロケイト点を一つ戻す
                             if (0 < mLocPick.mLocList.Count) {
                                 mLocPick.mLocList.RemoveAt(mLocPick.mLocList.Count - 1);

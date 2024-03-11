@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Mini3DCad"
         mc:Ignorable="d"
-        Title="PropertyDlg" Height="250" Width="420" Closing="Window_Closing" Loaded="Window_Loaded">
+        Title="PropertyDlg" Height="300" Width="420" Closing="Window_Closing" Loaded="Window_Loaded">
     <Grid>
         <Label Name="lbNameTitle" Content="名称" Margin="5,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <TextBox x:Name="tbName" Text="名称" Margin="80,5,50,0" VerticalAlignment="Top" />
@@ -68,6 +68,16 @@
         <Label Name="lbDivideAngTitle" Content="分割角度" Margin="100,140,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <TextBox Name="tbDivideAng" Margin="160,145,0,0" Width="60" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <CheckBox Name="chDivideAngEnable" Margin="230,145,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <Label Name="lbLayerListTitle" Content="レイヤ名" Margin="5,170,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="49" />
+        <ComboBox Name="cbLayerList" Margin="80,170,50,0" IsEditable="False" VerticalAlignment="Top" >
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <CheckBox Content="{Binding Text}" IsChecked="{Binding Checked, Mode=TwoWay}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+        <CheckBox x:Name="chLayerListEnable" Margin="0,175,20,0" VerticalAlignment="Top" HorizontalAlignment="Right"  />
+
         <Button x:Name="btOK" IsDefault="True" Content="OK" Width="60" Margin="0,0,100,10" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btOK_Click" />
         <Button x:Name="btCancel" IsCancel="True" Content="Cancel" Width="60" Margin="0,0,20,10" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btCancel_Click" />
     </Grid>

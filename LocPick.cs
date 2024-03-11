@@ -291,7 +291,11 @@ namespace Mini3DCad
                         if (1 < valstr.Length)
                             repeat = (int)ycalc.expression(valstr[1]);
                         PointD vec = new PointD(1, 0);
-                        for (int i = 1; i < repeat + 1; i++) {
+                        if (1 == mLocList.Count) {
+                            wp = mLocList[0] + vec;
+                            mLocList.Add(wp);
+                        }
+                        for (int i =1; i < repeat + 1; i++) {
                             vec = mLocList[i] - mLocList[0];
                             vec.rotate(ylib.D2R(val));
                             wp = mLocList[0] + vec;

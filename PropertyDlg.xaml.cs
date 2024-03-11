@@ -28,6 +28,7 @@ namespace Mini3DCad
         public bool mDisp3DEnable = false;
         public double mArcRadius = 1;
         public bool mArcRadiusEnable = false;
+        public bool mArcRadiusOn = true;
         public double mArcStartAngle = 0;
         public bool mArcStartAngleEnable = false;
         public double mArcEndAngle = Math.PI * 2;
@@ -40,6 +41,8 @@ namespace Mini3DCad
         public double mDivideAng = 15;
         public bool mDivideAngEnable = false;
         public bool mPropertyAll = false;
+        public List<CheckBoxListItem> mChkList;
+        public bool mCkkListEnable = false;
 
         private string[] mLineFontName = new string[] {
             "実線", "破線", "一点鎖線", "二点鎖線"};
@@ -81,12 +84,16 @@ namespace Mini3DCad
             //tbDivideAng.Visibility = mDivideAngOn ? Visibility.Visible : Visibility.Collapsed;
             tbDivideAng.IsEnabled = mDivideAngOn ? true : false;
             tbDivideAng.Text      = ylib.double2StrZeroSup(mDivideAng);
+            cbLayerList.ItemsSource = mChkList;
 
             if (!mArcOn) {
                 tbArcRadius.IsEnabled = false;
                 tbArcStartAngle.IsEnabled = false;
                 tbArcEndAngle.IsEnabled = false;
             }
+            if (!mArcRadiusOn)
+                tbArcRadius.IsEnabled = false;
+
 
             if (!mPropertyAll) {
                 chNameEnable.Visibility = Visibility.Hidden;
@@ -100,6 +107,7 @@ namespace Mini3DCad
                 chArcEndAngleEnable.Visibility = Visibility.Hidden;
                 chReverseEnable.Visibility = Visibility.Hidden;
                 chDivideAngEnable.Visibility = Visibility.Hidden;
+                chLayerListEnable.Visibility = Visibility.Hidden;
             }
         }
 
@@ -135,6 +143,7 @@ namespace Mini3DCad
             mReverseEnable = chReverseEnable.IsChecked == true;
             mDivideAng = ylib.doubleParse(tbDivideAng.Text, 10);
             mDivideAngEnable = chDivideAngEnable.IsChecked == true;
+            mCkkListEnable = chLayerListEnable.IsChecked == true;
 
             DialogResult = true;
             Close();

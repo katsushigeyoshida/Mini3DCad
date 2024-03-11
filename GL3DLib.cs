@@ -167,8 +167,8 @@ namespace Mini3DCad
             GL.Enable(EnableCap.ColorMaterial);     //  材質設定
             GL.Enable(EnableCap.Lighting);          //  光源の使用
 
-            //m3Dlib.setLight();
-            //m3Dlib.setMaterial();
+            //setLight();
+            //setMaterial();
             float[] position0 = new float[] { 1.0f, 1.0f, 2.0f, 0.0f };
             float[] position1 = new float[] { -1.0f, 1.0f, 2.0f, 0.0f };
             GL.Light(LightName.Light0, LightParameter.Position, position0);
@@ -178,6 +178,66 @@ namespace Mini3DCad
 
             GL.PointSize(3.0f);                     //  点の大きさ
             GL.LineWidth(1.5f);                     //  線の太さ
+        }
+
+        //  光源の位置
+        public float m_LightPosX = 0.0f;
+        public float m_LightPosY = 0.0f;
+        public float m_LightPosZ = 0.0f;
+
+        /// <summary>
+        /// 光源の設定
+        /// </summary>
+        public void setLight()
+        {
+            //	光源の位置と特性指定
+            float[] lightPosition0 = { 1.0f, 1.0f, 1.0f, 0.0f };    //	位置
+            float[] lightPosition1 = { -1.0f, -1.0f, -1.0f, 0.0f }; //	位置
+            float[] lightAmbient0 = { 0.2f, 0.2f, 0.2f, 1.0f };     //	環境光
+            float[] lightDiffuse0 = { 0.3f, 0.3f, 0.3f, 1.0f };     //	拡散光
+            float[] lightEmission0 = { 1.0f, 1.0f, 1.0f, 1.0f };    //	放射光
+            float[] lightSpecular0 = { 1.0f, 1.0f, 1.0f, 1.0f };    //	鏡面光
+
+            float[] lightAmbient1 = { 0.2f, 0.2f, 0.2f, 1.0f };     //	環境光
+            float[] lightDiffuse1 = { 0.1f, 0.1f, 0.1f, 1.0f };     //	拡散光
+            float[] lightEmission1 = { 1.0f, 1.0f, 1.0f, 1.0f };    //	放射光
+            float[] lightSpecular1 = { 0.5f, 0.5f, 0.5f, 1.0f };    //	鏡面光
+
+            lightPosition0[0] = -m_LightPosX;
+            lightPosition0[1] = -m_LightPosY;
+            lightPosition0[2] = -m_LightPosZ;
+            lightPosition1[0] = m_LightPosX;
+            lightPosition1[1] = m_LightPosY;
+            lightPosition1[2] = m_LightPosZ;
+
+            GL.LightModel(LightModelParameter.LightModelLocalViewer, 0);
+            GL.Light(LightName.Light0, LightParameter.Position, lightPosition0);
+            GL.Light(LightName.Light1, LightParameter.Position, lightPosition1);
+            GL.Light(LightName.Light0, LightParameter.Ambient, lightAmbient0);
+            GL.Light(LightName.Light1, LightParameter.Ambient, lightAmbient1);
+            GL.Light(LightName.Light0, LightParameter.Diffuse, lightDiffuse0);
+            GL.Light(LightName.Light1, LightParameter.Diffuse, lightDiffuse1);
+            GL.Light(LightName.Light0, LightParameter.Specular, lightSpecular0);
+            GL.Light(LightName.Light1, LightParameter.Specular, lightSpecular1);
+
+            GL.Enable(EnableCap.Lighting);
+            GL.Enable(EnableCap.Light0);		    // ライト0を有効化
+            GL.Enable(EnableCap.Light1);		    // ライト1を有効化
+        }
+
+        /// <summary>
+        /// 材質の設定
+        /// </summary>
+        public void setMaterial()
+        {
+            float[] mat_ambient = { 0.1f, 0.1f, 0.1f, 1.0f };
+            float[] mat_diffuse = { 0.4f, 0.4f, 0.4f, 1.0f };
+            float[] mat_specular = { 1.0f, 1.0f, 1.0f, 1.0f };
+            float[] mat_shininess = { 20.0f };
+            GL.Material(MaterialFace.Front, MaterialParameter.Ambient, mat_ambient);
+            GL.Material(MaterialFace.Front, MaterialParameter.Diffuse, mat_diffuse);
+            GL.Material(MaterialFace.Front, MaterialParameter.Specular, mat_specular);
+            GL.Material(MaterialFace.Front, MaterialParameter.Shininess, mat_shininess);
         }
 
         /// <summary>
@@ -421,66 +481,6 @@ namespace Mini3DCad
                 drawLine(new Vector3(mMax.X, mMin.Y, mMin.Z), new Vector3(mMax.X, mMin.Y, mMax.Z));
                 drawLine(new Vector3(mMax.X, mMax.Y, mMin.Z), new Vector3(mMax.X, mMax.Y, mMax.Z));
             }
-        }
-
-        //  光源の位置
-        public float m_LightPosX = 0.0f;
-        public float m_LightPosY = 0.0f;
-        public float m_LightPosZ = 0.0f;
-
-        /// <summary>
-        /// 光源の設定
-        /// </summary>
-        public void setLight()
-        {
-            //	光源の位置と特性指定
-            float[] lightPosition0 = { 1.0f, 1.0f, 1.0f, 0.0f };    //	位置
-            float[] lightPosition1 = { -1.0f, -1.0f, -1.0f, 0.0f }; //	位置
-            float[] lightAmbient0  = { 0.2f, 0.2f, 0.2f, 1.0f };    //	環境光
-            float[] lightDiffuse0  = { 0.3f, 0.3f, 0.3f, 1.0f };    //	拡散光
-            float[] lightEmission0 = { 1.0f, 1.0f, 1.0f, 1.0f };    //	放射光
-            float[] lightSpecular0 = { 1.0f, 1.0f, 1.0f, 1.0f };    //	鏡面光
-
-            float[] lightAmbient1  = { 0.2f, 0.2f, 0.2f, 1.0f };    //	環境光
-            float[] lightDiffuse1  = { 0.1f, 0.1f, 0.1f, 1.0f };    //	拡散光
-            float[] lightEmission1 = { 1.0f, 1.0f, 1.0f, 1.0f };    //	放射光
-            float[] lightSpecular1 = { 0.5f, 0.5f, 0.5f, 1.0f };    //	鏡面光
-
-            lightPosition0[0] = -m_LightPosX;
-            lightPosition0[1] = -m_LightPosY;
-            lightPosition0[2] = -m_LightPosZ;
-            lightPosition1[0] = m_LightPosX;
-            lightPosition1[1] = m_LightPosY;
-            lightPosition1[2] = m_LightPosZ;
-
-            GL.LightModel(LightModelParameter.LightModelLocalViewer, 0);
-            GL.Light(LightName.Light0, LightParameter.Position, lightPosition0);
-            GL.Light(LightName.Light1, LightParameter.Position, lightPosition1);
-            GL.Light(LightName.Light0, LightParameter.Ambient, lightAmbient0);
-            GL.Light(LightName.Light1, LightParameter.Ambient, lightAmbient1);
-            GL.Light(LightName.Light0, LightParameter.Diffuse, lightDiffuse0);
-            GL.Light(LightName.Light1, LightParameter.Diffuse, lightDiffuse1);
-            GL.Light(LightName.Light0, LightParameter.Specular, lightSpecular0);
-            GL.Light(LightName.Light1, LightParameter.Specular, lightSpecular1);
-
-            GL.Enable(EnableCap.Lighting);
-            GL.Enable(EnableCap.Light0);		    // ライト0を有効化
-            GL.Enable(EnableCap.Light1);		    // ライト1を有効化
-        }
-
-        /// <summary>
-        /// 材質の設定
-        /// </summary>
-        public void setMaterial()
-        {
-            float[] mat_ambient = { 0.1f, 0.1f, 0.1f, 1.0f };
-            float[] mat_diffuse = { 0.4f, 0.4f, 0.4f, 1.0f };
-            float[] mat_specular = { 1.0f, 1.0f, 1.0f, 1.0f };
-            float[] mat_shininess = { 20.0f };
-            GL.Material(MaterialFace.Front, MaterialParameter.Ambient, mat_ambient);
-            GL.Material(MaterialFace.Front, MaterialParameter.Diffuse, mat_diffuse);
-            GL.Material(MaterialFace.Front, MaterialParameter.Specular, mat_specular);
-            GL.Material(MaterialFace.Front, MaterialParameter.Shininess, mat_shininess);
         }
 
         /// <summary>

@@ -78,6 +78,8 @@ namespace Mini3DCad
                 case "circle":
                     if (1 < mPoints.Count)
                         mDataManage.addCircle(mPoints[0].toPointXY(), mPoints[1].toPointXY());
+                    else if (mPoints.Count == 1 && 0 < mRadius)
+                        mDataManage.addCircle(mPoints[0].toPointXY(), mPoints[0].toPointXY() + new PointD(mRadius, 0));
                     break;
                 case "arc":
                     if (2 < mPoints.Count)

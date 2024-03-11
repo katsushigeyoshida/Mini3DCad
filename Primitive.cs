@@ -1,5 +1,4 @@
 ﻿using CoreLib;
-using System.Windows.Shapes;
 using Brush = System.Windows.Media.Brush;
 using Brushes = System.Windows.Media.Brushes;
 
@@ -128,8 +127,7 @@ namespace Mini3DCad
         /// 移動処理
         /// </summary>
         /// <param name="v">移動ベクトル</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public abstract void translate(Point3D v, bool outline = false);
+        public abstract void translate(Point3D v);
 
         /// <summary>
         /// 回転処理
@@ -137,8 +135,7 @@ namespace Mini3DCad
         /// <param name="cp">回転中心</param>
         /// <param name="ang">回転角</param>
         /// <param name="face">操作面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public abstract void rotate(Point3D cp, double ang, FACE3D face, bool outline = false);
+        public abstract void rotate(Point3D cp, double ang, FACE3D face);
 
         /// <summary>
         /// オフセット
@@ -146,8 +143,7 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">操作面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public abstract void offset(Point3D sp, Point3D ep, FACE3D face, bool outline = false);
+        public abstract void offset(Point3D sp, Point3D ep, FACE3D face);
 
         /// <summary>
         /// ミラー
@@ -155,8 +151,7 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D操作面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public abstract void mirror(Point3D sp, Point3D ep, FACE3D face, bool outline = false);
+        public abstract void mirror(Point3D sp, Point3D ep, FACE3D face);
 
         /// <summary>
         /// トリム
@@ -164,8 +159,16 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public abstract void trim(Point3D sp, Point3D ep, FACE3D face, bool outline = false);
+        public abstract void trim(Point3D sp, Point3D ep, FACE3D face);
+
+        /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp">拡大中心</param>
+        /// <param name="scale">倍率</param>
+        /// <param name="face">2D平面</param>
+        public abstract void scale(Point3D cp, double scale, FACE3D face);
+
 
         /// <summary>
         /// 固有データを文字列配列に変換
@@ -382,16 +385,32 @@ namespace Mini3DCad
         public string propertyInfo()
         {
             string buf = $"ID: {mPrimitiveId}, Face: {mPrimitiveFace},";
-            buf += $" LineColor:{ylib.getBrushName(mLineColor)}, FaceColor:{ylib.getBrushName(mFaceColors[0])},";
-            buf += $" LineType:{mLineType}, Thickness:{mLineThickness}";
+            buf += $" LineColor: {ylib.getBrushName(mLineColor)}, FaceColor: {ylib.getBrushName(mFaceColors[0])},";
+            buf += $"\nLineType: {mLineType}, Thickness: {mLineThickness}";
+            buf += $" Area: {getArea().ToString("F2")}";
             return buf;
         }
 
         /// <summary>
-        /// 3D座標情報
+        /// 3D座標情報(VertexList)
         /// </summary>
         /// <returns></returns>
         public List<string> vertexInfo(string form = "F2")
+        {
+            List<string> vertexList = new List<string>();
+            for (int i = 0; i < mVertexList.Count; i++) {
+                for (int j = 0; j < mVertexList[i].Count; j++)
+                    vertexList.Add(mVertexList[i][j].ToString(form));
+            }
+            return vertexList;
+        }
+
+        /// <summary>
+        /// 3D座標情報(SurfaceData)
+        /// </summary>
+        /// <param name="form"></param>
+        /// <returns></returns>
+        public List<string> surfaceInfo(string form = "F2")
         {
             List<string> surfaceList = new List<string>();
             for (int i = 0; i < mSurfaceDataList.Count; i++) {
@@ -535,14 +554,9 @@ namespace Mini3DCad
         /// 移動処理
         /// </summary>
         /// <param name="v">移動ベクトル</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void translate(Point3D v, bool outline = false)
+        public override void translate(Point3D v)
         {
             mPoint.translate(v);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -551,14 +565,9 @@ namespace Mini3DCad
         /// <param name="cp">回転中心</param>
         /// <param name="ang">回転角</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void rotate(Point3D cp, double ang, FACE3D face, bool outline = false)
+        public override void rotate(Point3D cp, double ang, FACE3D face)
         {
             mPoint.rotate(cp, ang, face);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -567,15 +576,10 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void offset(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void offset(Point3D sp, Point3D ep, FACE3D face)
         {
             Point3D v = ep - sp;
             mPoint.offset(v);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -584,15 +588,10 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void mirror(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void mirror(Point3D sp, Point3D ep, FACE3D face)
         {
             Line3D l = new Line3D(sp, ep);
             mPoint = l.mirror(mPoint);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -601,15 +600,22 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void trim(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void trim(Point3D sp, Point3D ep, FACE3D face)
         {
 
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
+
+        /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp">拡大中心</param>
+        /// <param name="scale">倍率</param>
+        /// <param name="face">2D平面</param>
+        public override void scale(Point3D cp, double scale, FACE3D face)
+        {
+            mPoint.scale(cp, scale);
+        }
+
 
         /// <summary>
         /// 固有データを文字列配列に変換
@@ -759,13 +765,9 @@ namespace Mini3DCad
         /// 移動処理
         /// </summary>
         /// <param name="v">移動ベクトル</param>
-        public override void translate(Point3D v, bool outline = false)
+        public override void translate(Point3D v)
         {
             mLine.translate(v);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -774,13 +776,9 @@ namespace Mini3DCad
         /// <param name="cp">回転中心</param>
         /// <param name="ang">回転角</param>
         /// <param name="face">操作面</param>
-        public override void rotate(Point3D cp, double ang, FACE3D face, bool outline = false)
+        public override void rotate(Point3D cp, double ang, FACE3D face)
         {
             mLine.rotate(cp, ang, face);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -788,14 +786,10 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
-        public override void offset(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void offset(Point3D sp, Point3D ep, FACE3D face)
         {
             Point3D v = ep - sp;
             mLine.offset(v);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -804,15 +798,10 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void mirror(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void mirror(Point3D sp, Point3D ep, FACE3D face)
         {
             Line3D l = new Line3D(sp, ep);
             mLine = l.mirror(mLine);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -822,13 +811,20 @@ namespace Mini3DCad
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
         /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void trim(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void trim(Point3D sp, Point3D ep, FACE3D face)
         {
             mLine.trim(sp, ep);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+        }
+
+        /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp">拡大中心</param>
+        /// <param name="scale">倍率</param>
+        /// <param name="face">2D平面</param>
+        public override void scale(Point3D cp, double scale, FACE3D face)
+        {
+            mLine.scale(cp, scale);
         }
 
         /// <summary>
@@ -1020,13 +1016,9 @@ namespace Mini3DCad
         /// 移動処理
         /// </summary>
         /// <param name="v">移動ベクトル</param>
-        public override void translate(Point3D v, bool outline = false)
+        public override void translate(Point3D v)
         {
             mArc.translate(v);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1035,13 +1027,9 @@ namespace Mini3DCad
         /// <param name="cp">回転中心</param>
         /// <param name="ang">回転角</param>
         /// <param name="face">表示面</param>
-        public override void rotate(Point3D cp, double ang, FACE3D face, bool outline = false)
+        public override void rotate(Point3D cp, double ang, FACE3D face)
         {
             mArc.rotate(cp, ang, face);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1049,13 +1037,9 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
-        public override void offset(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void offset(Point3D sp, Point3D ep, FACE3D face)
         {
             mArc.offset(sp, ep);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1065,7 +1049,7 @@ namespace Mini3DCad
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
         /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void mirror(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void mirror(Point3D sp, Point3D ep, FACE3D face)
         {
             Line3D l = new Line3D(sp, ep);
             Point3D cp = l.mirror(mArc.mCp);
@@ -1074,11 +1058,6 @@ namespace Mini3DCad
             mArc.mCp = cp.toCopy();
             mArc.mU = u - cp;
             mArc.mV = v - cp;
-
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1087,14 +1066,21 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void trim(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void trim(Point3D sp, Point3D ep, FACE3D face)
         {
             mArc.trim(sp.toPoint(face), ep.toPoint(face), face);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+        }
+
+        /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp">拡大中心</param>
+        /// <param name="scale">倍率</param>
+        /// <param name="face">2D平面</param>
+        public override void scale(Point3D cp, double scale, FACE3D face)
+        {
+            mArc.mCp.scale(cp, scale);
+            mArc.mR *= scale;
         }
 
         /// <summary>
@@ -1293,13 +1279,9 @@ namespace Mini3DCad
         /// 移動処理
         /// </summary>
         /// <param name="v">移動ベクトル</param>
-        public override void translate(Point3D v, bool outline = false)
+        public override void translate(Point3D v)
         {
             mPolyline.translate(v);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1308,13 +1290,9 @@ namespace Mini3DCad
         /// <param name="cp">回転中心</param>
         /// <param name="ang">回転角</param>
         /// <param name="face">表示面</param>
-        public override void rotate(Point3D cp, double ang, FACE3D face, bool outline = false)
+        public override void rotate(Point3D cp, double ang, FACE3D face)
         {
             mPolyline.rotate(cp, ang, face);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1322,13 +1300,9 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
-        public override void offset(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void offset(Point3D sp, Point3D ep, FACE3D face)
         {
             mPolyline.offset(sp, ep);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1337,19 +1311,15 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void mirror(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void mirror(Point3D sp, Point3D ep, FACE3D face)
         {
-            Line3D l = new Line3D(sp, ep);
-            List<Point3D> plist = new List<Point3D>();
-            for (int i = 0; i < mPolyline.mPolyline.Count; i++){
-                 plist.Add(l.mirror(mPolyline.toPoint3D(i)));
-            }
-            mPolyline = new Polyline3D(plist);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+            mPolyline.mirror(sp, ep);
+            //Line3D l = new Line3D(sp, ep);
+            //List<Point3D> plist = new List<Point3D>();
+            //for (int i = 0; i < mPolyline.mPolyline.Count; i++){
+            //     plist.Add(l.mirror(mPolyline.toPoint3D(i)));
+            //}
+            //mPolyline = new Polyline3D(plist);
         }
 
         /// <summary>
@@ -1358,14 +1328,20 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void trim(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void trim(Point3D sp, Point3D ep, FACE3D face)
         {
             mPolyline.trim(sp, ep);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+        }
+
+        /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp">拡大中心</param>
+        /// <param name="scale">倍率</param>
+        /// <param name="face">2D平面</param>
+        public override void scale(Point3D cp, double scale, FACE3D face)
+        {
+            mPolyline.scale(cp, scale);
         }
 
         /// <summary>
@@ -1504,7 +1480,8 @@ namespace Mini3DCad
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="points">座標リスト</param>
+        /// <param name="points">2D座標リスト</param>
+        /// <param name="color">色</param>
         /// <param name="face">作成面</param>
         public PolygonPrimitive(List<PointD> points, Brush color, FACE3D face = FACE3D.XY)
         {
@@ -1520,6 +1497,12 @@ namespace Mini3DCad
             createVertexData();
         }
 
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="points">3D座標リスト</param>
+        /// <param name="color">色</param>
+        /// <param name="face">作成面</param>
         public PolygonPrimitive(List<Point3D> points, Brush color, FACE3D face = FACE3D.XY)
         {
             mPrimitiveId = PrimitiveId.Polygon;
@@ -1537,7 +1520,8 @@ namespace Mini3DCad
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="points">座標リスト</param>
+        /// <param name="polygon">3Dポリゴン</param>
+        /// <param name="color">色</param>
         /// <param name="face">2D平面</param>
         public PolygonPrimitive(Polygon3D polygon, Brush color, FACE3D face = FACE3D.XY)
         {
@@ -1556,7 +1540,8 @@ namespace Mini3DCad
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="polyline">ポリライン</param>
+        /// <param name="polyline">3Dポリライン</param>
+        /// <param name="color">色</param>
         /// <param name="face">2D平面</param>
         public PolygonPrimitive(Polyline3D polyline, Brush color, FACE3D face = FACE3D.XY)
         {
@@ -1595,19 +1580,22 @@ namespace Mini3DCad
         {
             mVertexList = new List<List<Point3D>>();
             mVertexList.Add(mPolygon.toPoint3D(true));
+            //(List<Point3D> triangles, bool reverse) = mPolygon.cnvTriangles();
+            //if (triangles.Count < 3)
+            //    return;
+            //for (int i = 0; i < triangles.Count; i += 3) {
+            //    List<Point3D> plist = new List<Point3D> { triangles[i], triangles[i + 1], triangles[i + 2], triangles[i] };
+            //    mVertexList.Add(plist);
+            //}
         }
 
         /// <summary>
         /// 移動処理
         /// </summary>
         /// <param name="v">移動ベクトル</param>
-        public override void translate(Point3D v, bool outline = false)
+        public override void translate(Point3D v)
         {
             mPolygon.translate(v);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1616,13 +1604,9 @@ namespace Mini3DCad
         /// <param name="cp">回転中心</param>
         /// <param name="ang">回転角</param>
         /// <param name="face">表示面</param>
-        public override void rotate(Point3D cp, double ang, FACE3D face, bool outline = false)
+        public override void rotate(Point3D cp, double ang, FACE3D face)
         {
             mPolygon.rotate(cp, ang, face);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1630,13 +1614,9 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
-        public override void offset(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void offset(Point3D sp, Point3D ep, FACE3D face)
         {
             mPolygon.offset(sp, ep);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1646,18 +1626,15 @@ namespace Mini3DCad
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
         /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void mirror(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void mirror(Point3D sp, Point3D ep, FACE3D face)
         {
-            Line3D l = new Line3D(sp, ep);
-            List<Point3D> plist = new List<Point3D>();
-            for (int i = 0; i < mPolygon.mPolygon.Count; i++) {
-                plist.Add(l.mirror(mPolygon.toPoint3D(i)));
-            }
-            mPolygon = new Polygon3D(plist);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+            mPolygon.mirror(sp, ep);
+            //Line3D l = new Line3D(sp, ep);
+            //List<Point3D> plist = new List<Point3D>();
+            //for (int i = 0; i < mPolygon.mPolygon.Count; i++) {
+            //    plist.Add(l.mirror(mPolygon.toPoint3D(i)));
+            //}
+            //mPolygon = new Polygon3D(plist);
         }
 
         /// <summary>
@@ -1666,14 +1643,20 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void trim(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void trim(Point3D sp, Point3D ep, FACE3D face)
         {
 
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+        }
+
+        /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp">拡大中心</param>
+        /// <param name="scale">倍率</param>
+        /// <param name="face">2D平面</param>
+        public override void scale(Point3D cp, double scale, FACE3D face)
+        {
+            mPolygon.scale(cp, scale);
         }
 
         /// <summary>
@@ -1939,10 +1922,10 @@ namespace Mini3DCad
         {
             mVertexList = new List<List<Point3D>>();
             Polygon3D polygon1 = mPolygon.toCopy();
-            mVertexList.Add(polygon1.toPoint3D(true));
+            mVertexList.Add(polygon1.toPoint3D(mClose));
             Polygon3D polygon2 = mPolygon.toCopy();
             polygon2.translate(mVector);
-            mVertexList.Add(polygon2.toPoint3D());
+            mVertexList.Add(polygon2.toPoint3D(mClose));
             for (int i = 0; i < polygon1.mPolygon.Count; i++) {
                 Point3D p1 = polygon1.toPoint3D(i);
                 Point3D p2 = p1.toCopy();
@@ -1956,13 +1939,9 @@ namespace Mini3DCad
         /// 移動処理
         /// </summary>
         /// <param name="v">移動ベクトル</param>
-        public override void translate(Point3D v, bool outline = false)
+        public override void translate(Point3D v)
         {
             mPolygon.translate(v);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1971,14 +1950,10 @@ namespace Mini3DCad
         /// <param name="cp">回転中心</param>
         /// <param name="ang">回転角</param>
         /// <param name="face">表示面</param>
-        public override void rotate(Point3D cp, double ang, FACE3D face, bool outline = false)
+        public override void rotate(Point3D cp, double ang, FACE3D face)
         {
             mVector.rotate(new Point3D(0, 0, 0), ang, face);
             mPolygon.rotate(cp, ang, face);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -1986,9 +1961,9 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
-        public override void offset(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void offset(Point3D sp, Point3D ep, FACE3D face)
         {
-
+            mPolygon.offset(sp, ep);
         }
 
         /// <summary>
@@ -1998,12 +1973,11 @@ namespace Mini3DCad
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
         /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void mirror(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void mirror(Point3D sp, Point3D ep, FACE3D face)
         {
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+            Line3D l = new Line3D(new Point3D(0, 0, 0), ep - sp);
+            mVector = l.mirror(mVector);
+            mPolygon.mirror(sp, ep);
         }
 
         /// <summary>
@@ -2012,14 +1986,21 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void trim(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void trim(Point3D sp, Point3D ep, FACE3D face)
         {
 
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+        }
+
+        /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp">拡大中心</param>
+        /// <param name="scale">倍率</param>
+        /// <param name="face">2D平面</param>
+        public override void scale(Point3D cp, double scale, FACE3D face)
+        {
+            mVector.length(mVector.length() * scale);
+            mPolygon.scale(cp, scale);
         }
 
         /// <summary>
@@ -2109,7 +2090,7 @@ namespace Mini3DCad
             string buf = "ExtrusionData: ";
             buf += "Vector " + mVector.ToString(form);
             buf += " Close " + mClose;
-            buf += " Polygon ";
+            buf += "\nPolygon ";
             buf += $"Cp {mPolygon.mCp.x.ToString(form)},{mPolygon.mCp.y.ToString(form)},{mPolygon.mCp.z.ToString(form)},";
             buf += $"U {mPolygon.mU.x.ToString(form)},{mPolygon.mU.y.ToString(form)},{mPolygon.mU.z.ToString(form)},";
             buf += $"V {mPolygon.mV.x.ToString(form)},{mPolygon.mV.y.ToString(form)},{mPolygon.mV.z.ToString(form)},";
@@ -2162,7 +2143,7 @@ namespace Mini3DCad
         public double mSa = 0;
         public double mEa = Math.PI * 2;
         public double mDivideAngle = Math.PI / 16;
-        public bool mClose = true;
+        public bool mClose = false;
 
         /// <summary>
         /// コンストラクタ
@@ -2241,7 +2222,7 @@ namespace Mini3DCad
                 for (int j = 0; j < outLines.Count; j++) {
                     plist.Add(outLines[j][i]);
                 }
-                plist.Add(outLines[0][i]);
+                //plist.Add(outLines[0][i]);
                 mVertexList.Add(plist);
             }
         }
@@ -2262,7 +2243,9 @@ namespace Mini3DCad
             cp.inverse();
             double ang = mSa;
             double dang = divideAngle;
-            while (ang < mEa) {
+            while ((ang - dang) < mEa) {
+                if (mEa < ang)
+                    ang = mEa;
                 List<Point3D> plist = outline.ConvertAll(p => p.toCopy());
                 plist.ForEach(p => p.rotate(cv, ang));
                 plist.ForEach(p => p.add(cp));
@@ -2276,14 +2259,10 @@ namespace Mini3DCad
         /// 移動処理
         /// </summary>
         /// <param name="v">移動ベクトル</param>
-        public override void translate(Point3D v, bool outline = false)
+        public override void translate(Point3D v)
         {
             mCenterLine.translate(v);
             mOutLine.translate(v);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -2292,14 +2271,10 @@ namespace Mini3DCad
         /// <param name="cp">回転中心</param>
         /// <param name="ang">回転角</param>
         /// <param name="face">表示面</param>
-        public override void rotate(Point3D cp, double ang, FACE3D face, bool outline = false)
+        public override void rotate(Point3D cp, double ang, FACE3D face)
         {
             mCenterLine.rotate(cp, ang, face);
             mOutLine.rotate(cp, ang, face);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -2307,9 +2282,9 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
-        public override void offset(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void offset(Point3D sp, Point3D ep, FACE3D face)
         {
-
+            mOutLine.offset(sp, ep);
         }
 
         /// <summary>
@@ -2318,13 +2293,11 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void mirror(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void mirror(Point3D sp, Point3D ep, FACE3D face)
         {
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+            Line3D l = new Line3D(sp, ep);
+            mCenterLine = l.mirror(mCenterLine);
+            mOutLine.mirror(sp, ep);
         }
 
         /// <summary>
@@ -2333,14 +2306,21 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void trim(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void trim(Point3D sp, Point3D ep, FACE3D face)
         {
 
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+        }
+
+        /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp"></param>
+        /// <param name="scale"></param>
+        /// <param name="face"></param>
+        public override void scale(Point3D cp, double scale, FACE3D face)
+        {
+            mCenterLine.scale(cp, scale);
+            mOutLine.scale(cp, scale);
         }
 
         /// <summary>
@@ -2454,8 +2434,8 @@ namespace Mini3DCad
             buf += " EndAngle " + mEa.ToString(form);
             buf += " DivideAngle " + mDivideAngle.ToString(form);
             buf += " Close " + mClose.ToString();
-            buf += $"CenterLine Sp {mCenterLine.mSp.ToString(form)} V {mCenterLine.mV.ToString(form)}";
-            buf += $" Size {mOutLine.mPolyline.Count} OutLine ";
+            buf += $"\nCenterLine Sp {mCenterLine.mSp.ToString(form)} V {mCenterLine.mV.ToString(form)}";
+            buf += $"\nOutLine Size {mOutLine.mPolyline.Count} ";
             for (int i = 0; i < mOutLine.mPolyline.Count; i++) {
                 buf += "," + mOutLine.mPolyline[i].ToString(form);
             }
@@ -2507,7 +2487,7 @@ namespace Mini3DCad
         public double mSa = 0;
         public double mEa = Math.PI * 2;
         public double mDivideAngle = Math.PI / 9;
-        public bool mClose = true;
+        public bool mClose = false;
 
         /// <summary>
         /// コンストラクタ
@@ -2593,7 +2573,7 @@ namespace Mini3DCad
                 for (int i = 0; i < outLines.Count; i++) {
                     plist.Add(outLines[i][j].toCopy());
                 }
-                plist.Add(outLines[0][j].toCopy());
+                //plist.Add(outLines[0][j].toCopy());
                 mVertexList.Add(plist);
             }
         }
@@ -2729,14 +2709,10 @@ namespace Mini3DCad
         /// 移動処理
         /// </summary>
         /// <param name="v">移動ベクトル</param>
-        public override void translate(Point3D v, bool outline = false)
+        public override void translate(Point3D v)
         {
             mOutLine1.translate(v);
             mOutLine2.translate(v);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -2745,14 +2721,10 @@ namespace Mini3DCad
         /// <param name="cp">回転中心</param>
         /// <param name="ang">回転角</param>
         /// <param name="face">表示面</param>
-        public override void rotate(Point3D cp, double ang, FACE3D face, bool outline = false)
+        public override void rotate(Point3D cp, double ang, FACE3D face)
         {
             mOutLine1.rotate(cp, ang, face);
             mOutLine2.rotate(cp, ang, face);
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
         }
 
         /// <summary>
@@ -2760,9 +2732,11 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
-        public override void offset(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void offset(Point3D sp, Point3D ep, FACE3D face)
         {
-
+            double d = ep.length(sp);
+            mOutLine1.offset(d);
+            mOutLine2.offset(d);
         }
 
         /// <summary>
@@ -2772,12 +2746,10 @@ namespace Mini3DCad
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
         /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void mirror(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void mirror(Point3D sp, Point3D ep, FACE3D face)
         {
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+            mOutLine1.mirror(sp, ep);
+            mOutLine2.mirror(sp, ep);
         }
 
         /// <summary>
@@ -2786,14 +2758,21 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="face">2D平面</param>
-        /// <param name="outline">3Dデータと外形線の作成</param>
-        public override void trim(Point3D sp, Point3D ep, FACE3D face, bool outline = false)
+        public override void trim(Point3D sp, Point3D ep, FACE3D face)
         {
 
-            if (!outline) {
-                createSurfaceData();
-                createVertexData();
-            }
+        }
+
+        /// <summary>
+        /// 拡大縮小
+        /// </summary>
+        /// <param name="cp"></param>
+        /// <param name="scale"></param>
+        /// <param name="face"></param>
+        public override void scale(Point3D cp, double scale, FACE3D face)
+        {
+            mOutLine1.scale(cp, scale);
+            mOutLine2.scale(cp, scale);
         }
 
         /// <summary>
@@ -2932,13 +2911,13 @@ namespace Mini3DCad
             buf += " EndAngle " + mEa.ToString(form);
             buf += " DivideAngle " + mDivideAngle.ToString(form);
             buf += " Close " + mClose.ToString();
-            buf += $"OutLine1 Cp {mOutLine1.mCp.ToString(form)} U {mOutLine1.mU.ToString(form)} V {mOutLine1.mV.ToString(form)}";
-            buf += $" size {mOutLine1.mPolyline.Count}  OutLine1 ";
+            buf += $"\nOutLine1 Cp {mOutLine1.mCp.ToString(form)} U {mOutLine1.mU.ToString(form)} V {mOutLine1.mV.ToString(form)}";
+            buf += $" size {mOutLine1.mPolyline.Count} ";
             for (int i = 0; i < mOutLine1.mPolyline.Count; i++) {
                 buf += "," + mOutLine1.mPolyline[i].ToString(form);
             }
-            buf += $"OutLine2 Cp {mOutLine2.mCp.ToString(form)} U {mOutLine2.mU.ToString(form)} V {mOutLine2.mV.ToString(form)}";
-            buf += $" size {mOutLine2.mPolyline.Count}  OutLine2 ";
+            buf += $"\nOutLine2 Cp {mOutLine2.mCp.ToString(form)} U {mOutLine2.mU.ToString(form)} V {mOutLine2.mV.ToString(form)}";
+            buf += $" size {mOutLine2.mPolyline.Count} ";
             for (int i = 0; i < mOutLine2.mPolyline.Count; i++) {
                 buf += "," + mOutLine2.mPolyline[i].ToString(form);
             }

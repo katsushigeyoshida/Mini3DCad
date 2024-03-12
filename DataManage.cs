@@ -50,6 +50,15 @@ namespace Mini3DCad
         public int mLayerSize = 64;                                     //  レイヤーサイズ
         public Layer mLayer;
 
+        public List<string[]> mImageFilters = new List<string[]>() {
+                    new string[] { "PNGファイル", "*.png" },
+                    new string[] { "JPGファイル", "*.jpg" },
+                    new string[] { "JPEGファイル", "*.jpeg" },
+                    new string[] { "GIFファイル", "*.gif" },
+                    new string[] { "BMPファイル", "*.bmp" },
+                    new string[] { "すべてのファイル", "*.*"}
+                };
+
         //  XYZ軸データ
         private List<Point3D> mXAxis = new List<Point3D>() { new Point3D(0, 0, 0), new Point3D(1, 0, 0) };
         private List<Point3D> mYAxis = new List<Point3D>() { new Point3D(0, 0, 0), new Point3D(0, 1, 0) };

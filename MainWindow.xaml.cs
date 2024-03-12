@@ -6,6 +6,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using Button = System.Windows.Controls.Button;
 using Point = System.Windows.Point;
 
@@ -994,6 +995,27 @@ namespace Mini3DCad
                 m3Dlib.screenCopy();
             } else {
                 mDraw.screenCopy();
+            }
+        }
+
+        /// <summary>
+        /// 作図領域の画面をファイル保存
+        /// </summary>
+        public void screenSave()
+        {
+            BitmapSource bitmapSource;
+            if (mDataManage.mFace == FACE3D.NON) {
+                bitmapSource = ylib.bitmap2BitmapSource(m3Dlib.ToBitmap());
+            } else {
+                bitmapSource = mDraw.toBitmapScreen();
+            }
+            if (bitmapSource != null) {
+                string path = ylib.fileSaveSelectDlg("イメージ保存", ".", mDataManage.mImageFilters);
+                if (0 < path.Length) {
+                    if (Path.GetExtension(path).Length == 0)
+                        path += ".png";
+                    ylib.saveBitmapImage(bitmapSource, path);
+                }
             }
         }
     }

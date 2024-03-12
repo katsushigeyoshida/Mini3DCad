@@ -23,7 +23,8 @@ namespace Mini3DCad
         connect, divide, changeProperty, changePropertyAll,
         extrusion, revolution, sweep, release,
         measure, measureDistance, measureAngle,
-        dispLayer, addLayer, removeLayer, info, remove, undo, screenCopy,
+        dispLayer, addLayer, removeLayer, info, remove, undo,
+        screenCopy, screenSave,
         save, load, back, cancel, close
     }
 
@@ -105,6 +106,7 @@ namespace Mini3DCad
             //new Command("ファイル", "保存",         OPERATION.save),
             //new Command("ファイル", "読込",         OPERATION.load),
             new Command("ツール",     "画面コピー",   OPERATION.screenCopy),
+            new Command("ツール",     "画面保存",     OPERATION.screenSave),
             new Command("ツール",     "戻る",         OPERATION.back),
             new Command("キャンセル", "キャンセル",   OPERATION.cancel),
             new Command("終了",       "終了",         OPERATION.close),
@@ -299,6 +301,10 @@ namespace Mini3DCad
                     break;
                 case OPERATION.screenCopy:
                     mMainWindow.screenCopy();
+                    opeMode = OPEMODE.clear;
+                    break;
+                case OPERATION.screenSave:
+                    mMainWindow.screenSave();
                     opeMode = OPEMODE.clear;
                     break;
                 case OPERATION.back:

@@ -1,4 +1,5 @@
 ﻿using CoreLib;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -630,13 +631,23 @@ namespace Mini3DCad
         /// </summary>
         public void screenCopy()
         {
+            BitmapSource bitmapSource = toBitmapScreen();
+            System.Windows.Clipboard.SetImage(bitmapSource);
+        }
+
+        /// <summary>
+        /// 作図領域のコピー
+        /// </summary>
+        /// <returns>BitmapSource</returns>
+        public BitmapSource toBitmapScreen()
+        {
             Brush tmpColor = mBaseBackColor;
             mBaseBackColor = Brushes.White;
             dispInit();
             draw2D(false, false);
             BitmapSource bitmapSource = ylib.canvas2Bitmap(mCanvas);
-            System.Windows.Clipboard.SetImage(bitmapSource);
             mBaseBackColor = tmpColor;
+            return bitmapSource;
         }
     }
 }

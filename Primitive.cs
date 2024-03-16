@@ -59,6 +59,50 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// 面データを逆回りに変換する
+        /// </summary>
+        /// <param name="reverse">変換する</param>
+        public void reverse(bool reverse = true)
+        {
+            if (!reverse)
+                return;
+            Point3D t = new Point3D();
+            switch (mDrawType) {
+                case DRAWTYPE.TRIANGLES:
+                    for (int i = 0; i < mVertexList.Count; i += 3) {
+                        t = mVertexList[i];
+                        mVertexList[i] = mVertexList[i + 2];
+                        mVertexList[i + 2] = t;
+                    }
+                    break;
+                case DRAWTYPE.QUADS:
+                    for (int i = 0; i < mVertexList.Count; i += 4) {
+                        t = mVertexList[i];
+                        mVertexList[i + 1] = mVertexList[i + 3];
+                        mVertexList[i + 3] = t;
+                    }
+                    break;
+                case DRAWTYPE.TRIANGLE_STRIP:
+                case DRAWTYPE.QUAD_STRIP:
+                    for (int i = 0; i < mVertexList.Count; i += 2) {
+                        t = mVertexList[i];
+                        mVertexList[i] = mVertexList[i + 1];
+                        mVertexList[i + 1] = t;
+                    }
+                    break;
+                case DRAWTYPE.TRIANGLE_FAN:
+                    t = mVertexList[0];
+                    mVertexList.RemoveAt(0);
+                    mVertexList.Reverse();
+                    mVertexList.Insert(0, t);
+                    break;
+                case DRAWTYPE.POLYGON:
+                    mVertexList.Reverse();
+                    break;
+            }
+        }
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         /// <returns></returns>
@@ -109,6 +153,7 @@ namespace Mini3DCad
         public bool mPick = false;                                              //  ピック状態
         public List<SurfaceData> mSurfaceDataList;                              //  3D座標データ
         public List<List<Point3D>> mVertexList;                                 //  2D表示用3D座標データ
+        public bool mReverse = false;
 
 
         public YLib ylib = new YLib();
@@ -251,6 +296,7 @@ namespace Mini3DCad
                 //copySurfaceDataList(primitive);
                 copyVertexList(primitive);
             }
+            mReverse = primitive.mReverse;
         }
 
         /// <summary>
@@ -386,7 +432,7 @@ namespace Mini3DCad
         {
             string buf = $"ID: {mPrimitiveId}, Face: {mPrimitiveFace},";
             buf += $" LineColor: {ylib.getBrushName(mLineColor)}, FaceColor: {ylib.getBrushName(mFaceColors[0])},";
-            buf += $"\nLineType: {mLineType}, Thickness: {mLineThickness}";
+            buf += $"\nLineType: {mLineType}, Thickness: {mLineThickness}, Reverse: {mReverse},";
             buf += $" Area: {getArea().ToString("F2")}";
             return buf;
         }
@@ -430,8 +476,9 @@ namespace Mini3DCad
                 "PrimitiveFace",    mPrimitiveFace.ToString(),
                 "LineColor",        ylib.getBrushName(mLineColor),
                 "LineThickness",    mLineThickness.ToString(),
-                "LineType",        mLineType.ToString(),
-                "FaceColors",       mFaceColors.Count.ToString()
+                "LineType",         mLineType.ToString(),
+                "Reverse",          mReverse.ToString(),
+                "FaceColors",       mFaceColors.Count.ToString(),
             };
             for (int i = 0; i < mFaceColors.Count; i++)
                 dataList.Add(ylib.getBrushName(mFaceColors[i]));
@@ -449,6 +496,7 @@ namespace Mini3DCad
                 return;
             int ival;
             double val;
+            bool bval;
             for (int i = 0; i < list.Length; i++) {
                 if (list[i] == "PrimitiveId") {
                     mPrimitiveId = (PrimitiveId)Enum.Parse(typeof(PrimitiveId), list[++i]);
@@ -460,6 +508,8 @@ namespace Mini3DCad
                     mLineThickness = double.TryParse(list[++i], out val) ? val : 1;
                 } else if (list[i] == "LineType") {
                     mLineType = int.TryParse(list[++i], out ival) ? ival : 0;
+                } else if (list[i] == "Reverse") {
+                    mReverse = bool.TryParse(list[++i], out bval) ? bval : false;
                 } else if (list[i] == "FaceColors") {
                     mFaceColors.Clear();
                     int count = int.TryParse(list[++i], out ival) ? ival : 0;
@@ -1570,6 +1620,7 @@ namespace Mini3DCad
             surfaceData.mVertexList = triangles;
             surfaceData.mDrawType = DRAWTYPE.TRIANGLES;
             surfaceData.mFaceColor = mFaceColors[0];
+            surfaceData.reverse(mReverse);
             mSurfaceDataList.Add(surfaceData);
         }
 
@@ -1884,6 +1935,7 @@ namespace Mini3DCad
                     surfaceData.mVertexList.Reverse();
                 surfaceData.mDrawType = DRAWTYPE.TRIANGLES;
                 surfaceData.mFaceColor = mFaceColors[0];
+                surfaceData.reverse(mReverse);
                 mSurfaceDataList.Add(surfaceData);
                 //  2面(端面)
                 surfaceData = new SurfaceData();
@@ -1892,6 +1944,7 @@ namespace Mini3DCad
                 surfaceData.mVertexList.Reverse();
                 surfaceData.mDrawType = DRAWTYPE.TRIANGLES;
                 surfaceData.mFaceColor = mFaceColors[0];
+                surfaceData.reverse(mReverse);
                 mSurfaceDataList.Add(surfaceData);
             }
             //  側面
@@ -1912,6 +1965,7 @@ namespace Mini3DCad
             }
             surfaceData.mDrawType = DRAWTYPE.QUAD_STRIP;
             surfaceData.mFaceColor = mFaceColors[0];
+            surfaceData.reverse(mReverse);
             mSurfaceDataList.Add(surfaceData);
         }
 
@@ -2193,6 +2247,7 @@ namespace Mini3DCad
                 }
                 surfaceData.mDrawType = DRAWTYPE.QUAD_STRIP;
                 surfaceData.mFaceColor = mFaceColors[0];
+                surfaceData.reverse(mReverse);
                 mSurfaceDataList.Add(surfaceData);
             }
             if (mClose) {
@@ -2204,6 +2259,7 @@ namespace Mini3DCad
                 }
                 surfaceData.mDrawType = DRAWTYPE.QUAD_STRIP;
                 surfaceData.mFaceColor = mFaceColors[0];
+                surfaceData.reverse(mReverse);
                 mSurfaceDataList.Add(surfaceData);
             }
         }
@@ -2542,6 +2598,7 @@ namespace Mini3DCad
                 }
                 surfaceData.mDrawType = DRAWTYPE.QUAD_STRIP;
                 surfaceData.mFaceColor = mFaceColors[0];
+                surfaceData.reverse(mReverse);
                 mSurfaceDataList.Add(surfaceData);
             }
             if (mClose) {
@@ -2553,6 +2610,7 @@ namespace Mini3DCad
                 }
                 surfaceData.mDrawType = DRAWTYPE.QUAD_STRIP;
                 surfaceData.mFaceColor = mFaceColors[0];
+                surfaceData.reverse(mReverse);
                 mSurfaceDataList.Add(surfaceData);
             }
         }

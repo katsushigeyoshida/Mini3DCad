@@ -286,6 +286,39 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// レイヤBitの置換え
+        /// </summary>
+        /// <param name="layerbit">LayerBit</param>
+        /// <param name="replaceData">置き換えリスト</param>
+        /// <returns>置換え後のLayerBit</returns>
+        public byte[] replaceOn(byte[] layerbit, List<int[]> replaceData)
+        {
+            byte[] bytes = new byte[layerbit.Length];
+            List<int> bitNoList = getBitOnNo(layerbit);
+            for (int i = 0; i < bitNoList.Count; i++) {
+                int n = replaceData.FindIndex(p => p[0] == bitNoList[i]);
+                if (0 <= n)
+                    bitOn(bytes, replaceData[n][1]);   
+            }
+            return bytes;
+        }
+
+        /// <summary>
+        /// OnBit位置の取得
+        /// </summary>
+        /// <param name="layerbit">LayerBit</param>
+        /// <returns>On位置リスト</returns>
+        public List<int> getBitOnNo(byte[] layerbit)
+        {
+            List<int> bitNoList= new List<int>();
+            for (int i = 0; i < layerbit.Length * 8; i++) {
+                if (getBitOn(layerbit, i))
+                    bitNoList.Add(i);
+            }
+            return bitNoList;
+        }
+
+        /// <summary>
         /// レイヤBit(bytes)が 0 かの確認
         /// </summary>
         /// <param name="bytes">レイヤBit</param>

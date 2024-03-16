@@ -493,6 +493,10 @@ namespace Mini3DCad
             return buf;
         }
 
+        /// <summary>
+        /// 図面インポート
+        /// </summary>
+        /// <returns></returns>
         public string importAsFile()
         {
             List<string[]> filters = new List<string[]>() {
@@ -505,6 +509,61 @@ namespace Mini3DCad
                 return "";
             //return importDxf(filePath);
             return "";
+        }
+
+        /// <summary>
+        /// データバックアップ
+        /// </summary>
+        /// <param name="messageOn">メッセージの有無</param>
+        /// <returns></returns>
+        public int dataBackUp(bool messageOn = true)
+        {
+            int count = 0;
+            if (mBaseDataFolder == null || mBackupFolder.Length == 0) {
+                ylib.messageBox(mMainWindow, "図面データのバックアップのフォルダが設定されていません。");
+                return count;
+            }
+            if (!Directory.Exists(mBackupFolder)) 
+                Directory.CreateDirectory(mBackupFolder);
+            string backupFolder = Path.Combine(mBackupFolder, Path.GetFileName(mBaseDataFolder));
+            if (Path.GetFullPath(mBaseDataFolder) != Path.GetFullPath(backupFolder)) {
+                DirectoryDiff directoryDiff = new DirectoryDiff(mBaseDataFolder, backupFolder);
+                List<FilesData> removeFile = directoryDiff.getNoExistFile();
+                bool noExistFileRemove = true;
+                if (0 < removeFile.Count) {
+                    if (ylib.messageBox(mMainWindow,
+                        $"ソースにないファイルがバックアップに {removeFile.Count} ファイル存在します。\nバックアップから削除しますか?",
+                        "", "確認", MessageBoxButton.YesNo) == MessageBoxResult.No)
+                        noExistFileRemove = false;
+                }
+                count = directoryDiff.syncFolder(noExistFileRemove);
+                if (messageOn)
+                    ylib.messageBox(mMainWindow, $"{count} ファイルのバックアップを更新しました。");
+            } else {
+                ylib.messageBox(mMainWindow, "バックアップ先がデータフォルダと同じです");
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// バックアップデータ管理
+        /// </summary>
+        public void dataRestor()
+        {
+            if (mBaseDataFolder == null || mBackupFolder.Length == 0 || !Directory.Exists(mBackupFolder)) {
+                ylib.messageBox(mMainWindow, "バックアップのフォルダが設定されていません。");
+                return;
+            }
+            string backupFolder = Path.Combine(mBackupFolder, Path.GetFileName(mBaseDataFolder));
+            DiffFolder dlg = new DiffFolder();
+            dlg.Owner = mMainWindow;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            dlg.mSrcTitle = "比較元(データフォルダ)";
+            dlg.mDestTitle = "比較先(バックアップ先)";
+            dlg.mSrcFolder = mBaseDataFolder;
+            dlg.mDestFolder = backupFolder;
+            dlg.mDiffTool = mDiffTool;
+            dlg.ShowDialog();
         }
     }
 }

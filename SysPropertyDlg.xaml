@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Mini3DCad"
         mc:Ignorable="d"
-        Title="システム設定" Height="200" Width="400" Loaded="Window_Loaded" Closing="Window_Closing">
+        Title="システム設定" Height="250" Width="400" Loaded="Window_Loaded" Closing="Window_Closing">
     <Grid>
         <Label Content="円の分割角度" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <TextBox x:Name="tbArcDivideAng" Text="" Width="50" Margin="120,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
@@ -15,7 +15,11 @@
         <TextBox x:Name="tbSweepDivideAng" Text="" Width="50" Margin="120,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <Label Content="データ保存フォルダ" Margin="0,75,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <ComboBox x:Name="cbDataFolder" Text="" IsEditable="True" Margin="120,80,30,0" VerticalAlignment="Top" MouseDoubleClick="tbDataFolder_MouseDoubleClick" />
-        <Button Content="OK" Width="50" IsDefault="True" Margin="0,0,100,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="Button_Click" />
-        <Button Content="Cancel" Width="50" IsCancel="True" Margin="0,0,30,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="Button_Click_1" />
+        <TextBlock Text="バックアップフォルダ" Margin="5,110,0,0" HorizontalAlignment="Left"  VerticalAlignment="Top"/>
+        <TextBox x:Name="tbBackupFolder" Margin="120,110,30,0" VerticalAlignment="Top" MouseDoubleClick="tbBackupFolder_MouseDoubleClick"/>
+        <TextBlock Text="ファイル比較ツール" Margin="5,135,0,0" HorizontalAlignment="Left"  VerticalAlignment="Top"/>
+        <TextBox x:Name="tbDiffTool" Margin="120,135,30,0" VerticalAlignment="Top" MouseDoubleClick="tbDiffTool_MouseDoubleClick" />
+        <Button Content="OK" Width="50" IsDefault="True" Margin="0,0,100,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="btOK_Click" />
+        <Button Content="Cancel" Width="50" IsCancel="True" Margin="0,0,30,10" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="btCancel_Click" />
     </Grid>
 </Window>

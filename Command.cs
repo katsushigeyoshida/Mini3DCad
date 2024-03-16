@@ -427,7 +427,7 @@ namespace Mini3DCad
         {
             if (0 < mDataFilePath.Length) {
                 mDataManage.saveData(mDataFilePath);
-            } else if (0 < mDataManage.mElementList.Count) {
+            } else if (!saveonly && 0 < mDataManage.mElementList.Count) {
                 string itemName = mMainWindow.mFileData.addItem();
                 if (0 < itemName.Length) {
                     mDataFilePath = mMainWindow.mFileData.getItemFilePath(itemName);

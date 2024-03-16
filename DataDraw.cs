@@ -312,7 +312,7 @@ namespace Mini3DCad
             if (grid)
                 dispGrid(mGridSize);
             for (int i = 0; i < mDataManage.mElementList.Count; i++) {
-                if (mDataManage.mElementList[i].drawChk(mDataManage.mLayer))
+                if (mDataManage.mElementList[i].isDraw(mDataManage.mLayer))
                     mDataManage.mElementList[i].draw2D(mGDraw, mFace);
             }
             if (bitmap && mCanvas != null) {

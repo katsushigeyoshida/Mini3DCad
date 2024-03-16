@@ -999,7 +999,8 @@ namespace Mini3DCad
                 if (element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon ||
                     element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
                     dlg.mReverseOn = true;
-                    dlg.mReverse = false;
+                    dlg.mReverse = element.mPrimitive.mReverse;
+                    //dlg.mReverse = false;
                 }
                 if (element.mPrimitive.mPrimitiveId == PrimitiveId.Extrusion ||
                     element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
@@ -1037,15 +1038,16 @@ namespace Mini3DCad
                         sweep.mSa = ylib.D2R(dlg.mArcStartAngle);
                         sweep.mEa = ylib.D2R(dlg.mArcEndAngle);
                     }
-                    if (dlg.mReverse) {
-                        if (element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
-                            PolygonPrimitive polygon = (PolygonPrimitive)element.mPrimitive;
-                            polygon.mPolygon.mPolygon.Reverse();
-                        } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
-                            RevolutionPrimitive revolution = (RevolutionPrimitive)element.mPrimitive;
-                            revolution.mOutLine.mPolyline.Reverse();
-                        }
-                    }
+                    element.mPrimitive.mReverse = dlg.mReverse;
+                    //if (dlg.mReverse) {
+                    //    if (element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
+                    //        PolygonPrimitive polygon = (PolygonPrimitive)element.mPrimitive;
+                    //        polygon.mPolygon.mPolygon.Reverse();
+                    //    } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
+                    //        RevolutionPrimitive revolution = (RevolutionPrimitive)element.mPrimitive;
+                    //        revolution.mOutLine.mPolyline.Reverse();
+                    //    }
+                    //}
                     element.mPrimitive.createSurfaceData();
                     element.mPrimitive.createVertexData();
                     element.update3DData();
@@ -1147,18 +1149,30 @@ namespace Mini3DCad
             if (picks.Count == 0)
                 return;
             List<string[]> listData = new List<string[]>();
+            List<string> listLayer = new List<string>();
+            //  要素データの取得
             Box3D area = mElementList[picks[0].mElementNo].mArea.toCopy();
             for (int i = 0; i < picks.Count; i++) {
                 Element element = mElementList[picks[i].mElementNo].toCopy();
-                if (element.drawChk(mLayer)) {
+                if (element.isDraw(mLayer)) {
                     listData.AddRange(element.toDataList());
                     area.extension(element.mArea);
+                    listLayer.AddRange(mLayer.getLayerNameList(element.mLayerBit));
                 }
             }
+            //  領域
             string buf = "area," + area.ToString() + "\n";
             buf = buf.Replace(") (", ",");
             buf = buf.Replace("(", "");
             buf = buf.Replace(")", "");
+            //  使用レイヤ
+            listLayer.Distinct();
+            buf += "layer,";
+            foreach (string layerName in listLayer) {
+                buf += $"{mLayer.getLayerNo(layerName)},{layerName},"; 
+            }
+            buf = buf.TrimEnd(',') + "\n";
+            //  プリミティブデータ
             foreach (string[] str in listData) {
                 buf += ylib.arrayStr2CsvData(str) + "\n";
             }
@@ -1174,6 +1188,7 @@ namespace Mini3DCad
         {
             string data = System.Windows.Clipboard.GetText();
             mCopyElementList = new List<Element>();
+            List<int[]> replaceLayer = new List<int[]>();
             if (0 < data.Length) {
                 List<string[]> dataList = new List<string[]>();
                 string[] strList = data.Split(new char[] { '\n' });
@@ -1181,12 +1196,22 @@ namespace Mini3DCad
                 for (int i = 1; i < strList.Length; i++)
                     dataList.Add(ylib.csvData2ArrayStr(strList[i]));
                 if (0 < dataList.Count) {
-                    string[] areaStr = dataList[0];
-                    if (4 < areaStr.Length && areaStr[0] == "area") {
-                        mCopyArea = new Box3D($"{areaStr[1]},{areaStr[2]},{areaStr[3]},{areaStr[4]},{areaStr[5]},{areaStr[6]}");
+                    int sp = 0;
+                    string[] strArray = dataList[sp++];
+                    if (4 < strArray.Length && strArray[0] == "area") {
+                        mCopyArea = new Box3D($"{strArray[1]},{strArray[2]},{strArray[3]},{strArray[4]},{strArray[5]},{strArray[6]}");
                         mCopyArea.normalize();
                     }
-                    int sp = 1;
+                    strArray = dataList[sp++];
+                    if (1 < strArray.Length && strArray[0] == "layer") {
+                        for (int i = 1; i < strArray.Length; i += 2) {
+                            mLayer.add(strArray[i + 1]);
+                            int oldLayNo = int.Parse(strArray[i]);
+                            int newLayNo = mLayer.getLayerNo(strArray[i + 1]);
+                            int[] layNo = new int[] { oldLayNo, newLayNo};
+                            replaceLayer.Add(layNo);
+                        }
+                    }
                     Element element;
                     while (sp < dataList.Count - 1) {
                         string[] buf = dataList[sp++];
@@ -1194,7 +1219,8 @@ namespace Mini3DCad
                             element = new Element(mLayerSize);
                             sp = element.setDataList(dataList, sp);
                             if (element.mPrimitive != null && 0 < element.mPrimitive.mSurfaceDataList.Count) {
-                                mLayer.bitOnAll(element.mLayerBit, true);
+                                element.mLayerBit = mLayer.replaceOn(element.mLayerBit, replaceLayer);
+                                //mLayer.bitOnAll(element.mLayerBit, true);
                                 mCopyElementList.Add(element);
                             }
                         }
@@ -1629,7 +1655,7 @@ namespace Mini3DCad
         {
             List<SurfaceData> surfaveDataList = new List<SurfaceData>();
             for (int i = 0;i < mElementList.Count;i++) {
-                if (mElementList[i].drawChk(mLayer) && mElementList[i].mDisp3D)
+                if (mElementList[i].isDraw(mLayer) && mElementList[i].mDisp3D)
                     surfaveDataList.AddRange(mElementList[i].mPrimitive.mSurfaceDataList);
             }
             return surfaveDataList;
@@ -1659,7 +1685,7 @@ namespace Mini3DCad
         {
             int count = 0;
             for (int i = 0; i < mElementList.Count; i++) {
-                if (mElementList[i].drawChk(mLayer))
+                if (mElementList[i].isDraw(mLayer))
                     count++;
             }
             return count;
@@ -1677,6 +1703,8 @@ namespace Mini3DCad
             dlg.mRevolutionDivideAngle = mRevolutionDivideAng;
             dlg.mSweepDivideAngle = mSweepDivideAng;
             dlg.mDataFolder = mMainWindow.mFileData.mBaseDataFolder;
+            dlg.mBackupFolder = mMainWindow.mFileData.mBackupFolder;
+            dlg.mDiffTool = mMainWindow.mFileData.mDiffTool;
             if (dlg.ShowDialog() == true) {
                 mArcDivideAng = dlg.mArcDivideAngle;
                 mRevolutionDivideAng = dlg.mRevolutionDivideAngle;
@@ -1685,6 +1713,8 @@ namespace Mini3DCad
                     mMainWindow.mFileData.setBaseDataFolder(dlg.mDataFolder, false);
                     mMainWindow.reloadDataFileList();
                 }
+                mMainWindow.mFileData.mBackupFolder = dlg.mBackupFolder;
+                mMainWindow.mFileData.mDiffTool = dlg.mDiffTool;
             }
         }
 
@@ -1696,6 +1726,8 @@ namespace Mini3DCad
         {
             List<string[]> list = new List<string[]>();
             string[] buf = { "DataManage" };
+            list.Add(buf);
+            buf = new string[] { "AppName", mMainWindow.mAppName };
             list.Add(buf);
             buf = new string[] { "PrimitiveBrush", ylib.getBrushName(mPrimitiveBrush) };
             list.Add(buf);
@@ -1728,9 +1760,12 @@ namespace Mini3DCad
         /// <returns>リスト終了位置</returns>
         public int setDataList(List<string[]> dataList, int sp)
         {
+            string appName = "";
             while (sp < dataList.Count) {
                 string[] buf = dataList[sp++];
-                if (buf[0] == "PrimitiveBrush") {
+                if (buf[0] == "AppName") {
+                    appName = buf[1];
+                } else if (buf[0] == "PrimitiveBrush") {
                     mPrimitiveBrush = ylib.getBrsh(buf[1]);
                 } else if (buf[0] == "Face") {
                     mFace = (FACE3D)Enum.Parse(typeof(FACE3D), buf[1]);
@@ -1756,7 +1791,9 @@ namespace Mini3DCad
                     break;
                 }
             }
-            return sp;
+            if (appName == mMainWindow.mAppName || appName == "")
+                return sp;
+            return -1;
         }
 
         /// <summary>
@@ -1768,11 +1805,13 @@ namespace Mini3DCad
             if (!File.Exists(path))
                 return;
             List<string[]> dataList = ylib.loadCsvData(path);
+            if (0 == dataList.Count || dataList[0][0] != "DataManage")
+                return;
             mLayer.clear();
             mElementList.Clear();
             Element element;
             int sp = 0;
-            while (sp < dataList.Count) {
+            while (0 <= sp && sp < dataList.Count) {
                 string[] buf = dataList[sp++];
                 if (buf[0] == "Element") {
                     element = new Element(mLayerSize);

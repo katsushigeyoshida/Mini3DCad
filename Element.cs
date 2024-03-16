@@ -78,7 +78,7 @@ namespace Mini3DCad
         /// 表示条件の判定
         /// </summary>
         /// <returns>表示</returns>
-        public bool drawChk(Layer layer)
+        public bool isDraw(Layer layer)
         {
             if (!mRemove && mPrimitive != null &&
                 mPrimitive.mPrimitiveId != PrimitiveId.Non &&
@@ -98,8 +98,7 @@ namespace Mini3DCad
         /// <returns>ピックの有無</returns>
         public bool pickChk(Layer layer, Box b, FACE3D face)
         {
-            if (!mRemove && mLinkNo < 0 &&
-                (layer.bitAnd(mLayerBit) || layer.mLayerAll || layer.IsEmpty(mLayerBit))) {
+            if (isDraw(layer)) {
                 if (!b.outsideChk(mArea.toBox(face))) {
                     if (mPrimitive.pickChk(b, face))
                         return true;
@@ -107,7 +106,6 @@ namespace Mini3DCad
             }
             return false;
         }
-
 
         /// <summary>
         /// エレメント情報

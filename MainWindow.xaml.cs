@@ -22,7 +22,11 @@ namespace Mini3DCad
         private double mPrevWindowWidth;        //  変更前のウィンドウ幅
         private System.Windows.WindowState mWindowState = System.Windows.WindowState.Normal;  //  ウィンドウの状態(最大化/最小化)
 
-        private string mAppName = "Mini3DCAD";                  //  アプリ名
+        private List<string> mSystemSetMenu = new List<string>() {
+            "システム設定", "データバックアップ",
+            "図面データバックアップ管理",
+        };
+        public string mAppName = "Mini3DCAD";                   //  アプリ名
         private string mHelpFile = "Mini3DCad_Manual.pdf";      //  マニュアルファイル
         private int mPickBoxSize = 10;                          //  ピック領域サイズ
         private int mMouseScroolSize = 5;                       //  マウスによるスクロール単位
@@ -60,6 +64,7 @@ namespace Mini3DCad
             InitializeComponent();
 
             Title = mAppName;
+            mAppName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
 
             //  OpenGL 初期化
             glControl = new GLControl();
@@ -122,7 +127,7 @@ namespace Mini3DCad
         {
             if (mCommandOpe.mLayerChkListDlg != null)
                 mCommandOpe.mLayerChkListDlg.Close();
-            mCommandOpe.saveFile();
+            mCommandOpe.saveFile(true);
             mCommandOpe.saveKeycommnad();
             WindowFormSave();
         }
@@ -176,6 +181,9 @@ namespace Mini3DCad
             //  図面データ保存フォルダ
             if (0 < Properties.Settings.Default.BaseDataFolder.Length)
                 mFileData.mBaseDataFolder = Properties.Settings.Default.BaseDataFolder;
+            if (0 < Properties.Settings.Default.BackupFolder.Length)
+                mFileData.mBackupFolder = Properties.Settings.Default.BackupFolder;
+            mFileData.mDiffTool = Properties.Settings.Default.DiffTool;
             //  図面分類
             if (0 < Properties.Settings.Default.GenreName.Length)
                 mFileData.mGenreName = Properties.Settings.Default.GenreName;
@@ -192,9 +200,11 @@ namespace Mini3DCad
         {
             //  図面分類
             Properties.Settings.Default.BaseDataFolder = mFileData.mBaseDataFolder;
+            Properties.Settings.Default.BackupFolder = mFileData.mBackupFolder;
             Properties.Settings.Default.GenreName = mFileData.mGenreName;
             Properties.Settings.Default.CategoryName = mFileData.mCategoryName;
             Properties.Settings.Default.DataName = mFileData.mDataName;
+            Properties.Settings.Default.DiffTool = mFileData.mDiffTool;
 
             //  Windowの位置とサイズを保存(登録項目をPropeties.settingsに登録して使用する)
             Properties.Settings.Default.MainWindowTop = Top;
@@ -870,7 +880,7 @@ namespace Mini3DCad
         /// <param name="e"></param>
         private void btSetting_Click(object sender, RoutedEventArgs e)
         {
-            mDataManage.setSystemProperty();
+            systemMenu();
         }
 
         /// <summary>
@@ -1016,6 +1026,32 @@ namespace Mini3DCad
                         path += ".png";
                     ylib.saveBitmapImage(bitmapSource, path);
                 }
+            }
+        }
+
+        /// <summary>
+        /// システム設定
+        /// </summary>
+        private void systemMenu()
+        {
+            MenuDialog dlg = new MenuDialog();
+            dlg.Owner = this;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            dlg.Title = "システム設定";
+            dlg.mMenuList = mSystemSetMenu;
+            dlg.ShowDialog();
+            switch (dlg.mResultMenu) {
+                case "システム設定":
+                    mDataManage.setSystemProperty();
+                    break;
+                case "データバックアップ":
+                    int count = 0;
+                    count += mFileData.dataBackUp(false);
+                    ylib.messageBox(this, $"{count} ファイルのバックアップを更新しました。");
+                    break;
+                case "図面データバックアップ管理":
+                    mFileData.dataRestor();
+                    break;
             }
         }
     }

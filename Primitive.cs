@@ -153,8 +153,8 @@ namespace Mini3DCad
         public bool mPick = false;                                              //  ピック状態
         public List<SurfaceData> mSurfaceDataList;                              //  3D座標データ
         public List<List<Point3D>> mVertexList;                                 //  2D表示用3D座標データ
-        public bool mReverse = false;
-
+        public bool mReverse = false;                                           //  Surfaceの座標回転方向変換
+        public bool mSurfaceVertex = false;                                     //  Debug用
 
         public YLib ylib = new YLib();
 
@@ -1630,14 +1630,17 @@ namespace Mini3DCad
         public override void createVertexData()
         {
             mVertexList = new List<List<Point3D>>();
-            mVertexList.Add(mPolygon.toPoint3D(true));
-            //(List<Point3D> triangles, bool reverse) = mPolygon.cnvTriangles();
-            //if (triangles.Count < 3)
-            //    return;
-            //for (int i = 0; i < triangles.Count; i += 3) {
-            //    List<Point3D> plist = new List<Point3D> { triangles[i], triangles[i + 1], triangles[i + 2], triangles[i] };
-            //    mVertexList.Add(plist);
-            //}
+            if (!mSurfaceVertex) {
+                mVertexList.Add(mPolygon.toPoint3D(true));
+            } else {
+                (List<Point3D> triangles, bool reverse) = mPolygon.cnvTriangles();
+                if (triangles.Count < 3)
+                    return;
+                for (int i = 0; i < triangles.Count; i += 3) {
+                    List<Point3D> plist = new List<Point3D> { triangles[i], triangles[i + 1], triangles[i + 2], triangles[i] };
+                    mVertexList.Add(plist);
+                }
+            }
         }
 
         /// <summary>

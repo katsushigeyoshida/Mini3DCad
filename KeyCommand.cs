@@ -56,11 +56,13 @@ namespace Mini3DCad
         /// コマンドの実行
         /// </summary>
         /// <param name="command">コマンド文字列</param>
+        /// <param name="face">2D平面</param>
         /// <returns></returns>
-        public bool execCommand(string command)
+        public bool execCommand(string command, FACE3D face)
         {
             if (command.Length == 0)
                 return false;
+            mFace = face;
             getCommandParameter(command);
             switch (mMainCmd[mCommandNo]) {
                 case "point":
@@ -181,6 +183,7 @@ namespace Mini3DCad
         private Point3D getPoint(string xyz, Point3D prev)
         {
             Point3D p = new Point3D();
+            bool zflag = false;
             string[] sep = { "x", "y", "z", "dx", "dy", "dz", ",", " " };
             List<string> list = ylib.splitString(xyz, sep);
             for (int i = 0; i < list.Count; i++) {
@@ -190,13 +193,19 @@ namespace Mini3DCad
                     p.y = ycalc.expression(list[++i]);
                 } else if (list[i] == "z" && i + 1 < list.Count) {
                     p.z = ycalc.expression(list[++i]);
+                    zflag = true;
                 } else if (list[i] == "dx" && i + 1 < list.Count) {
                     p.x = ycalc.expression(list[++i]) + prev.x;
                 } else if (list[i] == "dy" && i + 1 < list.Count) {
                     p.y = ycalc.expression(list[++i]) + prev.y;
                 } else if (list[i] == "dz" && i + 1 < list.Count) {
                     p.z = ycalc.expression(list[++i]) + prev.z;
+                    zflag = true;
                 }
+            }
+            if (!zflag) {
+                PointD pos = new PointD(p.x, p.y);
+                p = new Point3D(pos, mFace);
             }
 
             return p;

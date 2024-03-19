@@ -44,8 +44,7 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
-        <CheckBox Name="chFaceColor" Content="透明" Margin="190,65,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <CheckBox x:Name="chFaceColorEnable" Margin="250,65,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <CheckBox x:Name="chFaceColorEnable" Margin="190,65,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <Label Content="両面表示" Margin="5,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <CheckBox Name="chBothShading" Margin="80,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <CheckBox x:Name="chBothShadingEnable" Margin="110,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />

@@ -282,9 +282,11 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="primitive">Primitive</param>
         /// <param name="dataList">データリスト</param>
-        public void copyProperty(Primitive primitive, bool dataList = false)
+        /// <param name="id">Primitive ID</param>
+        public void copyProperty(Primitive primitive, bool dataList = false, bool id = false)
         {
-            mPrimitiveId = primitive.mPrimitiveId;
+            if (id)
+                mPrimitiveId = primitive.mPrimitiveId;
             mPrimitiveFace = primitive.mPrimitiveFace;
             mLineThickness = primitive.mLineThickness;
             mLineColor = primitive.mLineColor;
@@ -719,7 +721,7 @@ namespace Mini3DCad
         public override Primitive toCopy()
         {
             PointPrimitive point = new PointPrimitive();
-            point.copyProperty(this, true);
+            point.copyProperty(this, true, true);
             point.mPoint = mPoint.toCopy();
             return point;
         }
@@ -941,7 +943,7 @@ namespace Mini3DCad
         public override Primitive toCopy()
         {
             LinePrimitive line = new LinePrimitive();
-            line.copyProperty(this, true);
+            line.copyProperty(this, true, true);
             line.mLine = mLine.toCopy();
             return line;
         }
@@ -1207,7 +1209,7 @@ namespace Mini3DCad
         public override Primitive toCopy()
         {
             ArcPrimitive arc = new ArcPrimitive();
-            arc.copyProperty(this, true);
+            arc.copyProperty(this, true, true);
             arc.mArc = mArc.toCopy();
             arc.mDivideAngle = mDivideAngle;
             return arc;
@@ -1483,7 +1485,7 @@ namespace Mini3DCad
         public override Primitive toCopy()
         {
             PolylinePrimitive polyline = new PolylinePrimitive();
-            polyline.copyProperty(this, true);
+            polyline.copyProperty(this, true, true);
             polyline.mPolyline = mPolyline.toCopy();
             return polyline;
         }
@@ -1802,7 +1804,7 @@ namespace Mini3DCad
         public override Primitive toCopy()
         {
             PolygonPrimitive polygon = new PolygonPrimitive();
-            polygon.copyProperty(this, true);
+            polygon.copyProperty(this, true, true);
             polygon.mPolygon = mPolygon.toCopy();
             return polygon;
         }
@@ -1929,13 +1931,18 @@ namespace Mini3DCad
         {
             mSurfaceDataList = new List<SurfaceData>();
             SurfaceData surfaceData;
+            Point3D normal = mPolygon.getNormalLine();
+            bool wise = (Math.PI / 2) > normal.angle(mVector);
             if (mClose) {
                 //  1面(端面)
                 surfaceData = new SurfaceData();
                 (surfaceData.mVertexList, bool reverse) = mPolygon.cnvTriangles();
                 Point3D v0 = surfaceData.mVertexList[0].getNormal(surfaceData.mVertexList[1], surfaceData.mVertexList[2]);
-                if (v0.angle(mVector) < Math.PI / 2)
+                if (v0.angle(mVector) < Math.PI / 2) {
+                    //if (wise)
                     surfaceData.mVertexList.Reverse();
+                    //wise = true;
+                }
                 surfaceData.mDrawType = DRAWTYPE.TRIANGLES;
                 surfaceData.mFaceColor = mFaceColors[0];
                 surfaceData.reverse(mReverse);
@@ -1955,16 +1962,26 @@ namespace Mini3DCad
             surfaceData.mVertexList = new List<Point3D>();
             List<Point3D> outline = mPolygon.toPoint3D();
             for (int i = 0; i < outline.Count; i++) {
-                surfaceData.mVertexList.Add(outline[i]);
                 Point3D np = outline[i].toCopy();
                 np.translate(mVector);
-                surfaceData.mVertexList.Add(np);
+                if (!wise) {
+                    surfaceData.mVertexList.Add(outline[i]);
+                    surfaceData.mVertexList.Add(np);
+                } else {
+                    surfaceData.mVertexList.Add(np);
+                    surfaceData.mVertexList.Add(outline[i]);
+                }
             }
             if (mClose) {
-                surfaceData.mVertexList.Add(outline[0]);
                 Point3D np = outline[0].toCopy();
                 np.translate(mVector);
-                surfaceData.mVertexList.Add(np);
+                if (!wise) {
+                    surfaceData.mVertexList.Add(outline[0]);
+                    surfaceData.mVertexList.Add(np);
+                } else {
+                    surfaceData.mVertexList.Add(np);
+                    surfaceData.mVertexList.Add(outline[0]);
+                }
             }
             surfaceData.mDrawType = DRAWTYPE.QUAD_STRIP;
             surfaceData.mFaceColor = mFaceColors[0];
@@ -2164,7 +2181,7 @@ namespace Mini3DCad
         public override Primitive toCopy()
         {
             ExtrusionPrimitive extrusion = new ExtrusionPrimitive();
-            extrusion.copyProperty(this, true);
+            extrusion.copyProperty(this, true, true);
             extrusion.mPolygon = mPolygon.toCopy();
             extrusion.mVector = mVector.toCopy();
             extrusion.mClose = mClose;
@@ -2507,7 +2524,7 @@ namespace Mini3DCad
         public override Primitive toCopy()
         {
             RevolutionPrimitive revolusion = new RevolutionPrimitive();
-            revolusion.copyProperty(this, true);
+            revolusion.copyProperty(this, true, true);
             revolusion.mSa = mSa;
             revolusion.mEa = mEa;
             revolusion.mDivideAngle = mDivideAngle;
@@ -2991,7 +3008,7 @@ namespace Mini3DCad
         public override Primitive toCopy()
         {
             SweepPrimitive revolusion = new SweepPrimitive();
-            revolusion.copyProperty(this, true);
+            revolusion.copyProperty(this, true, true);
             revolusion.mSa = mSa;
             revolusion.mEa = mEa;
             revolusion.mDivideAngle = mDivideAngle;

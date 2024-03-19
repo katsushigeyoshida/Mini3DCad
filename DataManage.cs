@@ -749,13 +749,13 @@ namespace Mini3DCad
                     ele1.mPrimitive.mPrimitiveId == PrimitiveId.Arc ||
                     ele1.mPrimitive.mPrimitiveId == PrimitiveId.Polyline)) {
 
-                    Polyline3D polyline = ele0.mPrimitive.getVertexList();
+                    Polyline3D pl0 = ele0.mPrimitive.getVertexList();
                     Polyline3D pl1 = ele1.mPrimitive.getVertexList();
-                    if (polyline.nearStart(picks[0].mPos, mFace))               //  ピック位置に近い方を終点にする
-                        polyline.mPolyline.Reverse();
-                    polyline.add(pl1.toPoint3D(), picks[1].mPos, mFace, true);  //  ピック位置に近い方を始点にして追加
-                    polyline.squeeze();
-                    addPolyline(polyline, ele0.mPrimitive.mLineColor, ele0.mPrimitive.mFaceColors[0]);
+                    if (pl0.nearStart(picks[0].mPos, mFace))               //  ピック位置に近い方を終点にする
+                        pl0.mPolyline.Reverse();
+                    pl0.add(pl1.toPoint3D(), picks[1].mPos, mFace, true);  //  ピック位置に近い方を始点にして追加
+                    pl0.squeeze();
+                    addPolyline(pl0, ele0.mPrimitive.mLineColor, ele0.mPrimitive.mFaceColors[0]);
                     mElementList[^1].copyLayer(ele0);
                 }
             } else
@@ -765,6 +765,42 @@ namespace Mini3DCad
             for (int i = 0; i < picks.Count; i++) {
                 mElementList[picks[i].mElementNo].mRemove = true;
                 addLink(picks[i].mElementNo);
+            }
+        }
+
+        /// <summary>
+        /// 線分要素に分解する
+        /// </summary>
+        /// <param name="picks">ピックリスト</param>
+        public void disassemble(List<PickData> picks)
+        {
+            if (picks.Count < 1)
+                return;
+            foreach (var pick in picks) {
+                Element ele = mElementList[pick.mElementNo];
+                if (ele.mPrimitive.mPrimitiveId == PrimitiveId.Polyline) {
+                    PolylinePrimitive polyline = (PolylinePrimitive)ele.mPrimitive;
+                    List<Point3D> plist = polyline.mPolyline.toPoint3D();
+                    for (int i = 0; i < plist.Count - 1; i++) {
+                        addLine(plist[i], plist[i + 1]);
+                        Element lineEle = mElementList[^1];
+                        lineEle.copyProperty(ele);
+                        lineEle.copyLayer(ele);
+                    }
+                } else if (ele.mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
+                    PolygonPrimitive polygon = (PolygonPrimitive)ele.mPrimitive;
+                    List<Point3D> plist = polygon.mPolygon.toPoint3D();
+                    for (int i = 0; i < plist.Count; i++) {
+                        addLine(plist[i], plist[(i + 1) % plist.Count]);
+                        Element lineEle = mElementList[^1];
+                        lineEle.copyProperty(ele);
+                        lineEle.copyLayer(ele);
+                    }
+                } else
+                    continue;
+                //  undo用のリンクエレメント作成
+                mElementList[pick.mElementNo].mRemove = true;
+                addLink(pick.mElementNo);
             }
         }
 
@@ -965,7 +1001,6 @@ namespace Mini3DCad
                 dlg.mLineColor = element.mPrimitive.mLineColor;
                 dlg.mLineFont = element.mPrimitive.mLineType;
                 dlg.mFaceColor = element.mPrimitive.mFaceColors[0];
-                dlg.mFaceColorNull = element.mPrimitive.mFaceColors[0] == null;
                 dlg.mDisp3D = element.mDisp3D;
                 dlg.mBothShading = element.mBothShading;
                 dlg.mChkList = mLayer.getLayerChkList(element.mLayerBit);
@@ -995,26 +1030,26 @@ namespace Mini3DCad
                     dlg.mArcRadiusOn = false;
                     dlg.mArcStartAngle = ylib.R2D(sweep.mSa);
                     dlg.mArcEndAngle = ylib.R2D(sweep.mEa);
+                    dlg.mReverseOn = true;
+                    dlg.mReverse = element.mPrimitive.mReverse;
                 }
                 if (element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon ||
                     element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
                     dlg.mReverseOn = true;
                     dlg.mReverse = element.mPrimitive.mReverse;
-                    //dlg.mReverse = false;
                 }
                 if (element.mPrimitive.mPrimitiveId == PrimitiveId.Extrusion ||
                     element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
                     dlg.mLineFontOn = false;
+                    dlg.mReverseOn = true;
+                    dlg.mReverse = element.mPrimitive.mReverse;
                 }
 
                 if (dlg.ShowDialog() == true) {
                     element.mName = dlg.mName;
                     element.mPrimitive.mLineColor = dlg.mLineColor;
                     element.mPrimitive.mLineType = dlg.mLineFont;
-                    if (dlg.mFaceColorNull)
-                        element.mPrimitive.mFaceColors[0] = null;
-                    else
-                        element.mPrimitive.mFaceColors[0] = dlg.mFaceColor;
+                    element.mPrimitive.mFaceColors[0] = dlg.mFaceColor;
                     element.mDisp3D = dlg.mDisp3D;
                     element.mBothShading = dlg.mBothShading;
                     element.mLayerBit = mLayer.setLayerChkList(element.mLayerBit, dlg.mChkList);
@@ -1039,15 +1074,6 @@ namespace Mini3DCad
                         sweep.mEa = ylib.D2R(dlg.mArcEndAngle);
                     }
                     element.mPrimitive.mReverse = dlg.mReverse;
-                    //if (dlg.mReverse) {
-                    //    if (element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
-                    //        PolygonPrimitive polygon = (PolygonPrimitive)element.mPrimitive;
-                    //        polygon.mPolygon.mPolygon.Reverse();
-                    //    } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
-                    //        RevolutionPrimitive revolution = (RevolutionPrimitive)element.mPrimitive;
-                    //        revolution.mOutLine.mPolyline.Reverse();
-                    //    }
-                    //}
                     element.mPrimitive.createSurfaceData();
                     element.mPrimitive.createVertexData();
                     element.update3DData();
@@ -1081,10 +1107,7 @@ namespace Mini3DCad
                 if (dlg.mLineFontEnable)
                     element.mPrimitive.mLineType = dlg.mLineFont;
                 if (dlg.mFaceColorEnable) {
-                    if (dlg.mFaceColorNull)
-                        element.mPrimitive.mFaceColors[0] = null;
-                    else
-                        element.mPrimitive.mFaceColors[0] = dlg.mFaceColor;
+                    element.mPrimitive.mFaceColors[0] = dlg.mFaceColor;
                 }
                 if (dlg.mDisp3DEnable)
                     element.mDisp3D = dlg.mDisp3D;

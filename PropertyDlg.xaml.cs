@@ -17,7 +17,6 @@ namespace Mini3DCad
         public bool mLineColoeEnable = false;
         public Brush mFaceColor = Brushes.Blue;
         public string mFaceColorName = "Blue";
-        public bool mFaceColorNull = false;
         public bool mFaceColorEnable = false;
         public int mLineFont = 0;
         public bool mLineFontOn = true;
@@ -65,12 +64,11 @@ namespace Mini3DCad
             if (0 <= colorindex)
                 cbLineColor.SelectedIndex = colorindex;
             colorindex = ylib.getBrushNo(mFaceColor);
-            if (!mFaceColorNull && 0 <= colorindex)
+            if (0 <= colorindex)
                 cbFaceColor.SelectedIndex = ylib.getBrushNo(mFaceColor);
             cbLineFont.ItemsSource   = mLineFontName;
             cbLineFont.SelectedIndex = mLineFont;
             cbLineFont.IsEnabled     = mLineFontOn;
-            chFaceColor.IsChecked    = mFaceColorNull;
             chBothShading.IsChecked  = mBothShading;
             chDisp3D.IsChecked       = mDisp3D;
             tbArcRadius.Text         = mArcRadius.ToString();
@@ -130,8 +128,7 @@ namespace Mini3DCad
                 mFaceColorName = ylib.mBrushList[cbFaceColor.SelectedIndex].colorTitle;
             }
             mLineColoeEnable = chLineColorEnable.IsChecked == true;
-            mFaceColorNull = chFaceColor.IsChecked == true;
-            mFaceColorEnable = chFaceColor.IsChecked == true;
+            mFaceColorEnable = chFaceColorEnable.IsChecked == true;
             mBothShading = (chBothShading.IsChecked == true);
             mBothShadingEnable = chBothShading.IsChecked == true;
             mDisp3D = chDisp3D.IsChecked == true;

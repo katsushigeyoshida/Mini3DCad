@@ -993,6 +993,8 @@ namespace Mini3DCad
         public Color4 brush2Color4(System.Windows.Media.Brush brush)
         {
             Color4 col = new Color4();
+            if (brush == null)
+                return col;
             System.Windows.Media.Color color = (brush as SolidColorBrush).Color;
             col.R = (float)color.R / 256;
             col.G = (float)color.G / 256;

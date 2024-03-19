@@ -65,6 +65,20 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// Element属性をコピーする
+        /// </summary>
+        /// <param name="element"></param>
+        /// <param name="dataList">データリスト</param>
+        /// <param name="id">Primitive ID</param>
+        public void copyProperty(Element element, bool dataList = false, bool id = false)
+        {
+            mName = element.mName;
+            mPrimitive.copyProperty(element.mPrimitive, dataList, id);
+            mBothShading = element.mBothShading;
+            mDisp3D = element.mDisp3D;
+        }
+
+        /// <summary>
         /// レイヤーBitをコピー
         /// </summary>
         /// <param name="element">エレメント</param>

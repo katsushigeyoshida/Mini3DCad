@@ -2,6 +2,9 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup />
   <ItemGroup>
+    <Compile Update="ImageTrimming.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Update="PropertyDlg.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -13,6 +16,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="ImageTrimming.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Update="PropertyDlg.xaml">
       <SubType>Designer</SubType>
     </Page>

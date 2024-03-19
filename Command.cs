@@ -19,12 +19,12 @@ namespace Mini3DCad
         non, loc, pick,
         point, line, circle, arc, rect, polyline, polygon,
         translate, rotate, offset, mirror, trim, strach, scale,
+        connect, divide,disassemble,  changeProperty, changePropertyAll,
         copyTranslate, copyRotate, copyOffset, copyMirror, copyTrim, copyScale, copyElement, pasteElement,
-        connect, divide, changeProperty, changePropertyAll,
         extrusion, revolution, sweep, release,
         measure, measureDistance, measureAngle,
         dispLayer, addLayer, removeLayer, info, remove, undo,
-        screenCopy, screenSave,
+        screenCopy, screenSave, imageTrimming,
         save, load, back, cancel, close
     }
 
@@ -73,6 +73,7 @@ namespace Mini3DCad
             new Command("2D編集",     "反転",         OPERATION.mirror),
             new Command("2D編集",     "トリム",       OPERATION.trim),
             new Command("2D編集",     "拡大縮小",     OPERATION.scale),
+            new Command("2D編集",     "分解",         OPERATION.disassemble),
             new Command("2D編集",     "分割",         OPERATION.divide),
             new Command("2D編集",     "接続",         OPERATION.connect),
             new Command("2D編集",     "属性変更",     OPERATION.changeProperty),
@@ -107,6 +108,7 @@ namespace Mini3DCad
             //new Command("ファイル", "読込",         OPERATION.load),
             new Command("ツール",     "画面コピー",   OPERATION.screenCopy),
             new Command("ツール",     "画面保存",     OPERATION.screenSave),
+            new Command("ツール",    "イメージトリミング", OPERATION.imageTrimming),
             new Command("ツール",     "戻る",         OPERATION.back),
             new Command("キャンセル", "キャンセル",   OPERATION.cancel),
             new Command("終了",       "終了",         OPERATION.close),
@@ -241,6 +243,10 @@ namespace Mini3DCad
                     mDataManage.connect(picks);
                     opeMode = OPEMODE.clear;
                     break;
+                case OPERATION.disassemble:
+                    mDataManage.disassemble(picks);
+                    opeMode = OPEMODE.clear;
+                    break;
                 case OPERATION.changeProperty:
                     mDataManage.changeProperty(picks);
                     opeMode = OPEMODE.clear;
@@ -307,6 +313,9 @@ namespace Mini3DCad
                     mMainWindow.screenSave();
                     opeMode = OPEMODE.clear;
                     break;
+                case OPERATION.imageTrimming:
+                    imageTrimming(mMainWindow);
+                    break;
                 case OPERATION.back:
                     opeMode = OPEMODE.non;
                     break;
@@ -325,7 +334,7 @@ namespace Mini3DCad
             }
             if (opeMode != OPEMODE.loc)
                 mDataManage.updateData();
-            if (mDataManage.mOperationCount % mSaveOperationCount == 0)
+            if ((mDataManage.mOperationCount % mSaveOperationCount) == 0)
                 saveFile();
             mMainWindow.dispTitle();
             return opeMode;
@@ -336,10 +345,10 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="command">コマンド文字列</param>
         /// <returns></returns>
-        public bool keyCommand(string command)
+        public bool keyCommand(string command, FACE3D face)
         {
             mDataManage.mOperationCount++;
-            return mKeyCommand.execCommand(command);
+            return mKeyCommand.execCommand(command, face);
         }
 
         /// <summary>
@@ -406,6 +415,21 @@ namespace Mini3DCad
             dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             if (dlg.ShowDialog() == true) {
                 mDataManage.mLayer.add(dlg.mEditText);
+            }
+        }
+
+        /// <summary>
+        /// クリップボードのイメージをトリミングする
+        /// </summary>
+        /// <param name="window">メインウィンドウ</param>
+        private void imageTrimming(Window window)
+        {
+            ImageTrimming dlg = new ImageTrimming();
+            dlg.Owner = window;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            dlg.Title = "画像のサイズ設定";
+            dlg.mCancelEnable = false;
+            if (dlg.ShowDialog() == true) {
             }
         }
 

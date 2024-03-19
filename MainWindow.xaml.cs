@@ -314,7 +314,7 @@ namespace Mini3DCad
                     slist[i].mFaceColor, scale, v);
             }
             m3Dlib.setAreaFrameDisp(false);
-            m3Dlib.drawAxis(scale, v);
+            //m3Dlib.drawAxis(scale, v);
             m3Dlib.rendeFrameEnd();
         }
 
@@ -419,7 +419,7 @@ namespace Mini3DCad
             if (mOperationMode == OPEMODE.loc) {
                 mLocPick.autoLoc(wpos, picks);
                 //  データ登録(データ数不定コマンド)
-                if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement, true))
+                if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement, 0 == picks.Count))
                     commandClear();
             } else {
                 mLocPick.pickElement(wpos, picks, mOperationMode);
@@ -864,7 +864,7 @@ namespace Mini3DCad
         private void cbCommand_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key == Key.Enter) {
-                if (mCommandOpe.keyCommand(cbCommand.Text)) {
+                if (mCommandOpe.keyCommand(cbCommand.Text, mDataManage.mFace)) {
                     cbCommand.ItemsSource = mCommandOpe.mKeyCommand.keyCommandList(cbCommand.Text);
                     commandClear();
                     dispTitle();

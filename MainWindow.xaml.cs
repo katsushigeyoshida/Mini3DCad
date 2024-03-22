@@ -880,7 +880,7 @@ namespace Mini3DCad
         /// <param name="e"></param>
         private void btSetting_Click(object sender, RoutedEventArgs e)
         {
-            systemMenu();
+            mDataManage.setSystemProperty();
         }
 
         /// <summary>
@@ -1026,32 +1026,6 @@ namespace Mini3DCad
                         path += ".png";
                     ylib.saveBitmapImage(bitmapSource, path);
                 }
-            }
-        }
-
-        /// <summary>
-        /// システム設定
-        /// </summary>
-        private void systemMenu()
-        {
-            MenuDialog dlg = new MenuDialog();
-            dlg.Owner = this;
-            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            dlg.Title = "システム設定";
-            dlg.mMenuList = mSystemSetMenu;
-            dlg.ShowDialog();
-            switch (dlg.mResultMenu) {
-                case "システム設定":
-                    mDataManage.setSystemProperty();
-                    break;
-                case "データバックアップ":
-                    int count = 0;
-                    count += mFileData.dataBackUp(false);
-                    ylib.messageBox(this, $"{count} ファイルのバックアップを更新しました。");
-                    break;
-                case "図面データバックアップ管理":
-                    mFileData.dataRestor();
-                    break;
             }
         }
     }

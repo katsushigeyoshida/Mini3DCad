@@ -525,9 +525,8 @@ namespace Mini3DCad
             }
             if (!Directory.Exists(mBackupFolder)) 
                 Directory.CreateDirectory(mBackupFolder);
-            string backupFolder = Path.Combine(mBackupFolder, Path.GetFileName(mBaseDataFolder));
-            if (Path.GetFullPath(mBaseDataFolder) != Path.GetFullPath(backupFolder)) {
-                DirectoryDiff directoryDiff = new DirectoryDiff(mBaseDataFolder, backupFolder);
+            if (Path.GetFullPath(mBaseDataFolder) != Path.GetFullPath(mBackupFolder)) {
+                DirectoryDiff directoryDiff = new DirectoryDiff(mBaseDataFolder, mBackupFolder);
                 List<FilesData> removeFile = directoryDiff.getNoExistFile();
                 bool noExistFileRemove = true;
                 if (0 < removeFile.Count) {
@@ -554,14 +553,13 @@ namespace Mini3DCad
                 ylib.messageBox(mMainWindow, "バックアップのフォルダが設定されていません。");
                 return;
             }
-            string backupFolder = Path.Combine(mBackupFolder, Path.GetFileName(mBaseDataFolder));
             DiffFolder dlg = new DiffFolder();
             dlg.Owner = mMainWindow;
             dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             dlg.mSrcTitle = "比較元(データフォルダ)";
             dlg.mDestTitle = "比較先(バックアップ先)";
             dlg.mSrcFolder = mBaseDataFolder;
-            dlg.mDestFolder = backupFolder;
+            dlg.mDestFolder = mBackupFolder;
             dlg.mDiffTool = mDiffTool;
             dlg.ShowDialog();
         }

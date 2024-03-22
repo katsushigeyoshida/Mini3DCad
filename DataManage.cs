@@ -45,10 +45,11 @@ namespace Mini3DCad
         public Box3D mArea;                                             //  要素領域
         public Box3D mCopyArea;                                         //  要素領域
         public int mOperationCount = 0;                                 //  操作回数
-        public List<string> mCommandHistory = new List<string>();
+        public List<string> mCommandHistory = new List<string>();       //  コマンド履歴
         public int mFirstEntityCount = 0;                               //  編集開始時の要素数
-        public int mLayerSize = 64;                                     //  レイヤーサイズ
-        public Layer mLayer;
+        public int mLayerSize = 64;                                     //  レイヤサイズ
+        public Layer mLayer;                                            //  レイヤ
+        public string mZumenComment;                                    //  図面コメント
 
         public List<string[]> mImageFilters = new List<string[]>() {
                     new string[] { "PNGファイル", "*.png" },
@@ -83,6 +84,10 @@ namespace Mini3DCad
         public void clear()
         {
             mElementList.Clear();
+            mZumenComment = "";
+            mOperationCount = 0;
+            mFirstEntityCount = 0;
+            mLayer.clear();
         }
 
         /// <summary>
@@ -1728,6 +1733,7 @@ namespace Mini3DCad
             dlg.mDataFolder = mMainWindow.mFileData.mBaseDataFolder;
             dlg.mBackupFolder = mMainWindow.mFileData.mBackupFolder;
             dlg.mDiffTool = mMainWindow.mFileData.mDiffTool;
+            dlg.mFileData = mMainWindow.mFileData;
             if (dlg.ShowDialog() == true) {
                 mArcDivideAng = dlg.mArcDivideAngle;
                 mRevolutionDivideAng = dlg.mRevolutionDivideAngle;
@@ -1761,6 +1767,8 @@ namespace Mini3DCad
             buf = new string[] { "RevolutionDivideAngle", mRevolutionDivideAng.ToString() };
             list.Add(buf);
             buf = new string[] { "SweepDivideAngle", mSweepDivideAng.ToString() };
+            list.Add(buf);
+            buf = new string[] { "ZumenComment", mZumenComment };
             list.Add(buf);
             if (mArea != null) {
                 buf = new string[] { "Area",
@@ -1798,6 +1806,8 @@ namespace Mini3DCad
                     mRevolutionDivideAng = ylib.doubleParse(buf[1]);
                 } else if (buf[0] == "SweepDivideAngle") {
                     mSweepDivideAng = ylib.doubleParse(buf[1]);
+                } else if (buf[0] == "ZumenComment") {
+                    mZumenComment = buf[1];
                 } else if (buf[0] == "Area" && buf.Length == 7) {
                     mArea = new Box3D();
                     mArea.mMin.x = ylib.doubleParse(buf[1]);
@@ -1830,8 +1840,7 @@ namespace Mini3DCad
             List<string[]> dataList = ylib.loadCsvData(path);
             if (0 == dataList.Count || dataList[0][0] != "DataManage")
                 return;
-            mLayer.clear();
-            mElementList.Clear();
+            clear();
             Element element;
             int sp = 0;
             while (0 <= sp && sp < dataList.Count) {

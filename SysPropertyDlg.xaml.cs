@@ -15,6 +15,7 @@ namespace Mini3DCad
         public string mDataFolder = "";                     //  データフォルダ
         public string mBackupFolder = "";                   //  バックアップフォルダ
         public string mDiffTool = "";                       //  ファイル比較ツール
+        public FileData mFileData;
 
         private string mDataFolderListPath = "DataFolderList.csv";      //  データフォルダパスリストファイルパス
         private List<string> mDataFolderList = new List<string>();      //  データフォルダパスリスト
@@ -122,6 +123,28 @@ namespace Mini3DCad
         {
             DialogResult = false;
             Close();
+        }
+
+        /// <summary>
+        /// [データバックアップ]ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btDataBackup_Click(object sender, RoutedEventArgs e)
+        {
+            int count = 0;
+            count += mFileData.dataBackUp(false);
+            ylib.messageBox(this, $"{count} ファイルのバックアップを更新しました。");
+        }
+
+        /// <summary>
+        /// [データ復元]ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btDataRestore_Click(object sender, RoutedEventArgs e)
+        {
+            mFileData.dataRestor();
         }
     }
 }

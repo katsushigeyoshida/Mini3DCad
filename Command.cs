@@ -23,7 +23,7 @@ namespace Mini3DCad
         copyTranslate, copyRotate, copyOffset, copyMirror, copyTrim, copyScale, copyElement, pasteElement,
         extrusion, revolution, sweep, release,
         measure, measureDistance, measureAngle,
-        dispLayer, addLayer, removeLayer, info, remove, undo,
+        zumenComment, dispLayer, addLayer, removeLayer, info, remove, undo,
         screenCopy, screenSave, imageTrimming,
         save, load, back, cancel, close
     }
@@ -93,8 +93,8 @@ namespace Mini3DCad
             new Command("3D編集",     "掃引",         OPERATION.sweep),
             new Command("3D編集",     "解除",         OPERATION.release),
             new Command("3D編集",     "戻る",         OPERATION.back),
+            new Command("設定",       "図面コメント", OPERATION.zumenComment),
             new Command("設定",       "表示レイヤ",   OPERATION.dispLayer),
-            //new Command("設定",       "レイヤ追加",   OPERATION.addLayer),
             //new Command("設定",       "レイヤ削除",   OPERATION.removeLayer),
             new Command("設定",       "戻る",         OPERATION.back),
             new Command("計測",       "距離",         OPERATION.measureDistance),
@@ -277,6 +277,9 @@ namespace Mini3DCad
                     mDataManage.release(picks);
                     opeMode = OPEMODE.clear;
                     break;
+                case OPERATION.zumenComment:
+                    zumenComment();
+                    break;
                 case OPERATION.dispLayer:
                     setDispLayer();
                     opeMode = OPEMODE.clear;
@@ -430,6 +433,24 @@ namespace Mini3DCad
             dlg.Title = "画像のサイズ設定";
             dlg.mCancelEnable = false;
             if (dlg.ShowDialog() == true) {
+            }
+        }
+
+        /// <summary>
+        /// 図面情報の表示と編集(ダイヤログ表示)
+        /// </summary>
+        public void zumenComment()
+        {
+            InputBox dlg = new InputBox();
+            dlg.Owner = mMainWindow;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            dlg.mMultiLine = true;
+            dlg.mWindowSizeOutSet = true;
+            dlg.Title = "図面のコメント";
+            dlg.mEditText = mDataManage.mZumenComment;
+            if (dlg.ShowDialog() == true) {
+                mDataManage.mZumenComment = dlg.mEditText;
+                mDataManage.mOperationCount++;
             }
         }
 

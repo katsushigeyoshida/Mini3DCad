@@ -22,20 +22,16 @@ namespace Mini3DCad
         private double mPrevWindowWidth;        //  変更前のウィンドウ幅
         private System.Windows.WindowState mWindowState = System.Windows.WindowState.Normal;  //  ウィンドウの状態(最大化/最小化)
 
-        private List<string> mSystemSetMenu = new List<string>() {
-            "システム設定", "データバックアップ",
-            "図面データバックアップ管理",
-        };
         public string mAppName = "Mini3DCAD";                   //  アプリ名
         private string mHelpFile = "Mini3DCad_Manual.pdf";      //  マニュアルファイル
-        private int mPickBoxSize = 10;                          //  ピック領域サイズ
-        private int mMouseScroolSize = 5;                       //  マウスによるスクロール単位
         public OPEMODE mOperationMode = OPEMODE.non;            //  操作モード(loc,pick)
         public OPEMODE mPrevOpeMode = OPEMODE.non;              //  操作モードの前回値
         private Point mPreMousePos;                             //  マウスの前回位置(screen座標)
         private PointD mPrePosition;                            //  マウスの前回位置(world座標)
         private bool mMouseLeftButtonDown = false;              //  左ボタン状態
         private bool mMouseRightButtonDown = false;             //  右ボタン状態
+        private int mPickBoxSize = 10;                          //  ピック領域サイズ
+        private int mMouseScroolSize = 5;                       //  マウスによるスクロール単位
         private double[] mGridSizeMenu = {                      //  グリッドサイズメニュー
             0, 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 10,
             20, 30, 40, 50, 100, 200, 300, 400, 500, 1000
@@ -379,11 +375,14 @@ namespace Mini3DCad
                 //  領域表示/ピック
                 if (mDraw.areaOpe(wpos, mOperationMode))
                     mOperationMode = mPrevOpeMode;
+            } else {
+                if (0 < mDraw.mGridSize)
+                    wpos.round(Math.Abs(mDraw.mGridSize));
             }
-            if (0 < mDraw.mGridSize)
-                wpos.round(Math.Abs(mDraw.mGridSize));
             if (mOperationMode == OPEMODE.loc) {
                 //  ロケイトの追加
+                if (mCommandOpe.mOperation == OPERATION.stretch && ylib.onAltKey())
+                    mCommandOpe.mOperation = OPERATION.stretchArc;
                 mLocPick.mLocList.Add(wpos);
             }
             //  データ登録(データ数固定コマンド)
@@ -422,11 +421,8 @@ namespace Mini3DCad
                 if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement, 0 == picks.Count))
                     commandClear();
             } else {
-                mLocPick.pickElement(wpos, picks, mOperationMode);
-                //  ピック色表示
-                mLocPick.setPick();
+                mLocPick.pickElement(wpos, picks, mOperationMode);  //  ピック要素登録
                 mDraw.draw();
-                mLocPick.pickReset();
             }
             dispStatus(wpos);
         }
@@ -452,9 +448,8 @@ namespace Mini3DCad
                 Point pos = e.GetPosition(mCurCanvas);
                 PointD wpos = mDraw.mGDraw.cnvScreen2World(new PointD(pos));
                 List<int> picks = mLocPick.getPickNo(wpos, mDraw.mGDraw.screen2worldXlength(mPickBoxSize));
-                if (0 < picks.Count &&
-                    mCommandOpe.execCommand(OPERATION.changeProperty, mLocPick.mPickElement) == OPEMODE.clear)
-                    commandClear();
+                if (0 < picks.Count)
+                    commandExec(OPERATION.changeProperty, mLocPick.mPickElement);
             }
         }
 
@@ -509,56 +504,10 @@ namespace Mini3DCad
                 } else if (level == COMMANDLEVEL.sub) {
                     //  サブコマンド
                     OPERATION ope = mCommandData.getCommand(menu);
-                    mOperationMode = mCommandOpe.execCommand(ope, mLocPick.mPickElement);
-                    if (mOperationMode == OPEMODE.clear || mOperationMode == OPEMODE.non) {
-                        commandClear();
-                    }
+                    commandExec(ope, mLocPick.mPickElement);
                 }
                 dispStatus(null);
             }
-        }
-
-        /// <summary>
-        /// コマンド処理をクリア
-        /// </summary>
-        /// <param name="dispFit"></param>
-        private void commandClear(bool dispFit = false)
-        {
-            mCommandOpe.mOperation = OPERATION.non;
-            mOperationMode = OPEMODE.non;
-            mLocPick.mLocList.Clear();
-            mLocPick.mPickElement.Clear();
-            lbCommand.ItemsSource = mCommandData.getMainCommand();
-            lbCommand.SelectedIndex = -1;
-            if (mDataManage.mFace == FACE3D.NON)
-                renderFrame();
-            if (mDataManage.mFace != FACE3D.NON && dispFit) {
-                mDraw.dispFit();
-            } else {
-                mDraw.draw();
-            }
-        }
-
-        /// <summary>
-        /// 操作モードとマウス位置の表示
-        /// </summary>
-        /// <param name="wpos"></param>
-        public void dispStatus(PointD wpos)
-        {
-            if (mPrePosition == null)
-                return;
-            if (wpos == null)
-                wpos = mPrePosition;
-            tbStatus.Text = $"Mode [{mOperationMode}] Pick [{mLocPick.mPickElement.Count}] Loc [{mLocPick.mLocList.Count}] Grid[{mDraw.mGridSize}] {wpos.ToString("f2")}";
-        }
-
-        /// <summary>
-        /// 編集中の部品名の表示
-        /// </summary>
-        public void dispTitle()
-        {
-            string filename = Path.GetFileNameWithoutExtension(mCommandOpe.mDataFilePath);
-            Title = $"{mAppName}[{filename}][{mDataManage.getElementCount()}]";
         }
 
         /// <summary>
@@ -884,6 +833,46 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// [アンドゥ]ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btUndo_Click(object sender, RoutedEventArgs e)
+        {
+            commandExec(OPERATION.undo, null);
+        }
+
+        /// <summary>
+        /// [要素コピー]ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btEntityCopy_Click(object sender, RoutedEventArgs e)
+        {
+            commandExec(OPERATION.copyElement, mLocPick.mPickElement);
+        }
+
+        /// <summary>
+        /// [要素貼付]ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btEntityPaste_Click(object sender, RoutedEventArgs e)
+        {
+            commandExec(OPERATION.pasteElement, null);
+        }
+
+        /// <summary>
+        /// [画面コピー]ボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btScreenCopy_Click(object sender, RoutedEventArgs e)
+        {
+            screenCopy();
+        }
+
+        /// <summary>
         /// ヘルプボタン
         /// </summary>
         /// <param name="sender"></param>
@@ -891,6 +880,61 @@ namespace Mini3DCad
         private void btHelp_Click(object sender, RoutedEventArgs e)
         {
             ylib.openUrl(mHelpFile);
+        }
+
+        /// <summary>
+        /// コマンドの実行
+        /// </summary>
+        /// <param name="ope">コマンドコード</param>
+        /// <param name="picks">ピックリスト</param>
+        private void commandExec(OPERATION ope, List<PickData> picks)
+        {
+            mOperationMode = mCommandOpe.execCommand(ope, picks);
+            if (mOperationMode == OPEMODE.clear || mOperationMode == OPEMODE.non)
+                commandClear();
+        }
+
+        /// <summary>
+        /// コマンド処理をクリア
+        /// </summary>
+        /// <param name="dispFit">全体表示</param>
+        private void commandClear(bool dispFit = false)
+        {
+            mCommandOpe.mOperation = OPERATION.non;
+            mOperationMode = OPEMODE.non;
+            mLocPick.mLocList.Clear();
+            mLocPick.mPickElement.Clear();
+            lbCommand.ItemsSource = mCommandData.getMainCommand();
+            lbCommand.SelectedIndex = -1;
+            if (mDataManage.mFace == FACE3D.NON)
+                renderFrame();
+            if (mDataManage.mFace != FACE3D.NON && dispFit) {
+                mDraw.dispFit();
+            } else {
+                mDraw.draw();
+            }
+        }
+
+        /// <summary>
+        /// 操作モードとマウス位置の表示
+        /// </summary>
+        /// <param name="wpos">マウス位置(World座標)</param>
+        public void dispStatus(PointD wpos)
+        {
+            if (mPrePosition == null)
+                return;
+            if (wpos == null)
+                wpos = mPrePosition;
+            tbStatus.Text = $"Mode [{mOperationMode}] Pick [{mLocPick.mPickElement.Count}] Loc [{mLocPick.mLocList.Count}] Grid[{mDraw.mGridSize}] {wpos.ToString("f2")}";
+        }
+
+        /// <summary>
+        /// 編集中の部品名の表示
+        /// </summary>
+        public void dispTitle()
+        {
+            string filename = Path.GetFileNameWithoutExtension(mCommandOpe.mDataFilePath);
+            Title = $"{mAppName}[{filename}][{mDataManage.getElementCount()} / {mDataManage.mElementList.Count}]";
         }
 
         /// <summary>

@@ -23,7 +23,7 @@ namespace Mini3DCad
         public List<PointD> mAreaLoc = new List<PointD>() {     //  領域座標
             new PointD(), new PointD()
         };
-        public Dictionary<FACE3D, Box> mWorldList = new Dictionary<FACE3D, Box>();
+        public Dictionary<FACE3D, Box> mWorldList = new Dictionary<FACE3D, Box>();  //  タブごとの表示領域
 
         public LocPick mLocPick;
         public DataManage mDataManage;
@@ -55,9 +55,9 @@ namespace Mini3DCad
         /// <summary>
         /// CanvasとImageを再設定
         /// </summary>
-        /// <param name="canvas"></param>
-        /// <param name="imScreen"></param>
-        /// <param name="face"></param>
+        /// <param name="canvas">Canvas</param>
+        /// <param name="imScreen">Image</param>
+        /// <param name="face">2D平面</param>
         public void setCanvas(Canvas canvas, System.Windows.Controls.Image imScreen, FACE3D face)
         {
             if (!mWorldList.ContainsKey(mFace)) {
@@ -158,8 +158,9 @@ namespace Mini3DCad
                     break;
                 case OPERATION.translate:
                 case OPERATION.copyTranslate:
-                    if (locList.Count == 1) {
-                        Point3D v = new Point3D(lastPoint, mFace) - new Point3D(locList[0], mFace);
+                    for (int i = 1; i <= locList.Count; i++) {
+                        PointD sp = i < locList.Count ? locList[i] : lastPoint;
+                        Point3D v = new Point3D(sp, mFace) - new Point3D(locList[0], mFace);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
                             primitive.translate(v);
@@ -170,8 +171,9 @@ namespace Mini3DCad
                     break;
                 case OPERATION.rotate:
                 case OPERATION.copyRotate:
-                    if (locList.Count == 2) {
-                        double ang = locList[0].angle2(locList[1], lastPoint);
+                    for (int i = 2; i <= locList.Count; i++) {
+                        PointD sp = i < locList.Count ? locList[i] : lastPoint;
+                        double ang = locList[0].angle2(locList[1], sp);
                         Point3D cp = new Point3D(locList[0], mFace);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
@@ -183,12 +185,15 @@ namespace Mini3DCad
                     break;
                 case OPERATION.offset:
                 case OPERATION.copyOffset:
-                    if (locList.Count == 1) {
-                        foreach (var pick in pickData) {
-                            primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.offset(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), mFace);
-                            primitive.createVertexData();
-                            primitive.draw2D(mGDraw, mFace);
+                    for (int i = 1; i <= locList.Count; i++) {
+                        PointD sp = i < locList.Count ? locList[i] : lastPoint;
+                        if (0 < locList[0].length(sp)) {
+                            foreach (var pick in pickData) {
+                                primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
+                                primitive.offset(new Point3D(locList[0], mFace), new Point3D(sp, mFace), mFace);
+                                primitive.createVertexData();
+                                primitive.draw2D(mGDraw, mFace);
+                            }
                         }
                     }
                     break;
@@ -216,11 +221,24 @@ namespace Mini3DCad
                     break;
                 case OPERATION.scale:
                 case OPERATION.copyScale:
-                    if (locList.Count == 2) {
-                        double scale = locList[0].length(lastPoint) / locList[0].length(locList[1]);
+                    for (int i = 2; i <= locList.Count; i++) {
+                        PointD sp = i < locList.Count ? locList[i] : lastPoint;
+                        double scale = locList[0].length(sp) / locList[0].length(locList[1]);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
                             primitive.scale(new Point3D(locList[0], mFace), scale, mFace);
+                            primitive.createVertexData();
+                            primitive.draw2D(mGDraw, mFace);
+                        }
+                    }
+                    break;
+                case OPERATION.stretch:
+                case OPERATION.stretchArc:
+                    if (locList.Count == 1) {
+                        Point3D v = new Point3D(lastPoint, mFace) - new Point3D(locList[0], mFace);
+                        foreach (var pick in pickData) {
+                            primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
+                            primitive.stretch(v, pick.mPos, ope == OPERATION.stretchArc, mFace);
                             primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
@@ -280,9 +298,9 @@ namespace Mini3DCad
         /// <summary>
         /// データの表示
         /// </summary>
-        /// <param name="init"></param>
-        /// <param name="grid"></param>
-        /// <param name="bitmap"></param>
+        /// <param name="init">初期化</param>
+        /// <param name="grid">グリッド表示</param>
+        /// <param name="bitmap"ビットマップ取得></param>
         public void draw(bool init = true, bool grid = true, bool bitmap = true)
         {
             if (init)
@@ -305,16 +323,18 @@ namespace Mini3DCad
         /// <summary>
         /// 2Dデータの表示
         /// </summary>
-        /// <param name="grid"></param>
-        /// <param name="bitmap"></param>
+        /// <param name="grid">グリッド表示</param>
+        /// <param name="bitmap">ビットマップ取得</param>
         public void draw2D(bool grid = true, bool bitmap = true)
         {
             if (grid)
                 dispGrid(mGridSize);
+            mLocPick.setPick();            //  ピック色設定
             for (int i = 0; i < mDataManage.mElementList.Count; i++) {
                 if (mDataManage.mElementList[i].isDraw(mDataManage.mLayer))
                     mDataManage.mElementList[i].draw2D(mGDraw, mFace);
             }
+            mLocPick.pickReset();           //  ピック食解除
             if (bitmap && mCanvas != null) {
                 mBitmapSource = ylib.canvas2Bitmap(mCanvas);
                 mBitmapOn = true;
@@ -344,21 +364,21 @@ namespace Mini3DCad
                 }
             } else if (shift) {
                 switch (key) {
-                    case Key.F1: mGridSize *= -1; draw(); break;
+                    case Key.F1: mGridSize *= -1; draw(); break;                    //  グリッド表示切替
                     default: break;
                 }
             } else {
                 switch (key) {
                     case Key.F1: draw(true); break;                                 //  再表示
-                    case Key.F2:
+                    case Key.F2:                                                    //  領域拡大
                         mMainWindow.mPrevOpeMode = mMainWindow.mOperationMode;
                         mMainWindow.mOperationMode = OPEMODE.areaDisp;
-                        break;                                             //  
+                        break;
                     case Key.F3: dispFit(); break;                                  //  全体表示
                     case Key.F4: zoom(mGDraw.mWorld.getCenter(), 1.2); break;       //  拡大表示
                     case Key.F5: zoom(mGDraw.mWorld.getCenter(), 1 / 1.2); break;   //  縮小表示
                     //case Key.F6: dispWidthFit(); break;                           //  全幅表示
-                    case Key.F7:
+                    case Key.F7:                                                    //  領域ピック
                         mMainWindow.mPrevOpeMode = mMainWindow.mOperationMode;
                         mMainWindow.mOperationMode = OPEMODE.areaPick;
                         break;
@@ -372,7 +392,7 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="wp">領域の中心座標</param>
         /// <param name="opeMode">操作モード</param>
-        /// <returns>捜査結果</returns>
+        /// <returns>操作結果</returns>
         public bool areaOpe(PointD wp, OPEMODE opeMode)
         {
             if (mAreaLoc[0].isNaN()) {

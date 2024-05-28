@@ -155,6 +155,7 @@ namespace Mini3DCad
         public List<List<Point3D>> mVertexList;                                 //  2D表示用3D座標データ
         public bool mReverse = false;                                           //  Surfaceの座標回転方向変換
         public bool mSurfaceVertex = false;                                     //  Debug用
+        public double mDivideAngle = Math.PI / 15;
 
         public YLib ylib = new YLib();
 
@@ -214,6 +215,14 @@ namespace Mini3DCad
         /// <param name="face">2D平面</param>
         public abstract void scale(Point3D cp, double scale, FACE3D face);
 
+        /// <summary>
+        /// ストレッチ
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        /// <param name="pickPos">ピック位置</param>
+        /// <param name="face">"D平面</param>
+        public abstract void stretch(Point3D vec, PointD pickPos, bool arc, FACE3D face);
+
 
         /// <summary>
         /// 固有データを文字列配列に変換
@@ -235,9 +244,22 @@ namespace Mini3DCad
         public abstract string dataInfo(string form);
 
         /// <summary>
+        /// 簡易データ情報
+        /// </summary>
+        /// <param name="form">書式</param>
+        /// <returns>文字列</returns>
+        public abstract string dataSummary(string form);
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         public abstract Primitive toCopy();
+
+        /// <summary>
+        /// 座標点の取得
+        /// </summary>
+        /// <returns></returns>
+        public abstract Polyline3D toPointList();
 
         /// <summary>
         /// 座標点リストをPolyline3Dで取得
@@ -299,6 +321,8 @@ namespace Mini3DCad
                 copyVertexList(primitive);
             }
             mReverse = primitive.mReverse;
+            mDivideAngle = primitive.mDivideAngle;
+            mSurfaceVertex = primitive.mSurfaceVertex;
         }
 
         /// <summary>
@@ -434,7 +458,7 @@ namespace Mini3DCad
         {
             string buf = $"ID: {mPrimitiveId}, Face: {mPrimitiveFace},";
             buf += $" LineColor: {ylib.getBrushName(mLineColor)}, FaceColor: {ylib.getBrushName(mFaceColors[0])},";
-            buf += $"\nLineType: {mLineType}, Thickness: {mLineThickness}, Reverse: {mReverse},";
+            buf += $"\nLineType: {mLineType}, Thickness: {mLineThickness}, Reverse: {mReverse}, DivideAngle: {mDivideAngle}";
             buf += $" Area: {getArea().ToString("F2")}";
             return buf;
         }
@@ -480,6 +504,7 @@ namespace Mini3DCad
                 "LineThickness",    mLineThickness.ToString(),
                 "LineType",         mLineType.ToString(),
                 "Reverse",          mReverse.ToString(),
+                "DivideAngle",      mDivideAngle.ToString(),
                 "FaceColors",       mFaceColors.Count.ToString(),
             };
             for (int i = 0; i < mFaceColors.Count; i++)
@@ -512,6 +537,8 @@ namespace Mini3DCad
                     mLineType = int.TryParse(list[++i], out ival) ? ival : 0;
                 } else if (list[i] == "Reverse") {
                     mReverse = bool.TryParse(list[++i], out bval) ? bval : false;
+                } else if (list[i] == "DivideAngle") {
+                    mDivideAngle = double.TryParse(list[++i], out val) ? val : Math.PI / 15;
                 } else if (list[i] == "FaceColors") {
                     mFaceColors.Clear();
                     int count = int.TryParse(list[++i], out ival) ? ival : 0;
@@ -668,6 +695,17 @@ namespace Mini3DCad
             mPoint.scale(cp, scale);
         }
 
+        /// <summary>
+        /// ストレッチ
+        /// </summary>
+        /// <param name="vec"></param>
+        /// <param name="pickPos"></param>
+        /// <param name="face"></param>
+        public override void stretch(Point3D vec, PointD pickPos, bool arc, FACE3D face)
+        {
+            mPoint.translate(vec);
+        }
+
 
         /// <summary>
         /// 固有データを文字列配列に変換
@@ -716,6 +754,17 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// サマリデータ
+        /// </summary>
+        /// <param name="form">データ書式</param>
+        /// <returns>文字列</returns>
+        public override string dataSummary(string form = "F2")
+        {
+            return $"座標:{mPoint.ToString(form)}";
+        }
+
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         public override Primitive toCopy()
@@ -724,6 +773,15 @@ namespace Mini3DCad
             point.copyProperty(this, true, true);
             point.mPoint = mPoint.toCopy();
             return point;
+        }
+
+        /// <summary>
+        /// 座標点リストの取得
+        /// </summary>
+        /// <returns>ポリライン</returns>
+        public override Polyline3D toPointList()
+        {
+            return new Polyline3D([mPoint]);
         }
 
         /// <summary>
@@ -880,6 +938,18 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// ストレッチ
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        /// <param name="pickPos">ピック位置</param>
+        /// <param name="face">2D平面</param>
+        public override void stretch(Point3D vec, PointD pickPos, bool arc, FACE3D face)
+        {
+            Point3D pos = new Point3D(pickPos, face);
+            mLine.stretch(vec, pos);
+        }
+
+        /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>
         /// <returns>文字列配列</returns>
@@ -938,6 +1008,16 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// サマリデータ
+        /// </summary>
+        /// <param name="form">データ書式</param>
+        /// <returns>文字列</returns>
+        public override string dataSummary(string form = "F2")
+        {
+            return $"座標:{mLine.mSp.ToString(form)},{mLine.endPoint().ToString(form)}";
+        }
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         public override Primitive toCopy()
@@ -946,6 +1026,15 @@ namespace Mini3DCad
             line.copyProperty(this, true, true);
             line.mLine = mLine.toCopy();
             return line;
+        }
+
+        /// <summary>
+        /// 座標点リストの取得
+        /// </summary>
+        /// <returns>ポリライン</returns>
+        public override Polyline3D toPointList()
+        {
+            return new Polyline3D(mLine.toPoint3D());
         }
 
         /// <summary>
@@ -975,7 +1064,6 @@ namespace Mini3DCad
     public class ArcPrimitive : Primitive
     {
         public Arc3D mArc;
-        public double mDivideAngle = Math.PI / 15;
 
         /// <summary>
         /// コンストラクタ
@@ -989,8 +1077,9 @@ namespace Mini3DCad
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="sp">始点</param>
-        /// <param name="ep">終点</param>
+        /// <param name="cp">中心</param>
+        /// <param name="r">半径</param>
+        /// <param name="color">カラー</param>
         /// <param name="face">2D平面</param>
         /// <param name="divideAng">分割角度</param>
         public ArcPrimitive(PointD cp, double r, Brush color, FACE3D face = FACE3D.XY, double divideAng = Math.PI /15)
@@ -1011,6 +1100,23 @@ namespace Mini3DCad
         /// <param name="arc">2D円弧</param>
         /// <param name="face">2D平面</param>
         /// <param name="divideAng">分割角度</param>
+        public ArcPrimitive(ArcD arc, FACE3D face = FACE3D.XY, double divideAng = Math.PI / 15)
+        {
+            mPrimitiveId = PrimitiveId.Arc;
+            mPrimitiveFace = face;
+            mArc = new Arc3D(arc, face);
+            mDivideAngle = divideAng;
+            createSurfaceData();
+            createVertexData();
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="arc">2D円弧</param>
+        /// <param name="color">カラー</param>
+        /// <param name="face">2D平面</param>
+        /// <param name="divideAng">分割角度</param>
         public ArcPrimitive(ArcD arc, Brush color, FACE3D face = FACE3D.XY, double divideAng = Math.PI / 15)
         {
             mPrimitiveId = PrimitiveId.Arc;
@@ -1026,7 +1132,8 @@ namespace Mini3DCad
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="arc">円弧</param>
+        /// <param name="arc">3D円弧</param>
+        /// <param name="color">カラー</param>
         /// <param name="face">2D平面</param>
         /// <param name="divideAng">分割角度</param>
         public ArcPrimitive(Arc3D arc, Brush color, FACE3D face = FACE3D.XY, double divideAng = Math.PI / 15)
@@ -1136,6 +1243,18 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// ストレッチ
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        /// <param name="pickPos">ピック位置</param>
+        /// <param name="face">2D平面</param>
+        public override void stretch(Point3D vec, PointD pickPos, bool arc, FACE3D face)
+        {
+            mArc.stretch(vec, new Point3D(pickPos, face));
+        }
+
+
+        /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>
         /// <returns>文字列配列</returns>
@@ -1204,6 +1323,16 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// サマリデータ
+        /// </summary>
+        /// <param name="form">データ書式</param>
+        /// <returns>文字列</returns>
+        public override string dataSummary(string form = "F2")
+        {
+            return $"中心:{mArc.mCp.ToString(form)},半径:{mArc.mR.ToString(form)},始終角:{ylib.R2D(mArc.mSa).ToString(form)},{ylib.R2D(mArc.mEa).ToString(form)}";
+        }
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         public override Primitive toCopy()
@@ -1213,6 +1342,21 @@ namespace Mini3DCad
             arc.mArc = mArc.toCopy();
             arc.mDivideAngle = mDivideAngle;
             return arc;
+        }
+
+        /// <summary>
+        /// 座標点リストを求める
+        /// </summary>
+        /// <returns>ポリライン</returns>
+        public override Polyline3D toPointList()
+        {
+            int divNo = Math.PI * 1.9 < (mArc.mEa - mArc.mSa) ? 4 : 2;
+            List<Point3D> plist = mArc.toPoint3D(divNo);
+            Polyline3D polyline = new Polyline3D(plist);
+            polyline.mPolyline[1].type = 1;
+            if (divNo == 4)
+                polyline.mPolyline[3].type = 1;
+            return polyline;
         }
 
         /// <summary>
@@ -1257,7 +1401,7 @@ namespace Mini3DCad
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="points">座標リスト</param>
+        /// <param name="points">2D座標リスト</param>
         /// <param name="face">2D平面</param>
         public PolylinePrimitive(List<PointD> points, Brush color, FACE3D face = FACE3D.XY)
         {
@@ -1274,7 +1418,23 @@ namespace Mini3DCad
         /// <summary>
         /// コンストラクタ
         /// </summary>
-        /// <param name="points">座標リスト</param>
+        /// <param name="polyline">2Dポリライン</param>
+        /// <param name="face">2D平面</param>
+        public PolylinePrimitive(PolylineD polyline, FACE3D face = FACE3D.XY)
+        {
+            mPrimitiveId = PrimitiveId.Polyline;
+            mPrimitiveFace = face;
+            mPolyline = new Polyline3D(polyline, face);
+            mPolyline.squeeze();
+            createSurfaceData();
+            createVertexData();
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="points">3D座標リスト</param>
+        /// <param name="color">カラー</param>
         /// <param name="face">2D平面</param>
         public PolylinePrimitive(List<Point3D> points, Brush color, FACE3D face = FACE3D.XY)
         {
@@ -1292,6 +1452,7 @@ namespace Mini3DCad
         /// コンストラクタ
         /// </summary>
         /// <param name="polyline">ポリライン</param>
+        /// <param name="color">カラー</param>
         /// <param name="face">2D平面</param>
         public PolylinePrimitive(Polyline3D polyline, Brush color, FACE3D face = FACE3D.XY)
         {
@@ -1312,7 +1473,7 @@ namespace Mini3DCad
         {
             mSurfaceDataList = new List<SurfaceData>();
             SurfaceData surfaceData = new SurfaceData();
-            surfaceData.mVertexList = mPolyline.toPoint3D();
+            surfaceData.mVertexList = mPolyline.toPoint3D(mDivideAngle);
             surfaceData.mDrawType = DRAWTYPE.LINE_STRIP;
             surfaceData.mFaceColor = mLineColor;
             mSurfaceDataList.Add(surfaceData);
@@ -1323,8 +1484,9 @@ namespace Mini3DCad
         /// </summary>
         public override void createVertexData()
         {
-            mVertexList = new List<List<Point3D>>();
-            mVertexList.Add(mPolyline.toPoint3D());
+            mVertexList = new List<List<Point3D>>() {
+                mPolyline.toPoint3D(mDivideAngle / 2)
+            };
         }
 
         /// <summary>
@@ -1366,12 +1528,6 @@ namespace Mini3DCad
         public override void mirror(Point3D sp, Point3D ep, FACE3D face)
         {
             mPolyline.mirror(sp, ep);
-            //Line3D l = new Line3D(sp, ep);
-            //List<Point3D> plist = new List<Point3D>();
-            //for (int i = 0; i < mPolyline.mPolyline.Count; i++){
-            //     plist.Add(l.mirror(mPolyline.toPoint3D(i)));
-            //}
-            //mPolyline = new Polyline3D(plist);
         }
 
         /// <summary>
@@ -1397,21 +1553,36 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// ストレッチ
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        /// <param name="pickPos">ピック位置</param>
+        /// <param name="face">2D平面</param>
+        public override void stretch(Point3D vec, PointD pickPos, bool arc, FACE3D face)
+        {
+            mPolyline.stretch(vec, new Point3D(pickPos, face), arc);
+        }
+
+        /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>
         /// <returns>文字列配列</returns>
         public override string[] toDataList()
         {
+            bool multi = mPolyline.IsMultiType();
             List<string> dataList = new List<string>() {
                 "PolylineData",
                 "Cp", mPolyline.mCp.x.ToString(), mPolyline.mCp.y.ToString(), mPolyline.mCp.z.ToString(),
                 "U", mPolyline.mU.x.ToString(), mPolyline.mU.y.ToString(), mPolyline.mU.z.ToString(),
                 "V", mPolyline.mV.x.ToString(), mPolyline.mV.y.ToString(), mPolyline.mV.z.ToString(),
-                "Size", mPolyline.mPolyline.Count.ToString()
+                "Size", mPolyline.mPolyline.Count.ToString(),
+                "Multi", multi.ToString(),
             };
             for (int i = 0; i < mPolyline.mPolyline.Count; i++) {
                 dataList.Add(mPolyline.mPolyline[i].x.ToString());
                 dataList.Add(mPolyline.mPolyline[i].y.ToString());
+                if (multi)
+                    dataList.Add(mPolyline.mPolyline[i].type.ToString());
             }
             return dataList.ToArray();
         }
@@ -1428,6 +1599,8 @@ namespace Mini3DCad
                 int ival;
                 double val;
                 int count;
+                bool multi = false;
+                bool bval;
                 for (int i = 1; i < list.Length; i++) {
                     if (list[i] == "Cp") {
                         Point3D p = new Point3D();
@@ -1449,10 +1622,14 @@ namespace Mini3DCad
                         mPolyline.mV = p;
                     } else if (list[i] == "Size") {
                         count = int.TryParse(list[++i], out ival) ? ival : 0;
+                    } else if (list[i] == "Multi") {
+                        multi = bool.TryParse(list[++i], out bval) ? bval : false;
                     } else {
                         PointD p = new PointD();
                         p.x = double.TryParse(list[i], out val) ? val : 0;
                         p.y = double.TryParse(list[++i], out val) ? val : 0;
+                        if (multi)
+                            p.type = int.TryParse(list[++i], out ival) ? ival : 0;
                         mPolyline.mPolyline.Add(p);
                     }
                 }
@@ -1480,6 +1657,23 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// サマリデータ
+        /// </summary>
+        /// <param name="form">データ書式</param>
+        /// <returns>文字列</returns>
+        public override string dataSummary(string form = "F2")
+        {
+            List<Point3D> plist = mPolyline.toPoint3D();
+            string buf = "";
+            for (int i = 0; i < plist.Count && i < 5; i++)
+                buf += plist[i].ToString(form) + ",";
+            buf = buf.TrimEnd(',');
+            if (5 < plist.Count)
+                buf += ",・・・";
+            return $"数:{mPolyline.mPolyline.Count},座標:{buf}";
+        }
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         public override Primitive toCopy()
@@ -1488,6 +1682,15 @@ namespace Mini3DCad
             polyline.copyProperty(this, true, true);
             polyline.mPolyline = mPolyline.toCopy();
             return polyline;
+        }
+
+        /// <summary>
+        /// 座標点リストを求める
+        /// </summary>
+        /// <returns>ポリライン</returns>
+        public override Polyline3D toPointList()
+        {
+            return mPolyline.toCopy();
         }
 
         /// <summary>
@@ -1542,6 +1745,23 @@ namespace Mini3DCad
             mFaceColors[0] = color;
             mPrimitiveFace = face;
             mPolygon = new Polygon3D(points, face);
+            mPolygon.squeeze();
+            if (mPolygon.isClockwise(face))
+                mPolygon.reverse();
+            createSurfaceData();
+            createVertexData();
+        }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="polygon">2Dポリゴン</param>
+        /// <param name="face">2D平面</param>
+        public PolygonPrimitive(PolygonD polygon, FACE3D face = FACE3D.XY)
+        {
+            mPrimitiveId = PrimitiveId.Polygon;
+            mPrimitiveFace = face;
+            mPolygon = new Polygon3D(polygon.mPolygon, face);
             mPolygon.squeeze();
             if (mPolygon.isClockwise(face))
                 mPolygon.reverse();
@@ -1615,7 +1835,7 @@ namespace Mini3DCad
         public override void createSurfaceData()
         {
             mSurfaceDataList = new List<SurfaceData>();
-            (List<Point3D> triangles, bool reverse) = mPolygon.cnvTriangles();
+            (List<Point3D> triangles, bool reverse) = mPolygon.cnvTriangles(mDivideAngle);
             if (triangles.Count < 3)
                 return;
             SurfaceData surfaceData = new SurfaceData();
@@ -1633,16 +1853,29 @@ namespace Mini3DCad
         {
             mVertexList = new List<List<Point3D>>();
             if (!mSurfaceVertex) {
-                mVertexList.Add(mPolygon.toPoint3D(true));
+                mVertexList.Add(mPolygon.toPoint3D(mDivideAngle, true));
             } else {
-                (List<Point3D> triangles, bool reverse) = mPolygon.cnvTriangles();
-                if (triangles.Count < 3)
-                    return;
+                //  Debug(Surface表示確認)
+                mVertexList.AddRange(getVertexList(mPolygon));
+            }
+        }
+
+        /// <summary>
+        /// ポリゴンから３角形の座標リストを作成
+        /// </summary>
+        /// <param name="polygon">ポリゴン</param>
+        /// <returns>３角形座標リスト</returns>
+        private List<List<Point3D>> getVertexList(Polygon3D polygon)
+        {
+            List<List<Point3D>> vertexList = new List<List<Point3D>>();
+            (List<Point3D> triangles, bool reverse) = polygon.cnvTriangles(mDivideAngle);
+            if (3 <= triangles.Count) {
                 for (int i = 0; i < triangles.Count; i += 3) {
                     List<Point3D> plist = new List<Point3D> { triangles[i], triangles[i + 1], triangles[i + 2], triangles[i] };
-                    mVertexList.Add(plist);
+                    vertexList.Add(plist);
                 }
             }
+            return vertexList;
         }
 
         /// <summary>
@@ -1685,12 +1918,6 @@ namespace Mini3DCad
         public override void mirror(Point3D sp, Point3D ep, FACE3D face)
         {
             mPolygon.mirror(sp, ep);
-            //Line3D l = new Line3D(sp, ep);
-            //List<Point3D> plist = new List<Point3D>();
-            //for (int i = 0; i < mPolygon.mPolygon.Count; i++) {
-            //    plist.Add(l.mirror(mPolygon.toPoint3D(i)));
-            //}
-            //mPolygon = new Polygon3D(plist);
         }
 
         /// <summary>
@@ -1716,21 +1943,36 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// ストレッチ
+        /// </summary>
+        /// <param name="vec">移動ベクトル</param>
+        /// <param name="pickPos">ピック位置</param>
+        /// <param name="face">2D平面</param>
+        public override void stretch(Point3D vec, PointD pickPos, bool arc, FACE3D face)
+        {
+            mPolygon.stretch(vec, new Point3D(pickPos, face), arc);
+        }
+
+        /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>
         /// <returns>文字列配列</returns>
         public override string[] toDataList()
          {
+            bool multi = mPolygon.IsMultiType();
             List<string> dataList = new List<string>() {
                 "PolygonData",
                 "Cp", mPolygon.mCp.x.ToString(), mPolygon.mCp.y.ToString(), mPolygon.mCp.z.ToString(),
                 "U", mPolygon.mU.x.ToString(), mPolygon.mU.y.ToString(), mPolygon.mU.z.ToString(),
                 "V", mPolygon.mV.x.ToString(), mPolygon.mV.y.ToString(), mPolygon.mV.z.ToString(),
-                "Size", mPolygon.mPolygon.Count.ToString()
+                "Size", mPolygon.mPolygon.Count.ToString(),
+                "Multi", multi.ToString(),
             };
             for (int i = 0; i < mPolygon.mPolygon.Count; i++) {
                 dataList.Add(mPolygon.mPolygon[i].x.ToString());
                 dataList.Add(mPolygon.mPolygon[i].y.ToString());
+                if (multi)
+                    dataList.Add(mPolygon.mPolygon[i].type.ToString());
             }
             return dataList.ToArray();
         }
@@ -1747,6 +1989,8 @@ namespace Mini3DCad
                 int ival;
                 double val;
                 int count;
+                bool multi = false;
+                bool bval;
                 for (int i = 1; i < list.Length; i++) {
                     if (list[i] == "Cp") {
                         Point3D p = new Point3D();
@@ -1768,10 +2012,14 @@ namespace Mini3DCad
                         mPolygon.mV = p;
                     } else if (list[i] == "Size") {
                         count = int.TryParse(list[++i], out ival) ? ival : 0;
+                    } else if (list[i] == "Multi") {
+                        multi = bool.TryParse(list[++i], out bval) ? bval : false;
                     } else {
                         PointD p = new PointD();
                         p.x = double.TryParse(list[i], out val) ? val : 0;
                         p.y = double.TryParse(list[++i], out val) ? val : 0;
+                        if (multi)
+                            p.type = int.TryParse(list[++i], out ival) ? ival : 0;
                         mPolygon.mPolygon.Add(p);
                     }
                 }
@@ -1799,6 +2047,21 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// サマリデータ
+        /// </summary>
+        /// <param name="form">データ書式</param>
+        /// <returns>文字列</returns>
+        public override string dataSummary(string form = "F2")
+        {
+            List<Point3D> plist = mPolygon.toPoint3D();
+            string buf = "";
+            for (int i = 0; i < plist.Count && i < 4; i++)
+                buf += plist[i].ToString(form) + ",";
+            buf.TrimEnd(',');
+            return $"数:{mPolygon.mPolygon.Count},座標:{buf}";
+        }
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         public override Primitive toCopy()
@@ -1807,6 +2070,15 @@ namespace Mini3DCad
             polygon.copyProperty(this, true, true);
             polygon.mPolygon = mPolygon.toCopy();
             return polygon;
+        }
+
+        /// <summary>
+        /// 座標点リストを求める
+        /// </summary>
+        /// <returns>ポリライン</returns>
+        public override Polyline3D toPointList()
+        {
+            return mPolygon.toPolyline3D();
         }
 
         /// <summary>
@@ -1936,7 +2208,7 @@ namespace Mini3DCad
             if (mClose) {
                 //  1面(端面)
                 surfaceData = new SurfaceData();
-                (surfaceData.mVertexList, bool reverse) = mPolygon.cnvTriangles();
+                (surfaceData.mVertexList, bool reverse) = mPolygon.cnvTriangles(mDivideAngle);
                 Point3D v0 = surfaceData.mVertexList[0].getNormal(surfaceData.mVertexList[1], surfaceData.mVertexList[2]);
                 if (v0.angle(mVector) < Math.PI / 2) {
                     //if (wise)
@@ -1960,7 +2232,7 @@ namespace Mini3DCad
             //  側面
             surfaceData = new SurfaceData();
             surfaceData.mVertexList = new List<Point3D>();
-            List<Point3D> outline = mPolygon.toPoint3D();
+            List<Point3D> outline = mPolygon.toPoint3D(mDivideAngle);
             for (int i = 0; i < outline.Count; i++) {
                 Point3D np = outline[i].toCopy();
                 np.translate(mVector);
@@ -1995,11 +2267,26 @@ namespace Mini3DCad
         public override void createVertexData()
         {
             mVertexList = new List<List<Point3D>>();
+            //  1面(端面)
             Polygon3D polygon1 = mPolygon.toCopy();
-            mVertexList.Add(polygon1.toPoint3D(mClose));
+            mVertexList.Add(polygon1.toPoint3D(mDivideAngle, mClose));
+            if (!mSurfaceVertex) {
+                mVertexList.Add(polygon1.toPoint3D(mDivideAngle, mClose));
+            } else {
+                //  Debug(Surface表示確認)
+                mVertexList.AddRange(getVertexList(polygon1));
+            }
+            //  2面(端面)
             Polygon3D polygon2 = mPolygon.toCopy();
             polygon2.translate(mVector);
-            mVertexList.Add(polygon2.toPoint3D(mClose));
+            mVertexList.Add(polygon2.toPoint3D(mDivideAngle, mClose));
+            if (!mSurfaceVertex) {
+                mVertexList.Add(polygon2.toPoint3D(mDivideAngle, mClose));
+            } else {
+                //  Debug(Surface表示確認)
+                mVertexList.AddRange(getVertexList(polygon2));
+            }
+            //  側面
             for (int i = 0; i < polygon1.mPolygon.Count; i++) {
                 Point3D p1 = polygon1.toPoint3D(i);
                 Point3D p2 = p1.toCopy();
@@ -2007,6 +2294,24 @@ namespace Mini3DCad
                 List<Point3D> plist = new List<Point3D>() { p1, p2 };
                 mVertexList.Add(plist);
             }
+        }
+
+        /// <summary>
+        /// ポリゴンから３角形の座標リストを作成
+        /// </summary>
+        /// <param name="polygon">ポリゴン</param>
+        /// <returns>３角形座標リスト</returns>
+        private List<List<Point3D>> getVertexList(Polygon3D polygon)
+        {
+            List<List<Point3D>> vertexList = new List<List<Point3D>>();
+            (List<Point3D> triangles, bool reverse) = polygon.cnvTriangles(mDivideAngle);
+            if (3 <= triangles.Count) {
+                for (int i = 0; i < triangles.Count; i += 3) {
+                    List<Point3D> plist = new List<Point3D> { triangles[i], triangles[i + 1], triangles[i + 2], triangles[i] };
+                    vertexList.Add(plist);
+                }
+            }
+            return vertexList;
         }
 
         /// <summary>
@@ -2077,23 +2382,32 @@ namespace Mini3DCad
             mPolygon.scale(cp, scale);
         }
 
+        public override void stretch(Point3D vec, PointD pickPos, bool arc, FACE3D face)
+        {
+
+        }
+
         /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>
         /// <returns>文字列配列</returns>
         public override string[] toDataList()
         {
+            bool multi = mPolygon.IsMultiType();
             List<string> dataList = new List<string>() {
                 "ExtrusionData", "Vector", mVector.x.ToString(), mVector.y.ToString(), mVector.z.ToString(),
                 "SrcFace", mSrcFace.ToString(), "Close", mClose.ToString(),
                 "Cp", mPolygon.mCp.x.ToString(), mPolygon.mCp.y.ToString(), mPolygon.mCp.z.ToString(),
                 "U", mPolygon.mU.x.ToString(), mPolygon.mU.y.ToString(), mPolygon.mU.z.ToString(),
                 "V", mPolygon.mV.x.ToString(), mPolygon.mV.y.ToString(), mPolygon.mV.z.ToString(),
-                "Size", mPolygon.mPolygon.Count.ToString()
+                "Size", mPolygon.mPolygon.Count.ToString(),
+                "Multi", multi.ToString(),
             };
             for (int i = 0; i < mPolygon.mPolygon.Count; i++) {
                 dataList.Add(mPolygon.mPolygon[i].x.ToString());
                 dataList.Add(mPolygon.mPolygon[i].y.ToString());
+                if (multi)
+                    dataList.Add(mPolygon.mPolygon[i].type.ToString());
             }
             return dataList.ToArray();
         }
@@ -2112,6 +2426,7 @@ namespace Mini3DCad
                 bool bval;
                 int i = 1;
                 int count;
+                bool multi = false;
                 while (i < list.Length) {
                     if (list[i] == "Vector") {
                         mVector.x = double.TryParse(list[++i], out val) ? val : 0;
@@ -2141,10 +2456,14 @@ namespace Mini3DCad
                         mPolygon.mV = p;
                     } else if (list[i] == "Size") {
                         count = int.TryParse(list[++i], out ival) ? ival : 0;
+                    } else if (list[i] == "Multi") {
+                        multi = bool.TryParse(list[++i], out bval) ? bval : false;
                     } else {
                         PointD p = new PointD();
                         p.x = double.TryParse(list[i], out val) ? val : 0;
                         p.y = double.TryParse(list[++i], out val) ? val : 0;
+                        if (multi)
+                            p.type = int.TryParse(list[++i], out ival) ? ival : 0;
                         mPolygon.mPolygon.Add(p);
                     }
                     i++;
@@ -2176,6 +2495,16 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// サマリデータ
+        /// </summary>
+        /// <param name="form">データ書式</param>
+        /// <returns>文字列</returns>
+        public override string dataSummary(string form = "F2")
+        {
+            return $"領域:{getArea().ToString(form)}";
+        }
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         public override Primitive toCopy()
@@ -2186,6 +2515,15 @@ namespace Mini3DCad
             extrusion.mVector = mVector.toCopy();
             extrusion.mClose = mClose;
             return extrusion;
+        }
+
+        /// <summary>
+        /// 座標点リストを求める
+        /// </summary>
+        /// <returns>ポリライン</returns>
+        public override Polyline3D toPointList()
+        {
+            return new Polyline3D();
         }
 
         /// <summary>
@@ -2216,7 +2554,6 @@ namespace Mini3DCad
         public Polyline3D mOutLine;
         public double mSa = 0;
         public double mEa = Math.PI * 2;
-        public double mDivideAngle = Math.PI / 16;
         public bool mClose = false;
 
         /// <summary>
@@ -2291,7 +2628,8 @@ namespace Mini3DCad
         {
             mVertexList = new List<List<Point3D>>();
             List<List<Point3D>> outLines;
-            outLines = getCenterLineRotate(mCenterLine, mOutLine.toPoint3D(), mDivideAngle * 2);
+            double divideAngle = mDivideAngle < (Math.PI / 6) ? mDivideAngle * 2 : mDivideAngle;
+            outLines = getCenterLineRotate(mCenterLine, mOutLine.toPoint3D(), divideAngle);
             mVertexList.AddRange(outLines);
             for (int i = 0; i < outLines[0].Count; i++) {
                 List<Point3D> plist = new List<Point3D>();
@@ -2399,6 +2737,11 @@ namespace Mini3DCad
             mOutLine.scale(cp, scale);
         }
 
+        public override void stretch(Point3D vec, PointD pickPos, bool arc, FACE3D face)
+        {
+
+        }
+
         /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>
@@ -2409,7 +2752,6 @@ namespace Mini3DCad
                 "RevolutionData",
                 "StartAngle", mSa.ToString(),
                 "EndAngle", mEa.ToString(),
-                "DivideAngle", mDivideAngle.ToString(),
                 "Close", mClose.ToString(),
                 "CenterLineSp", mCenterLine.mSp.x.ToString(), mCenterLine.mSp.y.ToString(), mCenterLine.mSp.z.ToString(),
                 "CenterLineV", mCenterLine.mV.x.ToString(), mCenterLine.mV.y.ToString(), mCenterLine.mV.z.ToString(),
@@ -2447,8 +2789,6 @@ namespace Mini3DCad
                         mSa = double.TryParse(list[++i], out val) ? val : 0;
                     } else if (list[i] == "EndAngle") {
                         mEa = double.TryParse(list[++i], out val) ? val : 0;
-                    } else if (list[i] == "DivideAngle") {
-                        mDivideAngle = double.TryParse(list[++i], out val) ? val : 0;
                     } else if (list[i] == "Close") {
                         mClose = bool.TryParse(list[++i], out bval) ? bval : true;
                     } else if (list[i] == "CenterLineSp") {
@@ -2519,6 +2859,16 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// サマリデータ
+        /// </summary>
+        /// <param name="form">データ書式</param>
+        /// <returns>文字列</returns>
+        public override string dataSummary(string form = "F2")
+        {
+            return $"領域:{getArea().ToString(form)}";
+        }
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         public override Primitive toCopy()
@@ -2531,6 +2881,15 @@ namespace Mini3DCad
             revolusion.mCenterLine = mCenterLine.toCopy();
             revolusion.mOutLine = mOutLine.toCopy();
             return revolusion;
+        }
+
+        /// <summary>
+        /// 座標点リストを求める
+        /// </summary>
+        /// <returns>ポリライン</returns>
+        public override Polyline3D toPointList()
+        {
+            return new Polyline3D();
         }
 
         /// <summary>
@@ -2562,7 +2921,6 @@ namespace Mini3DCad
         public Polyline3D mOutLine2;
         public double mSa = 0;
         public double mEa = Math.PI * 2;
-        public double mDivideAngle = Math.PI / 9;
         public bool mClose = false;
 
         /// <summary>
@@ -2644,7 +3002,8 @@ namespace Mini3DCad
             List<List<Point3D>> outLines;
             if (!directChk(mOutLine1, mOutLine2, mPrimitiveFace))
                 mOutLine2.mPolyline.Reverse();
-            outLines = rotateOutlines(mOutLine1, mOutLine2, mDivideAngle * 2);
+            double divideAngle = mDivideAngle < (Math.PI / 6) ? mDivideAngle * 2 : mDivideAngle;
+            outLines = rotateOutlines(mOutLine1, mOutLine2, divideAngle);
             mVertexList.AddRange(outLines);
             for (int j = 0; j < outLines[0].Count; j++) {
                 List<Point3D> plist = new List<Point3D>();
@@ -2853,6 +3212,11 @@ namespace Mini3DCad
             mOutLine2.scale(cp, scale);
         }
 
+        public override void stretch(Point3D vec, PointD pickPos, bool arc, FACE3D face)
+        {
+
+        }
+
         /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>
@@ -2863,7 +3227,6 @@ namespace Mini3DCad
                 "SweepData",
                 "StartAngle", mSa.ToString(),
                 "EndAngle", mEa.ToString(),
-                "DivideAngle", mDivideAngle.ToString(),
                 "Close", mClose.ToString(),
                 "OutLine1Cp", mOutLine1.mCp.x.ToString(), mOutLine1.mCp.y.ToString(), mOutLine1.mCp.z.ToString(),
                 "OutLine1U", mOutLine1.mU.x.ToString(), mOutLine1.mU.y.ToString(), mOutLine1.mU.z.ToString(),
@@ -2911,8 +3274,6 @@ namespace Mini3DCad
                         mSa = double.TryParse(list[++i], out val) ? val : 0;
                     } else if (list[i] == "EndAngle") {
                         mEa = double.TryParse(list[++i], out val) ? val : 0;
-                    } else if (list[i] == "DivideAngle") {
-                        mDivideAngle = double.TryParse(list[++i], out val) ? val : 0;
                     } else if (list[i] == "Close") {
                         mClose = bool.TryParse(list[++i], out bval) ? bval : true;
                     } else if (list[i] == "OutLine1Cp") {
@@ -3003,6 +3364,16 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// サマリデータ
+        /// </summary>
+        /// <param name="form">データ書式</param>
+        /// <returns>文字列</returns>
+        public override string dataSummary(string form = "F2")
+        {
+            return $"領域:{getArea().ToString(form)}";
+        }
+
+        /// <summary>
         /// コピーを作成
         /// </summary>
         public override Primitive toCopy()
@@ -3015,6 +3386,15 @@ namespace Mini3DCad
             revolusion.mOutLine1 = mOutLine1.toCopy();
             revolusion.mOutLine2 = mOutLine2.toCopy();
             return revolusion;
+        }
+
+        /// <summary>
+        /// 座標点リストを求める
+        /// </summary>
+        /// <returns>ポリライン</returns>
+        public override Polyline3D toPointList()
+        {
+            return new Polyline3D();
         }
 
         /// <summary>

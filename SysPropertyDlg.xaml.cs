@@ -12,10 +12,11 @@ namespace Mini3DCad
         public double mArcDivideAngle = 30;                 //  円変換分割角度
         public double mRevolutionDivideAngle = 30;          //  回転体の分割角度
         public double mSweepDivideAngle = 30;               //  掃引の分割角度
+        public bool mSurfaceVertex = false;                 //  多角形の分割線表示
         public string mDataFolder = "";                     //  データフォルダ
         public string mBackupFolder = "";                   //  バックアップフォルダ
         public string mDiffTool = "";                       //  ファイル比較ツール
-        public FileData mFileData;
+        public FileData mFileData;                          //  バックアップ比較
 
         private string mDataFolderListPath = "DataFolderList.csv";      //  データフォルダパスリストファイルパス
         private List<string> mDataFolderList = new List<string>();      //  データフォルダパスリスト
@@ -32,6 +33,7 @@ namespace Mini3DCad
             tbArcDivideAng.Text = ylib.double2StrZeroSup(ylib.R2D(mArcDivideAngle), "F8");
             tbRevolutionDivideAng.Text = ylib.double2StrZeroSup(ylib.R2D(mRevolutionDivideAngle), "F8");
             tbSweepDivideAng.Text = ylib.double2StrZeroSup(ylib.R2D(mSweepDivideAngle), "F8");
+            cbPolygonTriangles.IsChecked = mSurfaceVertex;
             List<string[]> llistf = ylib.loadCsvData(mDataFolderListPath);
             foreach (var buf in llistf) {
                 if (!mDataFolderList.Contains(buf[0]))
@@ -103,6 +105,7 @@ namespace Mini3DCad
             mArcDivideAngle = ylib.D2R(ylib.string2double(tbArcDivideAng.Text));
             mRevolutionDivideAngle = ylib.D2R(ylib.string2double(tbRevolutionDivideAng.Text));
             mSweepDivideAngle = ylib.D2R(ylib.string2double(tbSweepDivideAng.Text));
+            mSurfaceVertex = cbPolygonTriangles.IsChecked == true;
             mDataFolder = cbDataFolder.Text;
             if (mDataFolderList.Contains(mDataFolder))
                 mDataFolderList.Remove(mDataFolder);

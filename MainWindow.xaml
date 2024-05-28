@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Mini3DCad"
         mc:Ignorable="d"
-        Title="Mini3DCad" Height="450" Width="600" Closing="Window_Closing" Loaded="Window_Loaded"
+        Title="Mini3DCad" Height="450" Width="700" Closing="Window_Closing" Loaded="Window_Loaded"
         LayoutUpdated="Window_LayoutUpdated" MouseWheel="Window_MouseWheel" MouseMove="Window_MouseMove" 
         MouseLeftButtonDown="Window_MouseLeftButtonDown" MouseLeftButtonUp="Window_MouseLeftButtonUp" 
         MouseRightButtonDown="Window_MouseRightButtonDown" MouseRightButtonUp="Window_MouseRightButtonUp" PreviewKeyDown="Window_PreviewKeyDown" MouseDoubleClick="Window_MouseDoubleClick">
@@ -23,10 +23,28 @@
                         </ComboBox.ContextMenu>
                     </ComboBox>
                 </ToolBar>
+                <ToolBar>
+                    <Button x:Name="btUndo" ToolTip="アンドゥ" Width="25" Height="25" Click="btUndo_Click"   >
+                        <Image Source="Icon\undo.png" ></Image>
+                    </Button>
+                    <Button x:Name="btEntityCopy" ToolTip="要素データコピー" Width="25" Height="25" Click="btEntityCopy_Click"  >
+                        <Image Source="Icon\copy.png" ></Image>
+                    </Button>
+                    <Button x:Name="btEntityPaste" ToolTip="要素データ貼り付け" Width="25" Height="25" Click="btEntityPaste_Click"  >
+                        <Image Source="Icon\paste.png" ></Image>
+                    </Button>
+                    <Button x:Name="btScreenCopy" ToolTip="画面コピー" Width="25" Height="25" Click="btScreenCopy_Click"  >
+                        <Image Source="Icon\ScreenShot.png" ></Image>
+                    </Button>
+                </ToolBar>
                 <ToolBar Height="25" >
                     <Button x:Name="btZoomArea" Width="25" Height="25" Click="btZoom_Click"
                             ToolTip="領域拡大 F2" >
                         <Image Source="Icon\ZoomOriginalSize.png" ></Image>
+                    </Button>
+                    <Button x:Name="btZoomFit" Width="25" Height="25" Click="btZoom_Click"
+                            ToolTip="全体表示 F3" >
+                        <Image Source="Icon\ZoomToFit.png" ></Image>
                     </Button>
                     <Button x:Name="btZoomIn" Width="25" Height="25" Click="btZoom_Click"
                             ToolTip="拡大表示 F4" >
@@ -35,10 +53,6 @@
                     <Button x:Name="btZoomOut" Width="25" Height="25" Click="btZoom_Click"
                             ToolTip="縮小表示 F5" >
                         <Image Source="Icon\ZoomOut.png" ></Image>
-                    </Button>
-                    <Button x:Name="btZoomFit" Width="25" Height="25" Click="btZoom_Click"
-                            ToolTip="全体表示 F3" >
-                        <Image Source="Icon\ZoomToFit.png" ></Image>
                     </Button>
                     <Button x:Name="btMenu" Width="25" Height="25" Click="btMenu_Click" 
                             ToolTip="ロケイトメニュー F6">

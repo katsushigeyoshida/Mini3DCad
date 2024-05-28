@@ -18,7 +18,7 @@ namespace Mini3DCad
     {
         non, loc, pick,
         point, line, circle, arc, rect, polyline, polygon,
-        translate, rotate, offset, mirror, trim, strach, scale,
+        translate, rotate, offset, mirror, trim, stretch, stretchArc, scale,
         connect, divide,disassemble,  changeProperty, changePropertyAll,
         copyTranslate, copyRotate, copyOffset, copyMirror, copyTrim, copyScale, copyElement, pasteElement,
         extrusion, revolution, sweep, release,
@@ -72,6 +72,7 @@ namespace Mini3DCad
             new Command("2D編集",     "オフセット",   OPERATION.offset),
             new Command("2D編集",     "反転",         OPERATION.mirror),
             new Command("2D編集",     "トリム",       OPERATION.trim),
+            new Command("2D編集",     "ストレッチ",   OPERATION.stretch),
             new Command("2D編集",     "拡大縮小",     OPERATION.scale),
             new Command("2D編集",     "分解",         OPERATION.disassemble),
             new Command("2D編集",     "分割",         OPERATION.divide),
@@ -231,6 +232,7 @@ namespace Mini3DCad
                 case OPERATION.offset: break;
                 case OPERATION.mirror: break;
                 case OPERATION.trim: break;
+                case OPERATION.stretch: break;
                 case OPERATION.scale: break;
                 case OPERATION.copyTranslate: break;
                 case OPERATION.copyRotate: break;
@@ -467,12 +469,13 @@ namespace Mini3DCad
         /// <summary>
         /// ファイルにデータを保存
         /// </summary>
-        /// <param name="saveonly">未使用</param>
+        /// <param name="saveonly">保存のみ</param>
         public void saveFile(bool saveonly = false)
         {
             if (0 < mDataFilePath.Length) {
                 mDataManage.saveData(mDataFilePath);
             } else if (!saveonly && 0 < mDataManage.mElementList.Count) {
+                //  新規ファイル名の設定
                 string itemName = mMainWindow.mFileData.addItem();
                 if (0 < itemName.Length) {
                     mDataFilePath = mMainWindow.mFileData.getItemFilePath(itemName);

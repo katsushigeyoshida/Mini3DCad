@@ -5,6 +5,18 @@ namespace Mini3DCad
 {
     public class Element
     {
+        public Dictionary<PrimitiveId, string> mPrimitiveName = new Dictionary<PrimitiveId, string>() {
+            { PrimitiveId.Non, "" },
+            { PrimitiveId.Point, "点" },
+            { PrimitiveId.Line, "線分" },
+            { PrimitiveId.Arc, "円弧" },
+            { PrimitiveId.Polyline, "折線" },
+            { PrimitiveId.Polygon, "多角形" },
+            { PrimitiveId.Extrusion, "押出" },
+            { PrimitiveId.Revolution, "回転体" },
+            { PrimitiveId.Sweep, "掃引" },
+        };
+
         public string mName;                    //  エレメント名(任意)
         public Primitive mPrimitive;            //  プリミティブリスト
         public List<Surface> mSurfaceList;      //  サーフェスデータリスト(LINE/TRYANGLE)
@@ -15,6 +27,7 @@ namespace Mini3DCad
         public int mOperationNo = -1;           //  操作位置
         public int mLinkNo = -1;                //  リンク先要素番号
         public byte[] mLayerBit;                //  レイヤーBit
+        public bool mSurfaceVertex = false;     //  Debug用(Polygon分割表示)
 
         private YLib ylib = new YLib();
 
@@ -112,7 +125,7 @@ namespace Mini3DCad
         /// <returns>ピックの有無</returns>
         public bool pickChk(Layer layer, Box b, FACE3D face)
         {
-            if (isDraw(layer)) {
+            if (isDraw(layer) && face != FACE3D.NON) {
                 if (!b.outsideChk(mArea.toBox(face))) {
                     if (mPrimitive.pickChk(b, face))
                         return true;
@@ -127,8 +140,9 @@ namespace Mini3DCad
         /// <returns>文字列</returns>
         public string propertyInfo()
         {
-            string buf = $"名称 : {mName} プリミティブ : {mPrimitive}";
-            buf += $" 両面表示 : {mBothShading} 3D表示 : {mDisp3D}";
+            string buf = $"名称:[{mName}] 種類:[{mPrimitiveName[mPrimitive.mPrimitiveId]}]";
+            buf += $" 2D色:[{ylib.getBrushName(mPrimitive.mLineColor)}] 3D色:[{ylib.getBrushName(mPrimitive.mFaceColors[0])}]";
+            buf += $" 作成面:[{mPrimitive.mPrimitiveFace}] 両面表示:[{mBothShading}] 3D表示:[{mDisp3D}] 反転:[{mPrimitive.mReverse}]";
             return buf;
         }
 
@@ -136,9 +150,9 @@ namespace Mini3DCad
         /// エレメントの簡易情報
         /// </summary>
         /// <returns>文字列</returns>
-        public string getSummary()
+        public string getSummary(string form = "F2")
         {
-            return $"{mName} {mPrimitive} {mArea.ToString("F2")}";
+            return $"{mName} {mPrimitiveName[mPrimitive.mPrimitiveId]} {mPrimitive.dataSummary(form)}";
         }
 
         /// <summary>
@@ -147,8 +161,7 @@ namespace Mini3DCad
         /// <returns>文字列</returns>
         public string dataInfo()
         {
-            string buf = mPrimitive.propertyInfo();
-            buf += "\n" + ylib.insertLinefeed(mPrimitive.dataInfo("F2"), ",", 100);
+            string buf = ylib.insertLinefeed(mPrimitive.dataInfo("F2"), ",", 100);
             int count = mPrimitive.mSurfaceDataList.Select(x => x.mVertexList.Count).Sum();
             int vertexCount = mPrimitive.mVertexList.Select(x => x.Count).Sum();
             buf += $"\nSurfaceList {count} VertexList {vertexCount}";
@@ -228,6 +241,7 @@ namespace Mini3DCad
                                 polyline.setPropertyList(buf);
                                 buf = dataList[sp++];
                                 polyline.setDataList(buf);
+                                polyline.mPolyline.squeeze();
                                 mPrimitive = polyline;
                                 break;
                             case "Polygon":
@@ -235,6 +249,7 @@ namespace Mini3DCad
                                 polygon.setPropertyList(buf);
                                 buf = dataList[sp++];
                                 polygon.setDataList(buf);
+                                polygon.mPolygon.squeeze();
                                 mPrimitive = polygon;
                                 break;
                             case "Extrusion":
@@ -263,6 +278,7 @@ namespace Mini3DCad
                                 break;
                         }
                         if (mPrimitive != null) {
+                            mPrimitive.mSurfaceVertex = mSurfaceVertex;
                             mPrimitive.createSurfaceData();
                             mPrimitive.createVertexData();
                         }

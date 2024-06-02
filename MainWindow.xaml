@@ -80,6 +80,9 @@
                     <TextBlock Text="グリッド" FontSize="11" VerticalAlignment="Center"/>
                     <ComboBox Name="cbGridSize" Width="40" ToolTip="グリッドのサイズ"
                               SelectionChanged="cbGridSize_SelectionChanged" />
+                    <TextBlock Text="R面" FontSize="11" VerticalAlignment="Center"/>
+                    <ComboBox Name="cbFilletSize" Width="40" IsEditable="True" ToolTip="グリッドのサイズ"
+                              SelectionChanged="cbFilletSize_SelectionChanged" PreviewKeyDown="cbFilletSize_PreviewKeyDown" />
                 </ToolBar>
             </ToolBarTray>
             <StackPanel DockPanel.Dock="Bottom" Height="26">

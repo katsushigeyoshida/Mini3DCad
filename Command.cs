@@ -19,7 +19,7 @@ namespace Mini3DCad
         non, loc, pick,
         point, line, circle, arc, rect, polyline, polygon,
         translate, rotate, offset, mirror, trim, stretch, stretchArc, scale,
-        connect, divide,disassemble,  changeProperty, changePropertyAll,
+        fillet, connect, divide,disassemble,  changeProperty, changePropertyAll,
         copyTranslate, copyRotate, copyOffset, copyMirror, copyTrim, copyScale, copyElement, pasteElement,
         extrusion, revolution, sweep, release,
         measure, measureDistance, measureAngle,
@@ -76,6 +76,7 @@ namespace Mini3DCad
             new Command("2D編集",     "拡大縮小",     OPERATION.scale),
             new Command("2D編集",     "分解",         OPERATION.disassemble),
             new Command("2D編集",     "分割",         OPERATION.divide),
+            new Command("2D編集",     "Ｒ面",         OPERATION.fillet),
             new Command("2D編集",     "接続",         OPERATION.connect),
             new Command("2D編集",     "属性変更",     OPERATION.changeProperty),
             new Command("2D編集",     "一括属性変更", OPERATION.changePropertyAll),
@@ -241,6 +242,11 @@ namespace Mini3DCad
                 case OPERATION.copyTrim: break;
                 case OPERATION.copyScale: break;
                 case OPERATION.divide: break;
+                //  以下はコマンド実行後ロケイト不要
+                case OPERATION.fillet:
+                    mDataManage.fillet(picks);
+                    opeMode = OPEMODE.clear;
+                    break;
                 case OPERATION.connect:
                     mDataManage.connect(picks);
                     opeMode = OPEMODE.clear;

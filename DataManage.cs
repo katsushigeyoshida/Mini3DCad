@@ -38,6 +38,7 @@ namespace Mini3DCad
         public double mRevolutionDivideAng = Math.PI / 18;              //  回転体の分割角度
         public double mSweepDivideAng = Math.PI / 9;                    //  掃引(スィープ)の回転分割角度
         public bool mSurfaceVertex = false;                             //  Debug用(Polygon分割表示)
+        public double mFilletSize = 0;                                  //  R面取り(フィレット)半径
 
         public FACE3D mFace = FACE3D.XY;                                //  Primitive 作成面
         public Brush mPrimitiveBrush = Brushes.Green;                   //  Primitiveの色設定
@@ -769,6 +770,30 @@ namespace Mini3DCad
                     mElementList[pick.mElementNo].mRemove = true;
                     addLink(pick.mElementNo);
                 }
+            }
+        }
+
+        /// <summary>
+        /// フィレット(R面取り)処理
+        /// </summary>
+        /// <param name="picks">ピックリスト</param>
+        public void fillet(List<PickData> picks)
+        {
+            if (picks.Count == 1) {
+                Element ele0 = mElementList[picks[0].mElementNo].toCopy();
+                bool result = false;
+                if (ele0.mPrimitive.mPrimitiveId == PrimitiveId.Polyline ||
+                    ele0.mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
+                    result = fillet(ele0, picks[0].mPos);
+                }
+                if (result) {
+                    mElementList[picks[0].mElementNo].mRemove = true;
+                    addLink(picks[0].mElementNo);
+                }
+            } else if (picks.Count == 2) {
+
+            } else {
+
             }
         }
 
@@ -1631,7 +1656,7 @@ namespace Mini3DCad
         {
             PolygonPrimitive polygonPrimitive = (PolygonPrimitive)element.mPrimitive;
             Polyline3D polyline = polygonPrimitive.mPolygon.divide(new Point3D(locPos, mFace));
-            //Polyline3D polyline = polygonPrimitive.mPolygon.divide(locPos, mFace);
+            //Polyline3D polygon = polygonPrimitive.mPolygon.divide(locPos, mFace);
             if (polyline == null)
                 return false;
             Element ele = new Element(mLayerSize);
@@ -1749,6 +1774,42 @@ namespace Mini3DCad
             }
             return false;
         }
+
+        /// <summary>
+        /// フィレットの作成
+        /// </summary>
+        /// <param name="element">ピック要素</param>
+        /// <param name="pickPos">ピック位置</param>
+        /// <returns></returns>
+        public bool fillet(Element element, PointD pickPos)
+        {
+            if (element.mPrimitive.mPrimitiveId == PrimitiveId.Polyline) {
+                PolylinePrimitive polylinePrimitive = (PolylinePrimitive)element.mPrimitive;
+                PolylineD polyline = new PolylineD(polylinePrimitive.mPolyline.mPolyline);
+                Point3D pickPos3D = new Point3D(pickPos, mFace);
+                PointD pos = pickPos3D.toPointD(polylinePrimitive.mPolyline.mCp, polylinePrimitive.mPolyline.mU, polylinePrimitive.mPolyline.mV);
+                polyline.fillet(mFilletSize, pos);
+                polylinePrimitive.mPolyline.mPolyline = polyline.toPointList();
+                polylinePrimitive.createSurfaceData();
+                polylinePrimitive.createVertexData();
+            } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
+                PolygonPrimitive polygpnPrimitive = (PolygonPrimitive)element.mPrimitive;
+                PolygonD polygon = new PolygonD(polygpnPrimitive.mPolygon.mPolygon);
+                Point3D pickPos3D = new Point3D(pickPos, mFace);
+                PointD pos = pickPos3D.toPointD(polygpnPrimitive.mPolygon.mCp, polygpnPrimitive.mPolygon.mU, polygpnPrimitive.mPolygon.mV);
+                polygon.fillet(mFilletSize, pos);
+                polygpnPrimitive.mPolygon.mPolygon = polygon.toPointList();
+                polygpnPrimitive.createSurfaceData();
+                polygpnPrimitive.createVertexData();
+            } else
+                return false;
+
+            element.mOperationNo = mOperationCount;
+            element.update3DData();
+            mElementList.Add(element);
+            return true;
+        }
+
 
         /// <summary>
         /// 計測

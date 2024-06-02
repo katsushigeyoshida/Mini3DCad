@@ -36,6 +36,9 @@ namespace Mini3DCad
             0, 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 10,
             20, 30, 40, 50, 100, 200, 300, 400, 500, 1000
         };
+        private double[] mFilletSizeMenu = {                    //  フィレットサイズメニュー
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 20, 25, 30
+        };
 
         public LocPick mLocPick;                            //  ロケイト・ピック処理
         public FileData mFileData;                          //  ファイル管理
@@ -108,6 +111,8 @@ namespace Mini3DCad
             cbGridSize.ItemsSource = mGridSizeMenu;
             cbColor.SelectedIndex = ylib.getBrushNo(mDataManage.mPrimitiveBrush);
             cbGridSize.SelectedIndex = mGridSizeMenu.FindIndex(Math.Abs(mDraw.mGridSize));
+            cbFilletSize.ItemsSource = mFilletSizeMenu;
+            cbFilletSize.SelectedIndex = 0;
             cbCommand.ItemsSource = mCommandOpe.mKeyCommand.mKeyCommandList;
             //  データファイルの設定
             mFileData.setBaseDataFolder();
@@ -533,6 +538,31 @@ namespace Mini3DCad
                 mDraw.mGridSize = mGridSizeMenu[cbGridSize.SelectedIndex];
                 mDraw.draw();
             }
+            btDummy.Focus();         //  ダミーでフォーカスを外す
+        }
+
+        /// <summary>
+        /// フィレットの半径値を設定
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cbFilletSize_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            int index = cbFilletSize.SelectedIndex;
+            if (0 <= index)
+                mDataManage.mFilletSize = mFilletSizeMenu[index];
+            btDummy.Focus();         //  ダミーでフォーカスを外す
+        }
+
+        /// <summary>
+        /// フィレットの半径値をキー入力設定
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cbFilletSize_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+                mDataManage.mFilletSize = ylib.doubleParse(cbFilletSize.Text, 0);
             btDummy.Focus();         //  ダミーでフォーカスを外す
         }
 

@@ -625,7 +625,8 @@ namespace Mini3DCad
                         element.mPrimitive.mPrimitiveId == PrimitiveId.Line ||
                         element.mPrimitive.mPrimitiveId == PrimitiveId.Arc ||
                         element.mPrimitive.mPrimitiveId == PrimitiveId.Polyline ||
-                        element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
+                        element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon ||
+                        element.mPrimitive.mPrimitiveId == PrimitiveId.Extrusion) {
                         element.mPrimitive.offset(new Point3D(sp, mFace), new Point3D(ep, mFace), mFace);
                         element.mPrimitive.createSurfaceData();
                         element.mPrimitive.createVertexData();
@@ -834,14 +835,16 @@ namespace Mini3DCad
 
                     Polyline3D pl0 = ele0.mPrimitive.toPointList();
                     Polyline3D pl1 = ele1.mPrimitive.toPointList();
-                    if (pl0.nearStart(picks[0].mPos, mFace))               //  ピック位置に近い方を終点にする
+                    if (pl0.length(new Point3D(picks[0].mPos, mFace)) < pl0.length() / 2 )
+                        //  ピック位置に近い方を終点にする
                         pl0.mPolyline.Reverse();
                     pl0.add(pl1.toPoint3D(), picks[1].mPos, mFace, true);  //  ピック位置に近い方を始点にして追加
                     pl0.squeeze();
                     addPolyline(pl0, ele0.mPrimitive.mLineColor, ele0.mPrimitive.mFaceColors[0]);
                     mElementList[^1].copyProperty(ele0);
                     mElementList[^1].copyLayer(ele0);
-                }
+                } else
+                    return;
             } else if (2 < picks.Count) {
                 Polyline3D polyline = new Polyline3D();
                 for (int i = 0; i< picks.Count; i++) {
@@ -851,7 +854,8 @@ namespace Mini3DCad
                         ele1.mPrimitive.mPrimitiveId == PrimitiveId.Polyline) {
                         Polyline3D polyline1 = ele1.mPrimitive.toPointList();
                         polyline.connect(polyline1);
-                    }
+                    } else
+                        return;
                 }
                 polyline.squeeze();
                 addPolyline(polyline, ele0.mPrimitive.mLineColor, ele0.mPrimitive.mFaceColors[0]);
@@ -1920,6 +1924,21 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// 表示データ再作成
+        /// </summary>
+        public void reCreate()
+        {
+            if (mElementList == null || mElementList.Count == 0) return;
+            for (int j = 0; j < mElementList.Count; j++) {
+                if (mElementList[j].mPrimitive != null) {
+                    mElementList[j].mPrimitive.mSurfaceVertex = mSurfaceVertex;
+                    mElementList[j].mPrimitive.createSurfaceData();
+                    mElementList[j].mPrimitive.createVertexData();
+                }
+            }
+        }
+
+        /// <summary>
         /// ElementデータをSurfaceDataに変換
         /// </summary>
         /// <returns>SurfaceDataリスト</returns>
@@ -1985,7 +2004,10 @@ namespace Mini3DCad
                 mArcDivideAng = dlg.mArcDivideAngle;
                 mRevolutionDivideAng = dlg.mRevolutionDivideAngle;
                 mSweepDivideAng = dlg.mSweepDivideAngle;
-                mSurfaceVertex = dlg.mSurfaceVertex;
+                if(mSurfaceVertex != dlg.mSurfaceVertex) {
+                    mSurfaceVertex = dlg.mSurfaceVertex;
+                    reCreate();
+                }
                 if (mMainWindow.mFileData.mBaseDataFolder != dlg.mDataFolder) {
                     mMainWindow.mFileData.setBaseDataFolder(dlg.mDataFolder, false);
                     mMainWindow.reloadDataFileList();

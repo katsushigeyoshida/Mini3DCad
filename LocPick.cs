@@ -74,7 +74,17 @@ namespace Mini3DCad
         /// <returns>座標</returns>
         private PointD autoLoc(PointD pos, int entNo = -1)
         {
-            return mDataManage.mElementList[entNo].mPrimitive.nearPoint(pos, 4, mDataManage.mFace);
+            if (mDataManage.mElementList[entNo].mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
+                ArcPrimitive arcPrimitive = (ArcPrimitive)mDataManage.mElementList[entNo].mPrimitive;
+                return arcPrimitive.mArc.nearPoint(pos, 4, mDataManage.mFace);
+            } else if (mDataManage.mElementList[entNo].mPrimitive.mPrimitiveId == PrimitiveId.Polyline) {
+                PolylinePrimitive polylinePrimitive = (PolylinePrimitive)mDataManage.mElementList[entNo].mPrimitive;
+                return polylinePrimitive.mPolyline.nearPoint(pos, 4, mDataManage.mFace);
+            } else if (mDataManage.mElementList[entNo].mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
+                PolygonPrimitive polygonPrimitive = (PolygonPrimitive)mDataManage.mElementList[entNo].mPrimitive;
+                return polygonPrimitive.mPolygon.nearPoint(pos, 4, mDataManage.mFace);
+            } else
+                return mDataManage.mElementList[entNo].mPrimitive.nearPoint(pos, 4, mDataManage.mFace);
         }
 
         /// <summary>

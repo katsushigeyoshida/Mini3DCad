@@ -859,7 +859,10 @@ namespace Mini3DCad
         /// <param name="e"></param>
         private void btSetting_Click(object sender, RoutedEventArgs e)
         {
-            mDataManage.setSystemProperty();
+            if (mDataManage.setSystemProperty()) {
+                commandClear();
+                dispTitle();
+            }
         }
 
         /// <summary>

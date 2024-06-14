@@ -825,6 +825,7 @@ namespace Mini3DCad
                 mElementList[^1].copyProperty(ele0);
                 mElementList[^1].copyLayer(ele0);
             } else if (picks.Count == 2) {
+                //  2要素をピック位置で接続
                 Element ele1 = mElementList[picks[1].mElementNo];
                 if ((ele0.mPrimitive.mPrimitiveId == PrimitiveId.Line ||
                     ele0.mPrimitive.mPrimitiveId == PrimitiveId.Arc ||
@@ -835,10 +836,7 @@ namespace Mini3DCad
 
                     Polyline3D pl0 = ele0.mPrimitive.toPointList();
                     Polyline3D pl1 = ele1.mPrimitive.toPointList();
-                    if (pl0.length(new Point3D(picks[0].mPos, mFace)) < pl0.length() / 2 )
-                        //  ピック位置に近い方を終点にする
-                        pl0.mPolyline.Reverse();
-                    pl0.add(pl1.toPoint3D(), picks[1].mPos, mFace, true);  //  ピック位置に近い方を始点にして追加
+                    pl0.connect(new Point3D(picks[0].mPos, mFace), pl1, new Point3D(picks[1].mPos, mFace));
                     pl0.squeeze();
                     addPolyline(pl0, ele0.mPrimitive.mLineColor, ele0.mPrimitive.mFaceColors[0]);
                     mElementList[^1].copyProperty(ele0);
@@ -846,6 +844,7 @@ namespace Mini3DCad
                 } else
                     return;
             } else if (2 < picks.Count) {
+                //  3要素以上で端点接続
                 Polyline3D polyline = new Polyline3D();
                 for (int i = 0; i< picks.Count; i++) {
                     Element ele1 = mElementList[picks[i].mElementNo];
@@ -1617,12 +1616,13 @@ namespace Mini3DCad
         /// <summary>
         /// ポリゴンプリミティブの作成
         /// </summary>
-        /// <param name="plist">3D座標リスト</param>
+        /// <param name="polygon">3D座標リスト</param>
         /// <returns>ポリゴンプリミティブ</returns>
-        public Primitive createPolygon(Polygon3D plist)
+        public Primitive createPolygon(Polygon3D polygon)
         {
-            PolygonPrimitive polygon = new PolygonPrimitive(plist, mPrimitiveBrush, mFace);
-            return polygon;
+            polygon.squeeze();
+            PolygonPrimitive polygonPrimitive = new PolygonPrimitive(polygon, mPrimitiveBrush, mFace);
+            return polygonPrimitive;
         }
 
         /// <summary>
@@ -1660,7 +1660,7 @@ namespace Mini3DCad
         {
             PolygonPrimitive polygonPrimitive = (PolygonPrimitive)element.mPrimitive;
             Polyline3D polyline = polygonPrimitive.mPolygon.divide(new Point3D(locPos, mFace));
-            //Polyline3D polygon = polygonPrimitive.mPolygon.divide(locPos, mFace);
+            //Polyline3D polygonPrimitive = polygonPrimitive.mPolygon.divide(locPos, mFace);
             if (polyline == null)
                 return false;
             Element ele = new Element(mLayerSize);
@@ -1854,7 +1854,6 @@ namespace Mini3DCad
             }
         }
 
-
         /// <summary>
         /// 要素情報表示
         /// </summary>
@@ -1987,7 +1986,7 @@ namespace Mini3DCad
         /// <summary>
         /// システム設定
         /// </summary>
-        public void setSystemProperty()
+        public bool setSystemProperty()
         {
             SysPropertyDlg dlg = new SysPropertyDlg();
             dlg.Owner = mMainWindow;
@@ -2015,7 +2014,9 @@ namespace Mini3DCad
                 mMainWindow.mFileData.mBackupFolder = dlg.mBackupFolder;
                 mMainWindow.mFileData.mDiffTool = dlg.mDiffTool;
                 mOperationCount++;
+                return true;
             }
+            return false;
         }
 
         /// <summary>

@@ -1670,7 +1670,7 @@ namespace Mini3DCad
             buf = buf.TrimEnd(',');
             if (5 < plist.Count)
                 buf += ",・・・";
-            return $"数:{mPolyline.mPolyline.Count},座標:{buf}";
+            return $"長さ:{mPolyline.length().ToString("F3")},数:{mPolyline.mPolyline.Count},座標:{buf}";
         }
 
         /// <summary>
@@ -2058,7 +2058,7 @@ namespace Mini3DCad
             for (int i = 0; i < plist.Count && i < 4; i++)
                 buf += plist[i].ToString(form) + ",";
             buf.TrimEnd(',');
-            return $"数:{mPolygon.mPolygon.Count},座標:{buf}";
+            return $"長さ:{mPolygon.length().ToString("F3")},数:{mPolygon.mPolygon.Count},座標:{buf}";
         }
 
         /// <summary>

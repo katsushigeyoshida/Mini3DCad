@@ -78,10 +78,10 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                     <TextBlock Text="グリッド" FontSize="11" VerticalAlignment="Center"/>
-                    <ComboBox Name="cbGridSize" Width="40" ToolTip="グリッドのサイズ"
+                    <ComboBox Name="cbGridSize" Width="40" ToolTip="グリッドのサイズ(Ctrl + F1でON/OFF)"
                               SelectionChanged="cbGridSize_SelectionChanged" />
                     <TextBlock Text="R面" FontSize="11" VerticalAlignment="Center"/>
-                    <ComboBox Name="cbFilletSize" Width="40" IsEditable="True" ToolTip="グリッドのサイズ"
+                    <ComboBox Name="cbFilletSize" Width="40" IsEditable="True" ToolTip="フィレットのサイズ"
                               SelectionChanged="cbFilletSize_SelectionChanged" PreviewKeyDown="cbFilletSize_PreviewKeyDown" />
                 </ToolBar>
             </ToolBarTray>

@@ -353,6 +353,7 @@ namespace Mini3DCad
         {
             if (control) {
                 switch (key) {
+                    case Key.F1: mGridSize *= -1; draw(); break;                    //  グリッド表示切替
                     case Key.Left: scroll(mScrollSize, 0); break;
                     case Key.Right: scroll(-mScrollSize, 0); break;
                     case Key.Up: scroll(0, mScrollSize); break;
@@ -364,7 +365,6 @@ namespace Mini3DCad
                 }
             } else if (shift) {
                 switch (key) {
-                    case Key.F1: mGridSize *= -1; draw(); break;                    //  グリッド表示切替
                     default: break;
                 }
             } else {

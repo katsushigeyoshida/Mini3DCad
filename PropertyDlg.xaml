@@ -44,13 +44,19 @@
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
+        <Label Content="外枠表示" Margin="280,60,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chOutlineDisp" Margin="340,65,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chOutlineDispEnable" Margin="370,65,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <CheckBox x:Name="chFaceColorEnable" Margin="190,65,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <Label Content="両面表示" Margin="5,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <CheckBox Name="chBothShading" Margin="80,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <CheckBox x:Name="chBothShadingEnable" Margin="110,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
-        <Label Content="3D表示" Margin="210,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <CheckBox Name="chDisp3D" Margin="260,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <CheckBox x:Name="chDisp3DEnable" Margin="290,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="3D表示" Margin="170,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chDisp3D" Margin="220,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chDisp3DEnable" Margin="250,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="端面表示" Margin="280,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chEdgeDisp" Margin="340,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chEdgeDispEnable" Margin="370,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <Label Content="円弧" Margin="5,110,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <Label Content="半径" Margin="40,110,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <TextBox Name="tbArcRadius" Margin="75,115,0,0" Width="60" VerticalAlignment="Top" HorizontalAlignment="Left" />
@@ -68,7 +74,7 @@
         <TextBox Name="tbDivideAng" Margin="160,145,0,0" Width="60" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <CheckBox Name="chDivideAngEnable" Margin="230,145,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <Label Name="lbLayerListTitle" Content="レイヤ名" Margin="5,170,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="49" />
-        <ComboBox Name="cbLayerList" Margin="80,170,50,0" IsEditable="False" VerticalAlignment="Top" >
+        <ComboBox Name="cbLayerList" Margin="80,170,50,0" IsEditable="False" VerticalAlignment="Top" MouseDoubleClick="cbLayerList_MouseDoubleClick" >
             <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <CheckBox Content="{Binding Text}" IsChecked="{Binding Checked, Mode=TwoWay}" />

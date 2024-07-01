@@ -81,7 +81,7 @@
                     <ComboBox Name="cbGridSize" Width="40" ToolTip="グリッドのサイズ(Ctrl + F1でON/OFF)"
                               SelectionChanged="cbGridSize_SelectionChanged" />
                     <TextBlock Text="R面" FontSize="11" VerticalAlignment="Center"/>
-                    <ComboBox Name="cbFilletSize" Width="40" IsEditable="True" ToolTip="フィレットのサイズ"
+                    <ComboBox Name="cbFilletSize" Width="50" IsEditable="True" ToolTip="フィレットのサイズ"
                               SelectionChanged="cbFilletSize_SelectionChanged" PreviewKeyDown="cbFilletSize_PreviewKeyDown" />
                 </ToolBar>
             </ToolBarTray>

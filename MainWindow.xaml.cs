@@ -36,7 +36,7 @@ namespace Mini3DCad
             0, 0.1, 0.2, 0.25, 0.3, 0.4, 0.5, 1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 10,
             20, 30, 40, 50, 100, 200, 300, 400, 500, 1000
         };
-        private double[] mFilletSizeMenu = {                    //  フィレットサイズメニュー
+        private List<double> mFilletSizeMenu = new List<double>() {                    //  フィレットサイズメニュー
             0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15, 16, 18, 20, 25, 30
         };
 
@@ -44,8 +44,8 @@ namespace Mini3DCad
         public FileData mFileData;                          //  ファイル管理
         public DataDraw mDraw;                              //  描画クラス
         public DataManage mDataManage;                      //  データ管理クラス
+        public CommandOpe mCommandOpe;                      //  コマンド処理
         private CommandData mCommandData;                   //  コマンドデータ
-        private CommandOpe mCommandOpe;                     //  コマンド処理
         private Canvas mCurCanvas;                          //  描画キャンバス
         private System.Windows.Controls.Image mCurImage;    //  描画イメージ
 
@@ -111,7 +111,9 @@ namespace Mini3DCad
             cbGridSize.ItemsSource = mGridSizeMenu;
             cbColor.SelectedIndex = ylib.getBrushNo(mDataManage.mPrimitiveBrush);
             cbGridSize.SelectedIndex = mGridSizeMenu.FindIndex(Math.Abs(mDraw.mGridSize));
-            cbFilletSize.ItemsSource = mFilletSizeMenu;
+            //cbFilletSize.ItemsSource = mFilletSizeMenu;
+            cbFilletSize.Items.Clear();
+            mFilletSizeMenu.ForEach(p => cbFilletSize.Items.Add(p));
             cbFilletSize.SelectedIndex = 0;
             cbCommand.ItemsSource = mCommandOpe.mKeyCommand.mKeyCommandList;
             //  データファイルの設定
@@ -485,7 +487,7 @@ namespace Mini3DCad
                 return;
             if (item.Name != "OpenGL" && mDraw != null) {
                 mDraw.setCanvas(mCurCanvas, mCurImage, mDataManage.mFace);
-                mDraw.draw2D();
+                mDraw.draw();
             }
             if (mDraw != null)
                 mDraw.mBitmapOn = false;    //  切り替え直後はBitmapが作られていない
@@ -561,9 +563,16 @@ namespace Mini3DCad
         /// <param name="e"></param>
         private void cbFilletSize_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (e.Key == Key.Enter)
+            if (e.Key == Key.Enter) {
                 mDataManage.mFilletSize = ylib.doubleParse(cbFilletSize.Text, 0);
-            btDummy.Focus();         //  ダミーでフォーカスを外す
+                if (!mFilletSizeMenu.Contains(mDataManage.mFilletSize)) {
+                    mFilletSizeMenu.Add(mDataManage.mFilletSize);
+                    mFilletSizeMenu.Sort();
+                    cbFilletSize.Items.Clear();
+                    mFilletSizeMenu.ForEach(p => cbFilletSize.Items.Add(p));
+                }
+            }
+            //btDummy.Focus();         //  ダミーでフォーカスを外す
         }
 
         /// <summary>
@@ -701,6 +710,7 @@ namespace Mini3DCad
                 mFileData.mDataName = lbItemList.Items[index].ToString() ?? "";
                 mCommandOpe.mDataFilePath = mFileData.getCurItemFilePath();
                 mCommandOpe.loadFile();
+                mLocPick.clear();
                 //  パラメータ設定
                 tabCanvas.SelectedIndex = -1;
                 mDraw.mWorldList.Clear();
@@ -1009,6 +1019,7 @@ namespace Mini3DCad
                     }
                 }
             }
+            dispStatus(null);
         }
 
         /// <summary>

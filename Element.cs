@@ -13,6 +13,7 @@ namespace Mini3DCad
             { PrimitiveId.Polyline, "折線" },
             { PrimitiveId.Polygon, "多角形" },
             { PrimitiveId.Extrusion, "押出" },
+            { PrimitiveId.Blend, "ブレンド" },
             { PrimitiveId.Revolution, "回転体" },
             { PrimitiveId.Sweep, "掃引" },
         };
@@ -27,7 +28,6 @@ namespace Mini3DCad
         public int mOperationNo = -1;           //  操作位置
         public int mLinkNo = -1;                //  リンク先要素番号
         public byte[] mLayerBit;                //  レイヤーBit
-        public bool mSurfaceVertex = false;     //  Debug用(Polygon分割表示)
 
         private YLib ylib = new YLib();
 
@@ -142,7 +142,7 @@ namespace Mini3DCad
         {
             string buf = $"名称:[{mName}] 種類:[{mPrimitiveName[mPrimitive.mPrimitiveId]}]";
             buf += $" 2D色:[{ylib.getBrushName(mPrimitive.mLineColor)}] 3D色:[{ylib.getBrushName(mPrimitive.mFaceColors[0])}]";
-            buf += $" 作成面:[{mPrimitive.mPrimitiveFace}] 両面表示:[{mBothShading}] 3D表示:[{mDisp3D}] 反転:[{mPrimitive.mReverse}]";
+            buf += $" 両面表示:[{mBothShading}] 3D表示:[{mDisp3D}] 反転:[{mPrimitive.mReverse}]";
             return buf;
         }
 
@@ -193,6 +193,8 @@ namespace Mini3DCad
             list.Add(buf);
             list.Add(mPrimitive.toPropertyList());
             list.Add(mPrimitive.toDataList());
+            if (mPrimitive.mPrimitiveId == PrimitiveId.Blend)
+                list.Add(mPrimitive.toDataList());
             buf = new string[] { "IsShading", mBothShading.ToString() };
             list.Add(buf);
             buf = new string[] { "Disp3D", mDisp3D.ToString() };
@@ -215,7 +217,7 @@ namespace Mini3DCad
         /// <param name="dataList">文字列配列リスト</param>
         /// <param name="sp">リスト開始位置</param>
         /// <returns>リスト終了位置</returns>
-        public int setDataList(List<string[]> dataList, int sp)
+        public int setDataList(List<string[]> dataList, int sp, bool wireFrame, bool surfaceVertex)
         {
             while (sp < dataList.Count) {
                 string[] buf = dataList[sp++];
@@ -259,6 +261,15 @@ namespace Mini3DCad
                                 extrusion.setDataList(buf);
                                 mPrimitive = extrusion;
                                 break;
+                            case "Blend":
+                                BlendPrimitive blend = new BlendPrimitive();
+                                blend.setPropertyList(buf);
+                                buf = dataList[sp++];
+                                blend.setDataList(buf);
+                                buf = dataList[sp++];
+                                blend.setDataList(buf);
+                                mPrimitive = blend;
+                                break;
                             case "Revolution":
                                 RevolutionPrimitive revolution = new RevolutionPrimitive();
                                 revolution.setPropertyList(buf);
@@ -278,7 +289,8 @@ namespace Mini3DCad
                                 break;
                         }
                         if (mPrimitive != null) {
-                            mPrimitive.mSurfaceVertex = mSurfaceVertex;
+                            mPrimitive.mSurfaceVertex = surfaceVertex;
+                            mPrimitive.mWireFrame = wireFrame;
                             mPrimitive.createSurfaceData();
                             mPrimitive.createVertexData();
                         }

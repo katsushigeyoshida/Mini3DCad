@@ -9,12 +9,29 @@
     <Grid>
         <Label Content="円の分割角度" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <TextBox x:Name="tbArcDivideAng" Text="" Width="50" Margin="120,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
-        <Label Content="多角形分割表示" Margin="200,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
-        <CheckBox x:Name="cbPolygonTriangles"  Margin="300,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="多角形分割2D表示" Margin="200,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <CheckBox x:Name="chPolygonTriangles"  Margin="320,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <Label Content="回転体の分割角度" Margin="0,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <TextBox x:Name="tbRevolutionDivideAng" Text="" Width="50" Margin="120,30,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="ワイヤーフレーム表示" Margin="200,25,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <CheckBox x:Name="chWireFrame"  Margin="320,30,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <Label Content="掃引の円分割角度" Margin="0,50,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <TextBox x:Name="tbSweepDivideAng" Text="" Width="50" Margin="120,55,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="2D背景色" Margin="200,50,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <ComboBox Name="cbBackColor" ItemsSource="{Binding}" SelectedValue="{Binding Color}"
+                 Margin="270,50,0,0" Width="100" VerticalAlignment="Top" HorizontalAlignment="Left">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <!--色と色名を並べて表示-->
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="20" Height="Auto" Margin="5,0" BorderThickness="1" 
+                               BorderBrush="Black" Background="{Binding brush}" >
+                        </Border>
+                        <TextBlock Text="{Binding colorTitle}"></TextBlock>
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
         <Label Content="データ保存フォルダ" Margin="0,75,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <ComboBox x:Name="cbDataFolder" Text="" IsEditable="True" Margin="120,80,30,0" VerticalAlignment="Top" MouseDoubleClick="tbDataFolder_MouseDoubleClick" />
         <TextBlock Text="バックアップフォルダ" Margin="5,110,0,0" HorizontalAlignment="Left"  VerticalAlignment="Top"/>

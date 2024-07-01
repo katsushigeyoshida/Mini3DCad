@@ -21,7 +21,7 @@ namespace Mini3DCad
         translate, rotate, offset, mirror, trim, stretch, stretchArc, scale,
         fillet, connect, divide,disassemble,  changeProperty, changePropertyAll,
         copyTranslate, copyRotate, copyOffset, copyMirror, copyTrim, copyScale, copyElement, pasteElement,
-        extrusion, revolution, sweep, release,
+        extrusion, blend, revolution, sweep, release,
         measure, measureDistance, measureAngle,
         zumenComment, dispLayer, addLayer, removeLayer, info, remove, undo,
         screenCopy, screenSave, imageTrimming,
@@ -91,6 +91,7 @@ namespace Mini3DCad
             new Command("2Dコピー",   "要素貼付け",   OPERATION.pasteElement),
             new Command("2Dコピー",   "戻る",         OPERATION.back),
             new Command("3D編集",     "押出",         OPERATION.extrusion),
+            new Command("3D編集",     "ブレンド",     OPERATION.blend),
             new Command("3D編集",     "回転体",       OPERATION.revolution),
             new Command("3D編集",     "掃引",         OPERATION.sweep),
             new Command("3D編集",     "解除",         OPERATION.release),
@@ -183,7 +184,7 @@ namespace Mini3DCad
     /// <summary>
     /// コマンド処理
     /// </summary>
-    class CommandOpe
+    public class CommandOpe
     {
         public int mSaveOperationCount = 10;                    //  定期保存の操作回数
 
@@ -270,6 +271,11 @@ namespace Mini3DCad
                     mDataManage.getPasteElement();
                     break;
                 case OPERATION.extrusion: break;
+                case OPERATION.blend:
+                    if (2 == picks.Count)
+                        mDataManage.blend(picks);
+                    opeMode = OPEMODE.clear;
+                    break;
                 case OPERATION.revolution:
                     if (2 == picks.Count)
                         mDataManage.revolution(picks);

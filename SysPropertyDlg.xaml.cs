@@ -1,6 +1,8 @@
 ﻿using CoreLib;
 using System.IO;
 using System.Windows;
+using Brush = System.Windows.Media.Brush;
+using Brushes = System.Windows.Media.Brushes;
 
 namespace Mini3DCad
 {
@@ -12,7 +14,9 @@ namespace Mini3DCad
         public double mArcDivideAngle = 30;                 //  円変換分割角度
         public double mRevolutionDivideAngle = 30;          //  回転体の分割角度
         public double mSweepDivideAngle = 30;               //  掃引の分割角度
-        public bool mSurfaceVertex = false;                 //  多角形の分割線表示
+        public bool mSurfaceVertex = false;                 //  多角形の分割線2D表示
+        public bool mWireFrame = false;                     //  ワイヤーフレーム表示3D
+        public Brush mBackColor = Brushes.White;            //  背景色
         public string mDataFolder = "";                     //  データフォルダ
         public string mBackupFolder = "";                   //  バックアップフォルダ
         public string mDiffTool = "";                       //  ファイル比較ツール
@@ -26,6 +30,8 @@ namespace Mini3DCad
         public SysPropertyDlg()
         {
             InitializeComponent();
+
+            cbBackColor.DataContext = ylib.mBrushList;
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -33,7 +39,11 @@ namespace Mini3DCad
             tbArcDivideAng.Text = ylib.double2StrZeroSup(ylib.R2D(mArcDivideAngle), "F8");
             tbRevolutionDivideAng.Text = ylib.double2StrZeroSup(ylib.R2D(mRevolutionDivideAngle), "F8");
             tbSweepDivideAng.Text = ylib.double2StrZeroSup(ylib.R2D(mSweepDivideAngle), "F8");
-            cbPolygonTriangles.IsChecked = mSurfaceVertex;
+            chPolygonTriangles.IsChecked = mSurfaceVertex;
+            chWireFrame.IsChecked = mWireFrame;
+            int colorIndex = ylib.getBrushNo(mBackColor);
+            if (0 <= colorIndex)
+                cbBackColor.SelectedIndex = colorIndex;
             List<string[]> llistf = ylib.loadCsvData(mDataFolderListPath);
             foreach (var buf in llistf) {
                 if (!mDataFolderList.Contains(buf[0]))
@@ -105,7 +115,11 @@ namespace Mini3DCad
             mArcDivideAngle = ylib.D2R(ylib.string2double(tbArcDivideAng.Text));
             mRevolutionDivideAngle = ylib.D2R(ylib.string2double(tbRevolutionDivideAng.Text));
             mSweepDivideAngle = ylib.D2R(ylib.string2double(tbSweepDivideAng.Text));
-            mSurfaceVertex = cbPolygonTriangles.IsChecked == true;
+            mSurfaceVertex = chPolygonTriangles.IsChecked == true;
+            mWireFrame = chWireFrame.IsChecked == true;
+            if (0 <= cbBackColor.SelectedIndex) {
+                mBackColor = ylib.mBrushList[cbBackColor.SelectedIndex].brush;
+            }
             mDataFolder = cbDataFolder.Text;
             if (mDataFolderList.Contains(mDataFolder))
                 mDataFolderList.Remove(mDataFolder);

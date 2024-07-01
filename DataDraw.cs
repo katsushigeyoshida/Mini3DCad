@@ -13,7 +13,7 @@ namespace Mini3DCad
     {
         public double mWorldSize = 2.0;                         //  3D 空間サイズ
         public double mGridSize = 1.0;                          //  グリッドサイズ
-        public Brush mBaseBackColor = null;                     //  背景色
+        public Brush mBaseBackColor = Brushes.White;            //  2D背景色
         public BitmapSource mBitmapSource;                      //  CanvasのBitmap一時保存
         public Brush mPickColor = Brushes.Red;                  //  ピック時のカラー
         public int mScrollSize = 19;                            //  キーによるスクロール単位
@@ -104,7 +104,7 @@ namespace Mini3DCad
                 mImScreen.Source = mBitmapSource;
                 mCanvas.Children.Add(mImScreen);
             } else {
-                draw2D();
+                draw();
             }
             Primitive primitive;
 
@@ -163,7 +163,7 @@ namespace Mini3DCad
                         Point3D v = new Point3D(sp, mFace) - new Point3D(locList[0], mFace);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.translate(v);
+                            primitive.translate(v, pick.mPos, mFace);
                             primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
@@ -177,7 +177,7 @@ namespace Mini3DCad
                         Point3D cp = new Point3D(locList[0], mFace);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.rotate(cp, -ang, mFace);
+                            primitive.rotate(cp, -ang, pick.mPos, mFace);
                             primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
@@ -190,7 +190,7 @@ namespace Mini3DCad
                         if (0 < locList[0].length(sp)) {
                             foreach (var pick in pickData) {
                                 primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                                primitive.offset(new Point3D(locList[0], mFace), new Point3D(sp, mFace), mFace);
+                                primitive.offset(new Point3D(locList[0], mFace), new Point3D(sp, mFace), pick.mPos, mFace);
                                 primitive.createVertexData();
                                 primitive.draw2D(mGDraw, mFace);
                             }
@@ -202,7 +202,7 @@ namespace Mini3DCad
                     if (locList.Count == 1) {
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.mirror(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), mFace);
+                            primitive.mirror(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), pick.mPos, mFace);
                             primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
@@ -213,7 +213,7 @@ namespace Mini3DCad
                     if (locList.Count == 1) {
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.trim(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), mFace);
+                            primitive.trim(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), pick.mPos, mFace);
                             primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
@@ -226,7 +226,7 @@ namespace Mini3DCad
                         double scale = locList[0].length(sp) / locList[0].length(locList[1]);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.scale(new Point3D(locList[0], mFace), scale, mFace);
+                            primitive.scale(new Point3D(locList[0], mFace), scale, pick.mPos, mFace);
                             primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
@@ -238,7 +238,7 @@ namespace Mini3DCad
                         Point3D v = new Point3D(lastPoint, mFace) - new Point3D(locList[0], mFace);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.stretch(v, pick.mPos, ope == OPERATION.stretchArc, mFace);
+                            primitive.stretch(v, ope == OPERATION.stretchArc, pick.mPos, mFace);
                             primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
@@ -316,8 +316,7 @@ namespace Mini3DCad
             if (mFace == FACE3D.NON || mDataManage.mArea == null || mDataManage.mArea.isNaN())
                 return;
             mGDraw.setWorldWindow(mDataManage.mArea.toBox(mFace));
-            dispInit();
-            draw2D();
+            draw();
         }
 
         /// <summary>
@@ -494,8 +493,7 @@ namespace Mini3DCad
         {
             mGDraw.setWorldZoom(wp, scaleStep, true);
             mGDraw.mClipBox = mGDraw.mWorld;
-            dispInit();
-            draw2D();
+            draw();
         }
 
         /// <summary>
@@ -505,8 +503,7 @@ namespace Mini3DCad
         public void areaDisp(Box area)
         {
             mGDraw.setWorldWindow(area);
-            dispInit();
-            draw2D();
+            draw();
         }
 
         /// <summary>
@@ -520,7 +517,7 @@ namespace Mini3DCad
                 mImScreen.Source = mBitmapSource;
                 mCanvas.Children.Add(mImScreen);
             } else {
-                draw2D();
+                draw();
             }
 
             mGDraw.mBrush = Brushes.Green;
@@ -605,7 +602,7 @@ namespace Mini3DCad
             buf = new string[] { "GridSize", mGridSize.ToString() };
             list.Add(buf);
             if (mBaseBackColor != null) {
-                buf = new string[] { "BaseBackColor", mBaseBackColor.ToString() };
+                buf = new string[] { "BaseBackColor", ylib.getBrushName(mBaseBackColor) };
                 list.Add(buf);
             }
             buf = new string[] {"World",
@@ -626,6 +623,7 @@ namespace Mini3DCad
         /// <returns>リスト終了位置</returns>
         public int setDataList(List<string[]> dataList, int sp)
         {
+            mBaseBackColor = null;
             while (sp < dataList.Count) {
                 string[] buf = dataList[sp++];
                 if (buf[0] == "BaseBackColor") {
@@ -663,8 +661,7 @@ namespace Mini3DCad
         {
             Brush tmpColor = mBaseBackColor;
             mBaseBackColor = Brushes.White;
-            dispInit();
-            draw2D(false, false);
+            draw(true, false, false);
             BitmapSource bitmapSource = ylib.canvas2Bitmap(mCanvas);
             mBaseBackColor = tmpColor;
             return bitmapSource;

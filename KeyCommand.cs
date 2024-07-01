@@ -63,40 +63,47 @@ namespace Mini3DCad
             if (command.Length == 0)
                 return false;
             mFace = face;
-            getCommandParameter(command);
-            switch (mMainCmd[mCommandNo]) {
-                case "point":
-                    if (0 < mPoints.Count)
-                        mDataManage.addPoint(mPoints[0]);
-                    break;
-                case "line":
-                    if (1 < mPoints.Count)
-                        mDataManage.addLine(mPoints[0], mPoints[1]);
-                    break;
-                case "rect":
-                    if (1 < mPoints.Count)
-                        mDataManage.addRect(mPoints[0].toPointXY(), mPoints[1].toPointXY());
-                    break;
-                case "circle":
-                    if (1 < mPoints.Count)
-                        mDataManage.addCircle(mPoints[0].toPointXY(), mPoints[1].toPointXY());
-                    else if (mPoints.Count == 1 && 0 < mRadius)
-                        mDataManage.addCircle(mPoints[0].toPointXY(), mPoints[0].toPointXY() + new PointD(mRadius, 0));
-                    break;
-                case "arc":
-                    if (2 < mPoints.Count)
-                        mDataManage.addArc(mPoints[0].toPointXY(), mPoints[1].toPointXY(), mPoints[2].toPointXY());
-                    break;
-                case "polyline":
-                    if (1 < mPoints.Count)
-                        mDataManage.addPolyline(mPoints);
-                    break;
-                case "polygon":
-                    if (2 < mPoints.Count)
-                        mDataManage.addPolygon(mPoints);
-                    break;
-                default:
+            try {
+                getCommandParameter(command);
+                if (mMainCmd.Count < mCommandNo)
                     return false;
+                switch (mMainCmd[mCommandNo]) {
+                    case "point":
+                        if (0 < mPoints.Count)
+                            mDataManage.addPoint(mPoints[0]);
+                        break;
+                    case "line":
+                        if (1 < mPoints.Count)
+                            mDataManage.addLine(mPoints[0], mPoints[1]);
+                        break;
+                    case "rect":
+                        if (1 < mPoints.Count)
+                            mDataManage.addPolygon(rect2Plist(mPoints[0], mPoints[1]));
+                        break;
+                    case "circle":
+                        if (1 < mPoints.Count)
+                            mDataManage.addCircle(point2Circle(mPoints[0], mPoints[1]));
+                        else if (mPoints.Count == 1 && 0 < mRadius)
+                            mDataManage.addArc(point2Circle(mPoints[0], mRadius));
+                        break;
+                    case "arc":
+                        if (2 < mPoints.Count)
+                            mDataManage.addArc(new Arc3D(mPoints[0], mPoints[1], mPoints[2]));
+                        break;
+                    case "polyline":
+                        if (1 < mPoints.Count)
+                            mDataManage.addPolyline(mPoints);
+                        break;
+                    case "polygon":
+                        if (2 < mPoints.Count)
+                            mDataManage.addPolygon(mPoints);
+                        break;
+                    default:
+                        return false;
+                }
+            } catch (Exception e) {
+                System.Diagnostics.Debug.WriteLine($"execCommand: {e.Message}");
+                return false;
             }
             mDataManage.updateData();
             return true;
@@ -154,6 +161,54 @@ namespace Mini3DCad
                     mValString = cmd[i];
                 }
             }
+        }
+
+        /// <summary>
+        /// 円弧データに返還
+        /// </summary>
+        /// <param name="cp">中心座標</param>
+        /// <param name="ep">円周上の座標</param>
+        /// <returns>円弧</returns>
+        private Arc3D point2Circle(Point3D cp, Point3D ep)
+        {
+            return new Arc3D(cp, cp.length(ep), mFace);
+        }
+
+        /// <summary>
+        /// 円データに変換
+        /// </summary>
+        /// <param name="cp">中心座標</param>
+        /// <param name="r">半径</param>
+        /// <returns>円弧</returns>
+        private Arc3D point2Circle(Point3D cp, double r)
+        {
+            return new Arc3D(cp, r, mFace);
+        }
+
+        /// <summary>
+        /// rectからPolylineデータに変換
+        /// </summary>
+        /// <param name="sp">始点</param>
+        /// <param name="ep">終点</param>
+        /// <returns>座標リスト</returns>
+        private List<Point3D> rect2Plist(Point3D sp, Point3D ep)
+        {
+            List<Point3D> plist = new List<Point3D>();
+            plist.Add(sp);
+            if (mFace == FACE3D.FRONT)
+                plist.Add(new Point3D(sp.x, ep.y, sp.z));
+            else if (mFace == FACE3D.TOP)
+                plist.Add(new Point3D(sp.x, sp.y, ep.z));
+            else if (mFace == FACE3D.RIGHT)
+                plist.Add(new Point3D(sp.x, sp.y, ep.z));
+            plist.Add(ep);
+            if (mFace == FACE3D.FRONT)
+                plist.Add(new Point3D(ep.x, sp.y, sp.z));
+            else if (mFace == FACE3D.TOP)
+                plist.Add(new Point3D(ep.x, sp.y, sp.z));
+            else if (mFace == FACE3D.RIGHT)
+                plist.Add(new Point3D(sp.x, ep.y, sp.z));
+            return plist;
         }
 
         /// <summary>

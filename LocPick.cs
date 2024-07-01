@@ -38,6 +38,15 @@ namespace Mini3DCad
         }
 
         /// <summary>
+        /// データクリア
+        /// </summary>
+        public void clear()
+        {
+            mLocList.Clear();
+            mPickElement.Clear();
+        }
+
+        /// <summary>
         /// オートロケイト
         /// </summary>
         /// <param name="pickPos">ピック座標</param>

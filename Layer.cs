@@ -270,8 +270,9 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="layerBits">レイヤBit</param>
         /// <param name="chkList">レイヤチェックリスト</param>
+        /// <param name="replace">置換え</param>
         /// <returns>反映後のレイヤBits</returns>
-        public byte[] setLayerChkList(byte[] layerBits, List<CheckBoxListItem> chkList)
+        public byte[] setLayerChkList(byte[] layerBits, List<CheckBoxListItem> chkList, bool replace = true)
         {
             foreach (CheckBoxListItem chkItem in chkList) {
                 int n = getLayerNo(chkItem.Text);
@@ -279,7 +280,7 @@ namespace Mini3DCad
                     n = add(chkItem.Text);
                 if (chkItem.Checked)
                     bitOn(layerBits, n);
-                else
+                else if (replace)
                     bitOff(layerBits, n);
             }
             return layerBits;

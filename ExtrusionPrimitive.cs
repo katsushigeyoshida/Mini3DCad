@@ -52,6 +52,8 @@ namespace Mini3DCad
                 Polyline3D polyline1 = new Polyline3D(mPolygon);
                 surfaceData = new SurfaceData();
                 surfaceData.mVertexList = polyline1.toPoint3D(mDivideAngle);
+                if (!mLoop)
+                    surfaceData.mVertexList.RemoveAt(surfaceData.mVertexList.Count - 1);
                 surfaceData.mDrawType = DRAWTYPE.LINE_STRIP;
                 surfaceData.mFaceColor = mFaceColors[0];
                 mSurfaceDataList.Add(surfaceData);
@@ -59,6 +61,8 @@ namespace Mini3DCad
                 polyline2.translate(mVector);
                 surfaceData = new SurfaceData();
                 surfaceData.mVertexList = polyline2.toPoint3D(mDivideAngle);
+                if (!mLoop)
+                    surfaceData.mVertexList.RemoveAt(surfaceData.mVertexList.Count - 1);
                 surfaceData.mDrawType = DRAWTYPE.LINE_STRIP;
                 surfaceData.mFaceColor = mFaceColors[0];
                 mSurfaceDataList.Add(surfaceData);
@@ -80,7 +84,7 @@ namespace Mini3DCad
                 //  サーフェース表示
                 Point3D normal = mPolygon.getNormalLine();
                 bool wise = (Math.PI / 2) > normal.angle(mVector);
-                if (mEdgeDisp) {
+                if (mEdgeDisp && mLoop) {
                     //  1面(端面)
                     mSurfaceDataList.Add(createSurfaceData(mPolygon, mVector, mDivideAngle, mFaceColors[0]));
                     //  2面(端面)
@@ -134,7 +138,7 @@ namespace Mini3DCad
                 mOutlineColors.Clear();
                 mOutlineType.Clear();
                 mVertexList.Add(mPolygon.toPoint3D(mDivideAngle, mLoop));
-                mOutlineColors.Add(mFaceColors[0]);
+                mOutlineColors.Add(mLineColor);
                 mOutlineType.Add(mLineType);
                 mVertexList.Add(getVector().toPoint3D());
                 mOutlineColors.Add(System.Windows.Media.Brushes.Green);
@@ -241,8 +245,17 @@ namespace Mini3DCad
         /// <param name="face">2D平面</param>
         public override void scale(Point3D cp, double scale, PointD pickPos, FACE3D face)
         {
-            mVector.length(mVector.length() * scale);
-            mPolygon.scale(cp, scale);
+            if (mOutlineDisp) {
+                int select = pickSelect(pickPos, face);
+                if (select == 1) {
+                    mVector.length(mVector.length() * scale);
+                } else {
+                    mPolygon.scale(cp, scale);
+                }
+            } else {
+                mVector.length(mVector.length() * scale);
+                mPolygon.scale(cp, scale);
+            }
         }
 
         /// <summary>
@@ -304,6 +317,7 @@ namespace Mini3DCad
             List<string> dataList = new List<string>() {
                 "ExtrusionData", "Vector", mVector.x.ToString(), mVector.y.ToString(), mVector.z.ToString(),
                 "Close", mEdgeDisp.ToString(),
+                "Loop", mLoop.ToString(),
                 "Cp", mPolygon.mCp.x.ToString(), mPolygon.mCp.y.ToString(), mPolygon.mCp.z.ToString(),
                 "U", mPolygon.mU.x.ToString(), mPolygon.mU.y.ToString(), mPolygon.mU.z.ToString(),
                 "V", mPolygon.mV.x.ToString(), mPolygon.mV.y.ToString(), mPolygon.mV.z.ToString(),
@@ -341,6 +355,8 @@ namespace Mini3DCad
                         mVector.z = double.TryParse(list[++i], out val) ? val : 0;
                     } else if (list[i] == "Close") {
                         mEdgeDisp = bool.TryParse(list[++i], out bval) ? bval : true;
+                    } else if (list[i] == "Loop") {
+                        mLoop = bool.TryParse(list[++i], out bval) ? bval : true;
                     } else if (list[i] == "Cp") {
                         Point3D p = new Point3D();
                         p.x = double.TryParse(list[++i], out val) ? val : 0;
@@ -419,6 +435,7 @@ namespace Mini3DCad
             extrusion.mPolygon = mPolygon.toCopy();
             extrusion.mVector = mVector.toCopy();
             extrusion.mEdgeDisp = mEdgeDisp;
+            extrusion.mLoop = mLoop;
             return extrusion;
         }
 

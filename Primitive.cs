@@ -12,7 +12,7 @@ namespace Mini3DCad
         Non, Link,
         Point, Line, Arc, Polyline, Polygon,
         WireCube, Cube, Cylinder, Sphere, Cone,
-        Extrusion, Blend, Revolution, Sweep
+        Extrusion, Blend, BlendPolyline, Revolution, Sweep
     }
 
     /// <summary>

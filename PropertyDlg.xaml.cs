@@ -45,6 +45,7 @@ namespace Mini3DCad
         public bool mDivideAngEnable = false;
         public bool mPropertyAll = false;           //  複数要素設定
         public List<CheckBoxListItem> mChkList;     //  レイヤー使用リスト
+        public bool mCkkListAdd = true;             //  レイヤ追加チェック
         public bool mCkkListEnable = false;
 
         private string[] mLineFontName = new string[] {
@@ -77,6 +78,7 @@ namespace Mini3DCad
             chBothShading.IsEnabled  = mBothShadingEnable;
             chDisp3D.IsChecked       = mDisp3D;
             chEdgeDisp.IsChecked     = mEdgeDisp;
+            chEdgeDisp.IsEnabled     = mEdgeDispEnable;
             chOutlineDisp.IsChecked  = mOutlineDisp;
             chOutlineDisp.IsEnabled  = mOutlineDispEnable;
             tbArcRadius.Text         = mArcRadius.ToString();
@@ -93,6 +95,7 @@ namespace Mini3DCad
             //cbLayerList.ItemsSource = mChkList;
             cbLayerList.Items.Clear();
             mChkList.ForEach(p => cbLayerList.Items.Add(p));
+            chLayerListAdd.IsChecked = mCkkListAdd;
 
             if (!mArcOn) {
                 tbArcRadius.IsEnabled = false;
@@ -118,6 +121,7 @@ namespace Mini3DCad
                 chArcEndAngleEnable.Visibility   = Visibility.Hidden;
                 chReverseEnable.Visibility       = Visibility.Hidden;
                 chDivideAngEnable.Visibility     = Visibility.Hidden;
+                chLayerListAdd.Visibility        = Visibility.Hidden;
                 chLayerListEnable.Visibility     = Visibility.Hidden;
             }
         }
@@ -167,6 +171,7 @@ namespace Mini3DCad
             mReverseEnable = chReverseEnable.IsChecked == true;
             mDivideAng       = ylib.doubleParse(tbDivideAng.Text, 10);
             mDivideAngEnable = chDivideAngEnable.IsChecked == true;
+            mCkkListAdd      = chLayerListAdd.IsChecked == true;
             mCkkListEnable   = chLayerListEnable.IsChecked == true;
 
             DialogResult = true;

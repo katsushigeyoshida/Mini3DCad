@@ -73,14 +73,15 @@
         <Label Name="lbDivideAngTitle" Content="分割角度" Margin="100,140,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <TextBox Name="tbDivideAng" Margin="160,145,0,0" Width="60" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <CheckBox Name="chDivideAngEnable" Margin="230,145,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <Label Name="lbLayerListTitle" Content="レイヤ名" Margin="5,170,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="49" />
-        <ComboBox Name="cbLayerList" Margin="80,170,50,0" IsEditable="False" VerticalAlignment="Top" MouseDoubleClick="cbLayerList_MouseDoubleClick" >
+        <Label Name="lbLayerListTitle" Content="レイヤ名" Margin="5,170,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="50" />
+        <ComboBox Name="cbLayerList" Margin="80,170,100,0" IsEditable="False" VerticalAlignment="Top" MouseDoubleClick="cbLayerList_MouseDoubleClick" >
             <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <CheckBox Content="{Binding Text}" IsChecked="{Binding Checked, Mode=TwoWay}" />
                 </DataTemplate>
             </ComboBox.ItemTemplate>
         </ComboBox>
+        <CheckBox x:Name="chLayerListAdd" Content="追加" Margin="0,175,50,0" VerticalAlignment="Top" HorizontalAlignment="Right" />
         <CheckBox x:Name="chLayerListEnable" Margin="0,175,20,0" VerticalAlignment="Top" HorizontalAlignment="Right"  />
 
         <Button x:Name="btOK" IsDefault="True" Content="OK" Width="60" Margin="0,0,100,10" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btOK_Click" />

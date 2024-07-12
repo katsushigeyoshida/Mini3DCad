@@ -105,7 +105,7 @@ namespace Mini3DCad
                 mOutlineColors.Add(System.Windows.Media.Brushes.Green);
                 mOutlineType.Add(2);
                 mVertexList.Add(mOutLine.toPoint3D(mDivideAngle));
-                mOutlineColors.Add(mFaceColors[0]);
+                mOutlineColors.Add(mLineColor);
                 mOutlineType.Add(mLineType);
             } else {
                 List<List<Point3D>> outLines;
@@ -314,6 +314,7 @@ namespace Mini3DCad
         /// <returns>文字列配列</returns>
         public override string[] toDataList()
         {
+            bool multi = mOutLine.IsMultiType();
             List<string> dataList = new List<string>() {
                 "RevolutionData",
                 "StartAngle", mSa.ToString(),
@@ -325,11 +326,14 @@ namespace Mini3DCad
                 "OutLineU", mOutLine.mU.x.ToString(), mOutLine.mU.y.ToString(), mOutLine.mU.z.ToString(),
                 "OutLineV", mOutLine.mV.x.ToString(), mOutLine.mV.y.ToString(), mOutLine.mV.z.ToString(),
                 "OutLineSize", mOutLine.mPolyline.Count.ToString(),
+                "Multi", multi.ToString(),
                 "OutLine"
             };
             for (int i = 0; i < mOutLine.mPolyline.Count; i++) {
                 dataList.Add(mOutLine.mPolyline[i].x.ToString());
                 dataList.Add(mOutLine.mPolyline[i].y.ToString());
+                if (multi)
+                    dataList.Add(mOutLine.mPolyline[i].type.ToString());
             }
             return dataList.ToArray();
         }
@@ -350,6 +354,7 @@ namespace Mini3DCad
                 bool bval;
                 int i = 1;
                 int count = 0;
+                bool multi = false;
                 while (i < list.Length) {
                     if (list[i] == "StartAngle") {
                         mSa = double.TryParse(list[++i], out val) ? val : 0;
@@ -389,11 +394,15 @@ namespace Mini3DCad
                         mOutLine.mV = p;
                     } else if (list[i] == "OutLineSize") {
                         count = int.TryParse(list[++i], out ival) ? ival : 0;
+                    } else if (list[i] == "Multi") {
+                        multi = bool.TryParse(list[++i], out bval) ? bval : false;
                     } else if (list[i] == "OutLine") {
                         for (int j = 0; j < count; j++) {
                             PointD p = new PointD();
                             p.x = double.TryParse(list[++i], out val) ? val : 0;
                             p.y = double.TryParse(list[++i], out val) ? val : 0;
+                            if (multi)
+                                p.type = int.TryParse(list[++i], out ival) ? ival : 0;
                             mOutLine.mPolyline.Add(p);
                         }
                     }

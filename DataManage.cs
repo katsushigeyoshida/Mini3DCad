@@ -942,7 +942,9 @@ namespace Mini3DCad
                 if (n1 < 0 || n2 < 0) return;
                 polygon1.changeStart(n1);
                 polygon2.changeStart(n2);
+
                 BlendPrimitive blendPrimitive = new BlendPrimitive(polygon1, polygon2, mArcDivideAng);
+
                 blendPrimitive.copyProperty(mElementList[picks[0].mElementNo].mPrimitive);
                 blendPrimitive.createSurfaceData();
                 blendPrimitive.createVertexData();
@@ -955,12 +957,51 @@ namespace Mini3DCad
                 element.mOperationNo = mOperationCount;
                 element.update3DData();
                 mElementList.Add(element);
+            } else {
+                Polyline3D polyline1;
+                Polyline3D polyline2;
+                if (mElementList[picks[0].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Line) {
+                    polyline1 = new Polyline3D(((LinePrimitive)mElementList[picks[0].mElementNo].mPrimitive).mLine, mFace);
+                } else if (mElementList[picks[0].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
+                    polyline1 = new Polyline3D(((ArcPrimitive)mElementList[picks[0].mElementNo].mPrimitive).mArc, 0, mFace);
+                } else if (mElementList[picks[0].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Polyline) {
+                    polyline1 = ((PolylinePrimitive)mElementList[picks[0].mElementNo].mPrimitive).mPolyline.toCopy();
+                } else
+                    return;
+                if (mElementList[picks[1].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Line) {
+                    polyline2 = new Polyline3D(((LinePrimitive)mElementList[picks[1].mElementNo].mPrimitive).mLine, mFace);
+                } else if (mElementList[picks[1].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
+                    polyline2 = new Polyline3D(((ArcPrimitive)mElementList[picks[1].mElementNo].mPrimitive).mArc, 0, mFace);
+                } else if (mElementList[picks[1].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Polyline) {
+                    polyline2 = ((PolylinePrimitive)mElementList[picks[1].mElementNo].mPrimitive).mPolyline.toCopy();
+                } else
+                    return;
+                double len1 = polyline1.length();
+                double len2 = polyline2.length();
+                if (polyline1.length(new Point3D(picks[0].mPos, mFace)) > len1 / 2)
+                    polyline1.reverse();
+                if (polyline2.length(new Point3D(picks[1].mPos, mFace)) > len2 / 2)
+                    polyline2.reverse();
 
-                mElementList[picks[0].mElementNo].mRemove = true;
-                addLink(picks[0].mElementNo);
-                mElementList[picks[1].mElementNo].mRemove = true;
-                addLink(picks[1].mElementNo);
+                BlendPolylinePrimitive blendPrimitive = new BlendPolylinePrimitive(polyline1, polyline2, mArcDivideAng);
+
+                blendPrimitive.copyProperty(mElementList[picks[0].mElementNo].mPrimitive);
+                blendPrimitive.createSurfaceData();
+                blendPrimitive.createVertexData();
+                Element element = new Element(mLayerSize);
+                element.copyLayer(mElementList[picks[0].mElementNo]);
+                element.mPrimitive = blendPrimitive;
+                element.mName = mElementList[picks[0].mElementNo].mName;
+                if (0 > element.mName.IndexOf("ブレンド"))
+                    element.mName += "-ブレンド";
+                element.mOperationNo = mOperationCount;
+                element.update3DData();
+                mElementList.Add(element);
             }
+            mElementList[picks[0].mElementNo].mRemove = true;
+            addLink(picks[0].mElementNo);
+            mElementList[picks[1].mElementNo].mRemove = true;
+            addLink(picks[1].mElementNo);
         }
 
         /// <summary>
@@ -1095,15 +1136,20 @@ namespace Mini3DCad
                 if (element.mPrimitive.mPrimitiveId == PrimitiveId.Extrusion) {
                     //  押出解除
                     ExtrusionPrimitive extrusion = (ExtrusionPrimitive) element.mPrimitive;
-                    if (extrusion.mEdgeDisp)
+                    if (extrusion.mEdgeDisp && extrusion.mLoop)
                         addPolygon(extrusion.mPolygon,extrusion.mLineColor, extrusion.mFaceColors[0], extrusion.mDivideAngle);
                     else
-                        addPolyline(extrusion.mPolygon.toPolyline3D(), extrusion.mLineColor, extrusion.mFaceColors[0], extrusion.mDivideAngle);
+                        addPolyline(extrusion.mPolygon.toPolyline3D(0, extrusion.mLoop), extrusion.mLineColor, extrusion.mFaceColors[0], extrusion.mDivideAngle);
                 } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.Blend) {
                     //  ブレンド解除
                     BlendPrimitive blend = (BlendPrimitive)element.mPrimitive;
                     addPolygon(blend.mPolygon1, blend.mLineColor, blend.mFaceColors[0], blend.mDivideAngle);
                     addPolygon(blend.mPolygon2, blend.mLineColor, blend.mFaceColors[0], blend.mDivideAngle);
+                } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.BlendPolyline) {
+                    //  ブレンドポリライン解除
+                    BlendPolylinePrimitive blend = (BlendPolylinePrimitive)element.mPrimitive;
+                    addPolyline(blend.mPolyline1, blend.mLineColor, blend.mFaceColors[0], blend.mDivideAngle);
+                    addPolyline(blend.mPolyline2, blend.mLineColor, blend.mFaceColors[0], blend.mDivideAngle);
                 } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
                     //  回転体解除
                     RevolutionPrimitive revolution = (RevolutionPrimitive) element.mPrimitive;
@@ -1173,6 +1219,13 @@ namespace Mini3DCad
                     dlg.mReverseOn = true;
                     dlg.mDivideAngOn = true;
                     dlg.mEdgeDispEnable = true;
+                    dlg.mOutlineDispEnable = true;
+                }
+                if (element.mPrimitive.mPrimitiveId == PrimitiveId.BlendPolyline) {
+                    dlg.mLineFontOn = false;
+                    dlg.mReverseOn = true;
+                    dlg.mDivideAngOn = true;
+                    dlg.mEdgeDispEnable = false;
                     dlg.mOutlineDispEnable = true;
                 }
                 if (element.mPrimitive.mPrimitiveId == PrimitiveId.Revolution) {
@@ -1282,7 +1335,7 @@ namespace Mini3DCad
                     element.mPrimitive.mPrimitiveId == PrimitiveId.Sweep))
                     element.mPrimitive.mOutlineDisp = dlg.mOutlineDisp;
                 if (dlg.mCkkListEnable)
-                    element.mLayerBit = mLayer.setLayerChkList(element.mLayerBit, dlg.mChkList);
+                    element.mLayerBit = mLayer.setLayerChkList(element.mLayerBit, dlg.mChkList, dlg.mCkkListAdd == false);
                 if (dlg.mDivideAngEnable)
                     element.mPrimitive.mDivideAngle = ylib.D2R(dlg.mDivideAng);
                 element.mOperationNo = mOperationCount;
@@ -1324,6 +1377,10 @@ namespace Mini3DCad
                 mElementList.Add(element);
                 mElementList[picks[i].mElementNo].mRemove = true;
                 addLink(picks[i].mElementNo);
+                if (dlg.mCkkListEnable && 
+                    mMainWindow.mCommandOpe.mLayerChkListDlg != null && 
+                    mMainWindow.mCommandOpe.mLayerChkListDlg.IsVisible)
+                    mMainWindow.mCommandOpe.setDispLayer();
             }
         }
 

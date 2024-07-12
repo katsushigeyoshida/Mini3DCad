@@ -10,7 +10,7 @@ namespace Mini3DCad
     {
         public Polygon3D mPolygon1;
         public Polygon3D mPolygon2;
-        public int mCount = 0;
+        public int mCount = 0;          //  アウトラインデータカウント(ファイル出力用)
 
         /// <summary>
         /// コンストラクタ
@@ -30,9 +30,7 @@ namespace Mini3DCad
         {
             mPrimitiveId = PrimitiveId.Blend;
             mPolygon1 = polygon1.toCopy();
-            mPolygon1 = new Polygon3D(mPolygon1.toPoint3D(divAng));
             mPolygon2 = polygon2.toCopy();
-            mPolygon2 = new Polygon3D(mPolygon2.toPoint3D(divAng));
         }
 
         /// <summary>
@@ -44,78 +42,102 @@ namespace Mini3DCad
             SurfaceData surfaceData;
             if (mWireFrame) {
                 //  ワイヤフレーム表示
-                Polyline3D polyline1 = new Polyline3D(mPolygon1);
-                surfaceData = new SurfaceData();
-                surfaceData.mVertexList = polyline1.toPoint3D(mDivideAngle);
-                surfaceData.mDrawType = DRAWTYPE.LINE_STRIP;
-                surfaceData.mFaceColor = mFaceColors[0];
-                mSurfaceDataList.Add(surfaceData);
-                Polyline3D polyline2 = new Polyline3D(mPolygon2);
-                surfaceData = new SurfaceData();
-                surfaceData.mVertexList = polyline2.toPoint3D(mDivideAngle);
-                surfaceData.mDrawType = DRAWTYPE.LINE_STRIP;
-                surfaceData.mFaceColor = mFaceColors[0];
-                mSurfaceDataList.Add(surfaceData);
-                //  側面
-                surfaceData = new SurfaceData();
-                List<Point3D> plist = new List<Point3D>();
-                for (int i = 0; i < mPolygon1.mPolygon.Count; i++) {
-                    Point3D p1 = polyline1.toPoint3D(i);
-                    Point3D p2 = polyline2.toPoint3D(i);
-                    plist.Add(p1);
-                    plist.Add(p2);
-                }
-                surfaceData.mVertexList = plist;
-                surfaceData.mDrawType = DRAWTYPE.LINES;
-                surfaceData.mFaceColor = mFaceColors[0];
-                mSurfaceDataList.Add(surfaceData);
+                mSurfaceDataList = createWireFrameDataList();
             } else {
                 //  サーフェース表示
-                Point3D normal = mPolygon1.getNormalLine();
-                Point3D vector = mPolygon2.toPoint3D(0) - mPolygon1.toPoint3D(0);
-                bool wise = (Math.PI / 2) > normal.angle(vector);
-                if (mEdgeDisp) {
-                    //  1面(端面)
-                    surfaceData = new SurfaceData();
-                    (surfaceData.mVertexList, bool reverse1) = mPolygon1.cnvTriangles(mDivideAngle);
-                    Point3D v1 = surfaceData.mVertexList[0].getNormal(surfaceData.mVertexList[1], surfaceData.mVertexList[2]);
-                    if (v1.angle(vector) < Math.PI / 2)
-                        surfaceData.mVertexList.Reverse();
-                    surfaceData.mDrawType = DRAWTYPE.TRIANGLES;
-                    surfaceData.mFaceColor = mFaceColors[0];
-                    surfaceData.reverse(mReverse);
-                    mSurfaceDataList.Add(surfaceData);
-                    //  2面(端面)
-                    surfaceData = new SurfaceData();
-                    (surfaceData.mVertexList, bool reverse2) = mPolygon2.cnvTriangles(mDivideAngle);
-                    Point3D v2 = surfaceData.mVertexList[0].getNormal(surfaceData.mVertexList[1], surfaceData.mVertexList[2]);
-                    if (v2.angle(vector) > Math.PI / 2)
-                        surfaceData.mVertexList.Reverse();
-                    surfaceData.mDrawType = DRAWTYPE.TRIANGLES;
-                    surfaceData.mFaceColor = mFaceColors[0];
-                    surfaceData.reverse(mReverse);
-                    mSurfaceDataList.Add(surfaceData);
-                }
-                //  側面
+                mSurfaceDataList = createSurfceDataList();
+            }
+        }
+
+        /// <summary>
+        /// ワイヤーフレーム表示データの作成
+        /// </summary>
+        /// <returns></returns>
+        private List<SurfaceData> createWireFrameDataList()
+        {
+            List<SurfaceData> wireFrameDataList = new List<SurfaceData>();
+            SurfaceData surfaceData;
+            Polyline3D polyline1 = new Polyline3D(mPolygon1);
+            surfaceData = new SurfaceData();
+            surfaceData.mVertexList = polyline1.toPoint3D(mDivideAngle);
+            surfaceData.mDrawType = DRAWTYPE.LINE_STRIP;
+            surfaceData.mFaceColor = mFaceColors[0];
+            wireFrameDataList.Add(surfaceData);
+            Polyline3D polyline2 = new Polyline3D(mPolygon2);
+            surfaceData = new SurfaceData();
+            surfaceData.mVertexList = polyline2.toPoint3D(mDivideAngle);
+            surfaceData.mDrawType = DRAWTYPE.LINE_STRIP;
+            surfaceData.mFaceColor = mFaceColors[0];
+            wireFrameDataList.Add(surfaceData);
+            //  側面
+            surfaceData = new SurfaceData();
+            List<Point3D> plist = new List<Point3D>();
+            for (int i = 0; i < mPolygon1.mPolygon.Count; i++) {
+                Point3D p1 = polyline1.toPoint3D(i);
+                Point3D p2 = polyline2.toPoint3D(i);
+                plist.Add(p1);
+                plist.Add(p2);
+            }
+            surfaceData.mVertexList = plist;
+            surfaceData.mDrawType = DRAWTYPE.LINES;
+            surfaceData.mFaceColor = mFaceColors[0];
+            wireFrameDataList.Add(surfaceData);
+            return wireFrameDataList;
+        }
+
+        /// <summary>
+        /// サーフェース表示データの作成
+        /// </summary>
+        /// <returns></returns>
+        private List<SurfaceData> createSurfceDataList()
+        {
+            List<SurfaceData> surfaceDataList = new List<SurfaceData>();
+            SurfaceData surfaceData;
+            Point3D normal = mPolygon1.getNormalLine();
+            Point3D vector = mPolygon2.toPoint3D(0) - mPolygon1.toPoint3D(0);
+            bool wise = (Math.PI / 2) > normal.angle(vector);
+            if (mEdgeDisp) {
+                //  1面(端面)
                 surfaceData = new SurfaceData();
-                surfaceData.mVertexList = new List<Point3D>();
-                List<Point3D> outline1 = mPolygon1.toPoint3D(mDivideAngle);
-                List<Point3D> outline2 = mPolygon2.toPoint3D(mDivideAngle);
-                for (int i = 0; i <= outline1.Count; i++) {
-                    int ii = i % outline1.Count;
-                    if (!wise) {
-                        surfaceData.mVertexList.Add(outline1[ii]);
-                        surfaceData.mVertexList.Add(outline2[ii]);
-                    } else {
-                        surfaceData.mVertexList.Add(outline2[ii]);
-                        surfaceData.mVertexList.Add(outline1[ii]);
-                    }
-                }
-                surfaceData.mDrawType = DRAWTYPE.QUAD_STRIP;
+                (surfaceData.mVertexList, bool reverse1) = mPolygon1.cnvTriangles(mDivideAngle);
+                Point3D v1 = surfaceData.mVertexList[0].getNormal(surfaceData.mVertexList[1], surfaceData.mVertexList[2]);
+                if (v1.angle(vector) < Math.PI / 2)
+                    surfaceData.mVertexList.Reverse();
+                surfaceData.mDrawType = DRAWTYPE.TRIANGLES;
                 surfaceData.mFaceColor = mFaceColors[0];
                 surfaceData.reverse(mReverse);
-                mSurfaceDataList.Add(surfaceData);
+                surfaceDataList.Add(surfaceData);
+                //  2面(端面)
+                surfaceData = new SurfaceData();
+                (surfaceData.mVertexList, bool reverse2) = mPolygon2.cnvTriangles(mDivideAngle);
+                Point3D v2 = surfaceData.mVertexList[0].getNormal(surfaceData.mVertexList[1], surfaceData.mVertexList[2]);
+                if (v2.angle(vector) > Math.PI / 2)
+                    surfaceData.mVertexList.Reverse();
+                surfaceData.mDrawType = DRAWTYPE.TRIANGLES;
+                surfaceData.mFaceColor = mFaceColors[0];
+                surfaceData.reverse(mReverse);
+                surfaceDataList.Add(surfaceData);
             }
+            //  側面
+            surfaceData = new SurfaceData();
+            surfaceData.mVertexList = new List<Point3D>();
+            List<Point3D> outline1 = mPolygon1.toPoint3D(mDivideAngle);
+            List<Point3D> outline2 = mPolygon2.toPoint3D(mDivideAngle);
+            for (int i = 0; i <= outline1.Count; i++) {
+                int ii = i % outline1.Count;
+                if (!wise) {
+                    surfaceData.mVertexList.Add(outline1[ii]);
+                    surfaceData.mVertexList.Add(outline2[ii]);
+                } else {
+                    surfaceData.mVertexList.Add(outline2[ii]);
+                    surfaceData.mVertexList.Add(outline1[ii]);
+                }
+            }
+            surfaceData.mDrawType = DRAWTYPE.QUAD_STRIP;
+            surfaceData.mFaceColor = mFaceColors[0];
+            surfaceData.reverse(mReverse);
+            surfaceDataList.Add(surfaceData);
+            return surfaceDataList;
         }
 
         /// <summary>
@@ -123,42 +145,63 @@ namespace Mini3DCad
         /// </summary>
         public override void createVertexData()
         {
-            mVertexList = new List<List<Point3D>>();
             if (mOutlineDisp) {
-                //  3D
-                mOutlineColors.Clear();
-                mOutlineType.Clear();
-                mOutlineColors.Add(mFaceColors[0]);
-                mOutlineType.Add(mLineType);
-                mVertexList.Add(mPolygon1.toPoint3D(mDivideAngle, true));
-                mVertexList.Add(mPolygon2.toPoint3D(mDivideAngle, true));
+                mVertexList = crateOutlineVertexData();
             } else {
-                //  1面(端面)
-                Polygon3D polygon1 = mPolygon1.toCopy();
-                mVertexList.Add(polygon1.toPoint3D(mDivideAngle, true));
-                if (!mSurfaceVertex) {
-                    mVertexList.Add(polygon1.toPoint3D(mDivideAngle, true));
-                } else {
-                    //  Debug(Surface表示確認)
-                    mVertexList.AddRange(getVertexList(polygon1));
-                }
-                //  2面(端面)
-                Polygon3D polygon2 = mPolygon2.toCopy();
-                mVertexList.Add(polygon2.toPoint3D(mDivideAngle, true));
-                if (!mSurfaceVertex) {
-                    mVertexList.Add(polygon2.toPoint3D(mDivideAngle, true));
-                } else {
-                    //  Debug(Surface表示確認)
-                    mVertexList.AddRange(getVertexList(polygon2));
-                }
-                //  側面
-                for (int i = 0; i < polygon1.mPolygon.Count; i++) {
-                    Point3D p1 = polygon1.toPoint3D(i);
-                    Point3D p2 = polygon2.toPoint3D(i);
-                    List<Point3D> plist = new List<Point3D>() { p1, p2 };
-                    mVertexList.Add(plist);
-                }
+                mVertexList = crateBlendVertexData();
             }
+        }
+
+        /// <summary>
+        /// 2Dのアウトライン表示データ作成
+        /// </summary>
+        /// <returns></returns>
+        private List<List<Point3D>> crateOutlineVertexData()
+        {
+            List<List<Point3D>>  vertexList = new List<List<Point3D>>();
+            //  3D
+            mOutlineColors.Clear();
+            mOutlineType.Clear();
+            mOutlineColors.Add(mLineColor);
+            mOutlineType.Add(mLineType);
+            vertexList.Add(mPolygon1.toPoint3D(mDivideAngle, true));
+            vertexList.Add(mPolygon2.toPoint3D(mDivideAngle, true));
+            return vertexList;
+        }
+
+        /// <summary>
+        /// 2D表示データ作成
+        /// </summary>
+        /// <returns></returns>
+        private List<List<Point3D>> crateBlendVertexData()
+        {
+            List<List<Point3D>> vertexList = new List<List<Point3D>>();
+            //  1面(端面)
+            Polygon3D polygon1 = mPolygon1.toCopy();
+            vertexList.Add(polygon1.toPoint3D(mDivideAngle, true));
+            if (!mSurfaceVertex) {
+                vertexList.Add(polygon1.toPoint3D(mDivideAngle, true));
+            } else {
+                //  Debug(Surface表示確認)
+                vertexList.AddRange(getVertexList(polygon1));
+            }
+            //  2面(端面)
+            Polygon3D polygon2 = mPolygon2.toCopy();
+            vertexList.Add(polygon2.toPoint3D(mDivideAngle, true));
+            if (!mSurfaceVertex) {
+                vertexList.Add(polygon2.toPoint3D(mDivideAngle, true));
+            } else {
+                //  Debug(Surface表示確認)
+                vertexList.AddRange(getVertexList(polygon2));
+            }
+            //  側面
+            for (int i = 0; i < polygon1.mPolygon.Count; i++) {
+                Point3D p1 = polygon1.toPoint3D(i);
+                Point3D p2 = polygon2.toPoint3D(i);
+                List<Point3D> plist = new List<Point3D>() { p1, p2 };
+                vertexList.Add(plist);
+            }
+            return vertexList;
         }
 
         /// <summary>
@@ -321,16 +364,17 @@ namespace Mini3DCad
         /// <returns>文字列配列</returns>
         public override string[] toDataList()
         {
+            List<string> dataList;
             Polygon3D polygon = mCount == 0 ? mPolygon1 : mPolygon2;
             bool multi = polygon.IsMultiType();
-            List<string> dataList = new List<string>() {
-                "BlendData" + (mCount + 1).ToString(),
-                "Cp", polygon.mCp.x.ToString(), polygon.mCp.y.ToString(), polygon.mCp.z.ToString(),
-                "U", polygon.mU.x.ToString(), polygon.mU.y.ToString(), polygon.mU.z.ToString(),
-                "V", polygon.mV.x.ToString(), polygon.mV.y.ToString(), polygon.mV.z.ToString(),
-                "Size", polygon.mPolygon.Count.ToString(),
-                "Multi", multi.ToString(),
-            };
+            dataList = new List<string>() {
+                    "BlendData" + (mCount + 1).ToString(),
+                    "Cp", polygon.mCp.x.ToString(), polygon.mCp.y.ToString(), polygon.mCp.z.ToString(),
+                    "U", polygon.mU.x.ToString(), polygon.mU.y.ToString(), polygon.mU.z.ToString(),
+                    "V", polygon.mV.x.ToString(), polygon.mV.y.ToString(), polygon.mV.z.ToString(),
+                    "Size", polygon.mPolygon.Count.ToString(),
+                    "Multi", multi.ToString(),
+                };
             for (int i = 0; i < polygon.mPolygon.Count; i++) {
                 dataList.Add(polygon.mPolygon[i].x.ToString());
                 dataList.Add(polygon.mPolygon[i].y.ToString());
@@ -350,56 +394,60 @@ namespace Mini3DCad
         {
             if (0 == list.Length)
                 return;
-            Polygon3D polygon = new Polygon3D();
-            if (list[0] == "BlendData1")
-                mPolygon1 = polygon;
-            else if (list[0] == "BlendData2")
-                mPolygon2 = polygon;
-            else
-                return;
             try {
-                int ival;
-                double val;
-                bool bval;
-                int i = 1;
-                int count;
-                bool multi = false;
-                while (i < list.Length) {
-                    if (list[i] == "Cp") {
-                        Point3D p = new Point3D();
-                        p.x = double.TryParse(list[++i], out val) ? val : 0;
-                        p.y = double.TryParse(list[++i], out val) ? val : 0;
-                        p.z = double.TryParse(list[++i], out val) ? val : 0;
-                        polygon.mCp = p;
-                    } else if (list[i] == "U") {
-                        Point3D p = new Point3D();
-                        p.x = double.TryParse(list[++i], out val) ? val : 0;
-                        p.y = double.TryParse(list[++i], out val) ? val : 0;
-                        p.z = double.TryParse(list[++i], out val) ? val : 0;
-                        polygon.mU = p;
-                    } else if (list[i] == "V") {
-                        Point3D p = new Point3D();
-                        p.x = double.TryParse(list[++i], out val) ? val : 0;
-                        p.y = double.TryParse(list[++i], out val) ? val : 0;
-                        p.z = double.TryParse(list[++i], out val) ? val : 0;
-                        polygon.mV = p;
-                    } else if (list[i] == "Size") {
-                        count = int.TryParse(list[++i], out ival) ? ival : 0;
-                    } else if (list[i] == "Multi") {
-                        multi = bool.TryParse(list[++i], out bval) ? bval : false;
-                    } else {
-                        PointD p = new PointD();
-                        p.x = double.TryParse(list[i], out val) ? val : 0;
-                        p.y = double.TryParse(list[++i], out val) ? val : 0;
-                        if (multi)
-                            p.type = int.TryParse(list[++i], out ival) ? ival : 0;
-                        polygon.mPolygon.Add(p);
-                    }
-                    i++;
+                if (list[0] == "BlendData1") {
+                    mPolygon1 = getPolygonDataList(list);
+                } else if (list[0] == "BlendData2") {
+                    mPolygon2 = getPolygonDataList(list);
                 }
             } catch (Exception e) {
                 System.Diagnostics.Debug.WriteLine($"Extrusion setDataList {e.ToString()}");
             }
+        }
+
+        private Polygon3D getPolygonDataList(string[] list)
+        {
+            Polygon3D polygon = new Polygon3D();
+            int ival;
+            double val;
+            bool bval;
+            int i = 1;
+            int count;
+            bool multi = false;
+            while (i < list.Length) {
+                if (list[i] == "Cp") {
+                    Point3D p = new Point3D();
+                    p.x = double.TryParse(list[++i], out val) ? val : 0;
+                    p.y = double.TryParse(list[++i], out val) ? val : 0;
+                    p.z = double.TryParse(list[++i], out val) ? val : 0;
+                    polygon.mCp = p;
+                } else if (list[i] == "U") {
+                    Point3D p = new Point3D();
+                    p.x = double.TryParse(list[++i], out val) ? val : 0;
+                    p.y = double.TryParse(list[++i], out val) ? val : 0;
+                    p.z = double.TryParse(list[++i], out val) ? val : 0;
+                    polygon.mU = p;
+                } else if (list[i] == "V") {
+                    Point3D p = new Point3D();
+                    p.x = double.TryParse(list[++i], out val) ? val : 0;
+                    p.y = double.TryParse(list[++i], out val) ? val : 0;
+                    p.z = double.TryParse(list[++i], out val) ? val : 0;
+                    polygon.mV = p;
+                } else if (list[i] == "Size") {
+                    count = int.TryParse(list[++i], out ival) ? ival : 0;
+                } else if (list[i] == "Multi") {
+                    multi = bool.TryParse(list[++i], out bval) ? bval : false;
+                } else {
+                    PointD p = new PointD();
+                    p.x = double.TryParse(list[i], out val) ? val : 0;
+                    p.y = double.TryParse(list[++i], out val) ? val : 0;
+                    if (multi)
+                        p.type = int.TryParse(list[++i], out ival) ? ival : 0;
+                    polygon.mPolygon.Add(p);
+                }
+                i++;
+            }
+            return polygon;
         }
 
         /// <summary>
@@ -422,7 +470,7 @@ namespace Mini3DCad
             buf += $"Cp {mPolygon2.mCp.x.ToString(form)},{mPolygon2.mCp.y.ToString(form)},{mPolygon2.mCp.z.ToString(form)},";
             buf += $"U {mPolygon2.mU.x.ToString(form)},{mPolygon2.mU.y.ToString(form)},{mPolygon2.mU.z.ToString(form)},";
             buf += $"V {mPolygon2.mV.x.ToString(form)},{mPolygon2.mV.y.ToString(form)},{mPolygon2.mV.z.ToString(form)},";
-            buf += $"Size {mPolygon1.mPolygon.Count} ";
+            buf += $"Size {mPolygon2.mPolygon.Count} ";
             for (int i = 0; i < mPolygon2.mPolygon.Count; i++) {
                 buf += "," + mPolygon2.mPolygon[i].ToString(form);
             }

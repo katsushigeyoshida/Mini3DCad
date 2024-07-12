@@ -14,6 +14,7 @@ namespace Mini3DCad
             { PrimitiveId.Polygon, "多角形" },
             { PrimitiveId.Extrusion, "押出" },
             { PrimitiveId.Blend, "ブレンド" },
+            { PrimitiveId.BlendPolyline, "ブレンド" },
             { PrimitiveId.Revolution, "回転体" },
             { PrimitiveId.Sweep, "掃引" },
         };
@@ -193,7 +194,8 @@ namespace Mini3DCad
             list.Add(buf);
             list.Add(mPrimitive.toPropertyList());
             list.Add(mPrimitive.toDataList());
-            if (mPrimitive.mPrimitiveId == PrimitiveId.Blend)
+            if (mPrimitive.mPrimitiveId == PrimitiveId.Blend ||
+                mPrimitive.mPrimitiveId == PrimitiveId.BlendPolyline)
                 list.Add(mPrimitive.toDataList());
             buf = new string[] { "IsShading", mBothShading.ToString() };
             list.Add(buf);
@@ -269,6 +271,15 @@ namespace Mini3DCad
                                 buf = dataList[sp++];
                                 blend.setDataList(buf);
                                 mPrimitive = blend;
+                                break;
+                            case "BlendPolyline":
+                                BlendPolylinePrimitive blendPolyline = new BlendPolylinePrimitive();
+                                blendPolyline.setPropertyList(buf);
+                                buf = dataList[sp++];
+                                blendPolyline.setDataList(buf);
+                                buf = dataList[sp++];
+                                blendPolyline.setDataList(buf);
+                                mPrimitive = blendPolyline;
                                 break;
                             case "Revolution":
                                 RevolutionPrimitive revolution = new RevolutionPrimitive();

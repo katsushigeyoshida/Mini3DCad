@@ -54,7 +54,7 @@ namespace Mini3DCad
                 return null;
             List<SurfaceData> surfaceDataList = new List<SurfaceData>();
             SurfaceData surfaceData = new SurfaceData();
-            List<Point3D> plist = crateVertexData();
+            List<Point3D> plist = crateVertexData(0);
             surfaceData.mVertexList = plist;
             surfaceData.mDrawType = DRAWTYPE.QUAD_STRIP;
             surfaceData.mFaceColor = mFaceColors[0];
@@ -74,7 +74,7 @@ namespace Mini3DCad
                 return null;
             List<SurfaceData>  surfaceDataList = new List<SurfaceData>();
             SurfaceData surfaceData = new SurfaceData();
-            List< Point3D > plist = crateVertexData();
+            List< Point3D > plist = crateVertexData(1);
             List<Point3D> edgelist = new List<Point3D>();
             for (int  i = 0;  i < plist.Count - 3;  i += 2) {
                 edgelist.Add(plist[i]);
@@ -106,7 +106,7 @@ namespace Mini3DCad
             mVertexList.Add(mPolyline1.toPoint3D(mDivideAngle / 2));
             mVertexList.Add(mPolyline2.toPoint3D(mDivideAngle / 2));
             if (!mOutlineDisp) {
-                List<Point3D> plist = crateVertexData();
+                List<Point3D> plist = crateVertexData(1);
                 for (int i = 0; i < plist.Count; i += 2) {
                     List<Point3D> line = new List<Point3D>() {
                         plist[i], plist[i + 1]
@@ -119,8 +119,9 @@ namespace Mini3DCad
         /// <summary>
         /// 座標点リストの作成
         /// </summary>
+        /// <param name="st">開始位置</param>
         /// <returns>座標点リスト</returns>
-        private List<Point3D> crateVertexData()
+        private List<Point3D> crateVertexData(int st = 0)
         {
             if (mPolyline1 == null || mPolyline2 == null)
                 return null;
@@ -150,9 +151,9 @@ namespace Mini3DCad
                 if (line1 != null && line2 != null) {
                     plist.AddRange(createVertexData(line1, line2));
                 } else if (line1 != null && arc2 != null) {
-                    plist.AddRange(createVertexData(line1, arc2));
+                    plist.AddRange(createVertexData(line1, arc2, false, st));
                 } else if (line2 != null && arc1 != null) {
-                    plist.AddRange(createVertexData(line2, arc1));
+                    plist.AddRange(createVertexData(line2, arc1, false, st));
                 } else if (arc1 != null && arc2 != null) {
                     plist.AddRange(createVertexData(arc1, arc2));
                 }
@@ -178,14 +179,15 @@ namespace Mini3DCad
         /// <param name="line">線分</param>
         /// <param name="arc">円弧</param>
         /// <param name="reverse">反転</param>
+        /// <param name="st">開始位置</param>
         /// <returns>座標点リスト</returns>
-        private List<Point3D> createVertexData(Line3D line, Arc3D arc, bool reverse = false)
+        private List<Point3D> createVertexData(Line3D line, Arc3D arc, bool reverse = false, int st = 0)
         {
             List<Point3D> arcPlist = arc.toPoint3D(mDivideAngle);
             if (!arc.mCcw) arcPlist.Reverse();
             List<Point3D> linePlist = line.toPoint3D(arcPlist.Count - 1);
             List<Point3D> plist = new List<Point3D>();
-            for (int i = 1; i < arcPlist.Count; i++) {
+            for (int i = st; i < arcPlist.Count; i++) {
                 if (reverse) {
                     plist.Add(arcPlist[i]);
                     plist.Add(linePlist[i]);

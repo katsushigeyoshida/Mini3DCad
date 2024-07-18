@@ -4,6 +4,29 @@ using System.Windows;
 namespace Mini3DCad
 {
     /// <summary>
+    /// ピックデータ
+    /// </summary>
+    public class PickData
+    {
+        public int mElementNo;                  //  要素No
+        public PointD mPos;                     //  ピック位置
+        public FACE3D mDispMode;                //  表示面
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="no">要素No</param>
+        /// <param name="pos">ピック位置</param>
+        /// <param name="dispMode">表示面</param>
+        public PickData(int no, PointD pos, FACE3D dispMode)
+        {
+            mElementNo = no;
+            mPos = pos;
+            mDispMode = dispMode;
+        }
+    }
+
+    /// <summary>
     /// ロケイト・ピック処理
     /// </summary>
     public class LocPick

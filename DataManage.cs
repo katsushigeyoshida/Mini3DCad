@@ -7,29 +7,6 @@ using Brushes = System.Windows.Media.Brushes;
 namespace Mini3DCad
 {
     /// <summary>
-    /// ピックデータ
-    /// </summary>
-    public class PickData
-    {
-        public int mElementNo;                  //  要素No
-        public PointD mPos;                     //  ピック位置
-        public FACE3D mDispMode;                //  表示面
-
-        /// <summary>
-        /// コンストラクタ
-        /// </summary>
-        /// <param name="no">要素No</param>
-        /// <param name="pos">ピック位置</param>
-        /// <param name="dispMode">表示面</param>
-        public PickData(int no, PointD pos, FACE3D dispMode)
-        {
-            mElementNo = no;
-            mPos = pos;
-            mDispMode = dispMode;
-        }
-    }
-
-    /// <summary>
     /// データ管理クラス
     /// </summary>
     public class DataManage
@@ -933,6 +910,7 @@ namespace Mini3DCad
                 return;
             if (mElementList[picks[0].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Polygon &&
                 mElementList[picks[1].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
+                //  ポリゴン同士
                 Polygon3D polygon1 = ((PolygonPrimitive)mElementList[picks[0].mElementNo].mPrimitive).mPolygon.toCopy();
                 Polygon3D polygon2 = ((PolygonPrimitive)mElementList[picks[1].mElementNo].mPrimitive).mPolygon.toCopy();
                 if (polygon1.isCounterClockWise(mFace)) polygon1.reverse();
@@ -958,20 +936,21 @@ namespace Mini3DCad
                 element.update3DData();
                 mElementList.Add(element);
             } else {
+                //  ポリゴン以外
                 Polyline3D polyline1;
                 Polyline3D polyline2;
                 if (mElementList[picks[0].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Line) {
-                    polyline1 = new Polyline3D(((LinePrimitive)mElementList[picks[0].mElementNo].mPrimitive).mLine, mFace);
+                    polyline1 = new Polyline3D(((LinePrimitive)mElementList[picks[0].mElementNo].mPrimitive).mLine);
                 } else if (mElementList[picks[0].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
-                    polyline1 = new Polyline3D(((ArcPrimitive)mElementList[picks[0].mElementNo].mPrimitive).mArc, 0, mFace);
+                    polyline1 = new Polyline3D(((ArcPrimitive)mElementList[picks[0].mElementNo].mPrimitive).mArc, 0);
                 } else if (mElementList[picks[0].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Polyline) {
                     polyline1 = ((PolylinePrimitive)mElementList[picks[0].mElementNo].mPrimitive).mPolyline.toCopy();
                 } else
                     return;
                 if (mElementList[picks[1].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Line) {
-                    polyline2 = new Polyline3D(((LinePrimitive)mElementList[picks[1].mElementNo].mPrimitive).mLine, mFace);
+                    polyline2 = new Polyline3D(((LinePrimitive)mElementList[picks[1].mElementNo].mPrimitive).mLine);
                 } else if (mElementList[picks[1].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
-                    polyline2 = new Polyline3D(((ArcPrimitive)mElementList[picks[1].mElementNo].mPrimitive).mArc, 0, mFace);
+                    polyline2 = new Polyline3D(((ArcPrimitive)mElementList[picks[1].mElementNo].mPrimitive).mArc, 0);
                 } else if (mElementList[picks[1].mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Polyline) {
                     polyline2 = ((PolylinePrimitive)mElementList[picks[1].mElementNo].mPrimitive).mPolyline.toCopy();
                 } else
@@ -1029,10 +1008,10 @@ namespace Mini3DCad
             Polyline3D outline;
             if (outlinePrimitive.mPrimitiveId == PrimitiveId.Line) {
                 LinePrimitive linePrimitive = (LinePrimitive)outlinePrimitive;
-                outline = new Polyline3D(linePrimitive.mLine, mFace);
+                outline = new Polyline3D(linePrimitive.mLine);
             } else if (outlinePrimitive.mPrimitiveId == PrimitiveId.Arc) {
                 ArcPrimitive arcPrimitive = (ArcPrimitive)outlinePrimitive;
-                outline = new Polyline3D(arcPrimitive.mArc, mArcDivideAng, mFace);
+                outline = new Polyline3D(arcPrimitive.mArc, mArcDivideAng);
             } else if (outlinePrimitive.mPrimitiveId == PrimitiveId.Polyline) {
                 PolylinePrimitive polylinePrimitive = (PolylinePrimitive)outlinePrimitive;
                 outline = polylinePrimitive.mPolyline.toCopy();

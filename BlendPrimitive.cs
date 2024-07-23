@@ -336,21 +336,21 @@ namespace Mini3DCad
         }
 
         /// <summary>
-        /// 要素内データの選択
+        /// 要素内データの選択(-1:なし,0:Polygon1,1:Polygon2)
         /// </summary>
         /// <param name="pickPos">ピック位置</param>
         /// <param name="face">2D平面</param>
         /// <returns>選択データ</returns>
         private int pickSelect(PointD pickPos, FACE3D face)
         {
-            PointD mp1 = mPolygon1.nearPoint(pickPos, 0, face);
-            PointD mp2 = mPolygon2.nearPoint(pickPos, 0, face);
+            Point3D mp1 = mPolygon1.nearPoint(pickPos, 0, face);
+            Point3D mp2 = mPolygon2.nearPoint(pickPos, 0, face);
             if (mp1 == null && mp2 == null) {
             } else if (mp1 != null && mp2 == null) {
                 return 0;
             } else if (mp1 == null && mp2 != null) {
                 return 1;
-            } else if (mp1.length(pickPos) < mp2.length(pickPos)) {
+            } else if (mp1.toPoint(face).length(pickPos) < mp2.toPoint(face).length(pickPos)) {
                 return 0;
             } else {
                 return 1;

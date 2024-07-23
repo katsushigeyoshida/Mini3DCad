@@ -116,6 +116,7 @@ namespace Mini3DCad
             mFilletSizeMenu.ForEach(p => cbFilletSize.Items.Add(p));
             cbFilletSize.SelectedIndex = 0;
             cbCommand.ItemsSource = mCommandOpe.mKeyCommand.mKeyCommandList;
+            cbBaseLoc.IsChecked = mDataManage.mBaseLoc;
             //  データファイルの設定
             mFileData.setBaseDataFolder();
             setDataFileList();
@@ -361,7 +362,7 @@ namespace Mini3DCad
                     return;
             } else if (0 <= mLocPick.mLocList.Count) {
                 //  ドラッギング表示
-                mDraw.dragging(mCommandOpe.mOperation, mLocPick.mPickElement, mLocPick.mLocList, wpos);
+                mDraw.dragging(mCommandOpe.mOperation, mLocPick.mPickElement, mLocPick.mLocList, new Point3D(wpos, mDataManage.mFace));
             }
             dispStatus(wpos);
             mPreMousePos = pos;     //  スクリーン座標
@@ -390,7 +391,7 @@ namespace Mini3DCad
                 //  ロケイトの追加
                 if (mCommandOpe.mOperation == OPERATION.stretch && ylib.onAltKey())
                     mCommandOpe.mOperation = OPERATION.stretchArc;
-                mLocPick.mLocList.Add(wpos);
+                mLocPick.mLocList.Add(new Point3D(wpos, mDataManage.mFace));
             }
             //  データ登録(データ数固定コマンド)
             if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement))
@@ -423,7 +424,7 @@ namespace Mini3DCad
             PointD wpos = mDraw.mGDraw.cnvScreen2World(new PointD(pos));
             List<int> picks = mLocPick.getPickNo(wpos, mDraw.mGDraw.screen2worldXlength(mPickBoxSize));
             if (mOperationMode == OPEMODE.loc) {
-                mLocPick.autoLoc(wpos, picks);
+                mLocPick.autoLoc(wpos, picks, mDataManage.mFace);
                 //  データ登録(データ数不定コマンド)
                 if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement, 0 == picks.Count))
                     commandClear();
@@ -573,6 +574,16 @@ namespace Mini3DCad
                 }
             }
             //btDummy.Focus();         //  ダミーでフォーカスを外す
+        }
+
+        /// <summary>
+        /// オートロケイト時に指定面の投影位置に座標を設定
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void cbBaseLoc_Click(object sender, RoutedEventArgs e)
+        {
+            mDataManage.mBaseLoc = cbBaseLoc.IsChecked == true;
         }
 
         /// <summary>

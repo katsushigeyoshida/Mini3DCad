@@ -90,7 +90,7 @@ namespace Mini3DCad
         /// <param name="pickData">ピックデータ</param>
         /// <param name="locList">ロケイトデータ</param>
         /// <param name="lastPoint">最終ロケイト点</param>
-        public void dragging(OPERATION ope, List<PickData> pickData, List<PointD> locList, PointD lastPoint)
+        public void dragging(OPERATION ope, List<PickData> pickData, List<Point3D> locList, Point3D lastPoint)
         {
             if (ope == OPERATION.non)
                 return;
@@ -132,7 +132,7 @@ namespace Mini3DCad
                     break;
                 case OPERATION.polyline:
                     if (0 < locList.Count) {
-                        List<PointD> plist = locList.ConvertAll(p => p);
+                        List<Point3D> plist = locList.ConvertAll(p => p);
                         plist.Add(lastPoint);
                         primitive = mDataManage.createPolyline(plist);
                         primitive.draw2D(mGDraw, mFace);
@@ -140,27 +140,30 @@ namespace Mini3DCad
                     break;
                 case OPERATION.rect:
                     if (locList.Count == 1) {
-                        List<PointD> plist = new List<PointD>() {
-                            locList[0], new PointD(locList[0].x, lastPoint.y),
-                            lastPoint, new PointD(lastPoint.x, locList[0].y)
+                        List<Point3D> plist = new List<Point3D>() {
+                            locList[0], new Point3D(locList[0].x, lastPoint.y, locList[0].z),
+                            lastPoint, new Point3D(lastPoint.x, locList[0].y, lastPoint.z)
                         };
                         primitive = mDataManage.createPolygon(plist);
                         primitive.draw2D(mGDraw, mFace);
                     }
                     break;
                 case OPERATION.polygon:
-                    if (0 < locList.Count) {
-                        List<PointD> plist = locList.ConvertAll(p => p);
+                    if (1 < locList.Count) {
+                        List<Point3D> plist = locList.ConvertAll(p => p);
                         plist.Add(lastPoint);
                         primitive = mDataManage.createPolygon(plist);
+                        primitive.draw2D(mGDraw, mFace);
+                    } else if (locList.Count == 1) {
+                        primitive = mDataManage.createLine(locList[0], lastPoint);
                         primitive.draw2D(mGDraw, mFace);
                     }
                     break;
                 case OPERATION.translate:
                 case OPERATION.copyTranslate:
                     for (int i = 1; i <= locList.Count; i++) {
-                        PointD sp = i < locList.Count ? locList[i] : lastPoint;
-                        Point3D v = new Point3D(sp, mFace) - new Point3D(locList[0], mFace);
+                        Point3D sp = i < locList.Count ? locList[i] : lastPoint;
+                        Point3D v = sp - locList[0];
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
                             primitive.translate(v, pick.mPos, mFace);
@@ -172,9 +175,9 @@ namespace Mini3DCad
                 case OPERATION.rotate:
                 case OPERATION.copyRotate:
                     for (int i = 2; i <= locList.Count; i++) {
-                        PointD sp = i < locList.Count ? locList[i] : lastPoint;
-                        double ang = locList[0].angle2(locList[1], sp);
-                        Point3D cp = new Point3D(locList[0], mFace);
+                        Point3D sp = i < locList.Count ? locList[i] : lastPoint;
+                        double ang = locList[0].toPoint(mFace).angle2(locList[1].toPoint(mFace), sp.toPoint(mFace));
+                        Point3D cp = new Point3D(locList[0]);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
                             primitive.rotate(cp, -ang, pick.mPos, mFace);
@@ -186,11 +189,11 @@ namespace Mini3DCad
                 case OPERATION.offset:
                 case OPERATION.copyOffset:
                     for (int i = 1; i <= locList.Count; i++) {
-                        PointD sp = i < locList.Count ? locList[i] : lastPoint;
+                        Point3D sp = i < locList.Count ? locList[i] : lastPoint;
                         if (0 < locList[0].length(sp)) {
                             foreach (var pick in pickData) {
                                 primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                                primitive.offset(new Point3D(locList[0], mFace), new Point3D(sp, mFace), pick.mPos, mFace);
+                                primitive.offset(locList[0], sp, pick.mPos, mFace);
                                 primitive.createVertexData();
                                 primitive.draw2D(mGDraw, mFace);
                             }
@@ -202,7 +205,7 @@ namespace Mini3DCad
                     if (locList.Count == 1) {
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.mirror(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), pick.mPos, mFace);
+                            primitive.mirror(locList[0], lastPoint, pick.mPos, mFace);
                             primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
@@ -213,7 +216,7 @@ namespace Mini3DCad
                     if (locList.Count == 1) {
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.trim(new Point3D(locList[0], mFace), new Point3D(lastPoint, mFace), pick.mPos, mFace);
+                            primitive.trim(locList[0], lastPoint, pick.mPos, mFace);
                             primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
@@ -222,11 +225,11 @@ namespace Mini3DCad
                 case OPERATION.scale:
                 case OPERATION.copyScale:
                     for (int i = 2; i <= locList.Count; i++) {
-                        PointD sp = i < locList.Count ? locList[i] : lastPoint;
+                        Point3D sp = i < locList.Count ? locList[i] : lastPoint;
                         double scale = locList[0].length(sp) / locList[0].length(locList[1]);
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
-                            primitive.scale(new Point3D(locList[0], mFace), scale, pick.mPos, mFace);
+                            primitive.scale(locList[0], scale, pick.mPos, mFace);
                             primitive.createVertexData();
                             primitive.draw2D(mGDraw, mFace);
                         }
@@ -235,7 +238,7 @@ namespace Mini3DCad
                 case OPERATION.stretch:
                 case OPERATION.stretchArc:
                     if (locList.Count == 1) {
-                        Point3D v = new Point3D(lastPoint, mFace) - new Point3D(locList[0], mFace);
+                        Point3D v = lastPoint - locList[0];
                         foreach (var pick in pickData) {
                             primitive = mDataManage.mElementList[pick.mElementNo].mPrimitive.toCopy();
                             primitive.stretch(v, ope == OPERATION.stretchArc, pick.mPos, mFace);
@@ -246,7 +249,7 @@ namespace Mini3DCad
                     break;
                 case OPERATION.extrusion:
                     if (locList.Count == 1) {
-                        Point3D v = new Point3D(lastPoint, mFace) - new Point3D(locList[0], mFace);
+                        Point3D v = lastPoint - locList[0];
                         foreach (var pick in pickData) {
                             primitive = mDataManage.createExtrusion(mDataManage.mElementList[pick.mElementNo].mPrimitive, v);
                             primitive.draw2D(mGDraw, mFace);
@@ -255,7 +258,7 @@ namespace Mini3DCad
                     break;
                 case OPERATION.pasteElement:
                     if (locList.Count == 0 && mDataManage.mCopyArea != null) {
-                        Point3D v = new Point3D(lastPoint, mFace) - mDataManage.mCopyArea.mMin;
+                        Point3D v = lastPoint - mDataManage.mCopyArea.mMin;
                         Box b = mDataManage.mCopyArea.toBox(mFace);
                         b.offset(v.toPoint(mFace));
                         mGDraw.drawWRectangle(b);
@@ -264,7 +267,7 @@ namespace Mini3DCad
             }
             mGDraw.mPointType = 2;
             mGDraw.mPointSize = 2;
-            mGDraw.drawWPoint(lastPoint);
+            mGDraw.drawWPoint(lastPoint.toPoint(mFace));
         }
 
         /// <summary>

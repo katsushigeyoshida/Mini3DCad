@@ -400,11 +400,11 @@ namespace Mini3DCad
         /// <returns>選択データ</returns>
         private int pickSelect(PointD pickPos, FACE3D face)
         {
-            PointD mp1 = mOutLine1.nearPoint(pickPos, 0, face);
-            PointD mp2 = mOutLine2.nearPoint(pickPos, 0, face);
-            if (!mOutLine1.onPoint(new Point3D(mp2, face)))
+            Point3D mp1 = mOutLine1.nearPoint(pickPos, 0, face);
+            Point3D mp2 = mOutLine2.nearPoint(pickPos, 0, face);
+            if (!mOutLine1.onPoint(mp1))
                 mp1 = null;
-            if (!mOutLine2.onPoint(new Point3D(mp2, face)))
+            if (!mOutLine2.onPoint(mp2))
                 mp2 = null;
             if (mp1 == null && mp2 == null) {
                 return -1;
@@ -412,7 +412,7 @@ namespace Mini3DCad
                 return 0;
             } else if (mp1 == null && mp2 != null) {
                 return 1;
-            } else if (mp1.length(pickPos) < mp2.length(pickPos)) {
+            } else if (mp1.toPoint(face).length(pickPos) < mp2.toPoint(face).length(pickPos)) {
                 return 0;
             } else {
                 return 1;

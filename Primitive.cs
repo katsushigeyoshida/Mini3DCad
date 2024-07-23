@@ -379,15 +379,17 @@ namespace Mini3DCad
         /// <param name="divideNo"></param>
         /// <param name="face"></param>
         /// <returns></returns>
-        public PointD nearPoint(PointD pos, int divideNo, FACE3D face)
+        public Point3D nearPoint(PointD pos, int divideNo, FACE3D face)
         {
+            //  2D平面の線分リストに変換
             List<LineD> llist = new List<LineD>();
             for (int i = 0; i < mVertexList.Count; i++) {
                 for (int j = 0; j < mVertexList[i].Count - 1; j++) {
-                    LineD line = new LineD(mVertexList[i][j].toPoint(face), mVertexList[i][j + 1].toPoint(face));
-                    llist.Add(line);
+                    LineD l = new LineD(mVertexList[i][j].toPoint(face), mVertexList[i][j + 1].toPoint(face));
+                    llist.Add(l);
                 }
             }
+            //  指定座標に最も近い線分との距離と位置を求める
             int n = -1;
             double dis = double.MaxValue;
             for (int i = 0; i < llist.Count; i++) {
@@ -398,13 +400,38 @@ namespace Mini3DCad
                     n = i;
                 }
             }
-            if (n < 0)
-                return null;
+            if (n < 0) return null;
+
+            (int ii, int jj) = getVertexListNo(n);
+            if (ii < 0 || jj < 0) return null;
+            //  3D線分上の交点を求める
+            Line3D line = new Line3D(mVertexList[ii][jj], mVertexList[ii][jj + 1]);
+            Point3D cp = line.intersection(pos, face);
             if (divideNo <= 0)
-                return llist[n].intersection(pos);
-            List<PointD> plist = llist[n].dividePoints(divideNo);
-            return plist.MinBy(p => p.length(pos));
+                return cp;
+
+            List<Point3D> plist = line.divide(divideNo);
+            return plist.MinBy(p => p.length(cp));
         }
+
+        /// <summary>
+        /// 線分の位置からVertexListの位置(2次元)を求める
+        /// </summary>
+        /// <param name="n">線分の位置</param>
+        /// <returns>vertexの位置(i,j)</returns>
+        private (int, int) getVertexListNo(int n)
+        {
+            int nn = 0;
+            for (int i = 0; i < mVertexList.Count; i++) {
+                for (int j = 0; j < mVertexList[i].Count - 1; j++) {
+                    if (nn == n)
+                        return (i, j);
+                    nn++;
+                }
+            }
+            return (-1, -1);
+        }
+
 
         /// <summary>
         /// 線分の取得

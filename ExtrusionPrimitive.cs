@@ -247,7 +247,7 @@ namespace Mini3DCad
         {
             if (mOutlineDisp) {
                 int select = pickSelect(pickPos, face);
-                if (select == 1) {
+                if (select == 0) {
                     mVector.length(mVector.length() * scale);
                 } else {
                     mPolygon.scale(cp, scale);
@@ -269,7 +269,7 @@ namespace Mini3DCad
         {
             if (mOutlineDisp) {
                 int select = pickSelect(pickPos, face);
-                if (select == 1) {
+                if (select == 0) {
                     Line3D vec3D = getVector();
                     vec3D.stretch(vec, new Point3D(pickPos, face));
                     mVector = vec3D.mV.toCopy();
@@ -280,7 +280,7 @@ namespace Mini3DCad
         }
 
         /// <summary>
-        /// 要素内データの選択
+        /// 要素内データの選択(0:Vector 1:Polygon)
         /// </summary>
         /// <param name="pickPos">ピック位置</param>
         /// <param name="face">2D平面</param>
@@ -289,8 +289,8 @@ namespace Mini3DCad
         {
             Line3D vec3D = getVector();
             double vl = vec3D.length(pickPos, face);
-            PointD mp = mPolygon.nearPoint(pickPos, 0, face);
-            if (mp == null || vec3D.length(pickPos, face) < mp.length(pickPos)) {
+            Point3D mp = mPolygon.nearPoint(pickPos, 0, face);
+            if (mp == null || vec3D.length(pickPos, face) < mp.toPoint(face).length(pickPos)) {
                 return 0;
             } else {
                 return 1;

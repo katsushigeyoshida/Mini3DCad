@@ -17,6 +17,7 @@ namespace Mini3DCad
         public bool mSurfaceVertex = false;                             //  Debug用(Polygon分割表示)
         public bool mWireFrame = false;                                 //  ワイヤーフレーム表示
         public double mFilletSize = 0;                                  //  R面取り(フィレット)半径
+        public bool mBaseLoc = true;                                    //  ロケイト座標を指定面の投影位置
 
         public FACE3D mFace = FACE3D.XY;                                //  Primitive 作成面
         public Brush mPrimitiveBrush = Brushes.Green;                   //  Primitiveの色設定
@@ -76,7 +77,7 @@ namespace Mini3DCad
         /// <param name="ope">処理の種別</param>
         /// <param name="last">ロケイトの完了</param>
         /// <returns></returns>
-        public bool defineData(OPERATION ope, List<PointD> locList, List<PickData> pickElement, bool last = false)
+        public bool defineData(OPERATION ope, List<Point3D> locList, List<PickData> pickElement, bool last = false)
         {
             mOperationCount++;
             switch (ope) {
@@ -274,15 +275,6 @@ namespace Mini3DCad
         /// 点要素の追加
         /// </summary>
         /// <param name="p">点座標</param>
-        public void addPoint(PointD p)
-        {
-            addPoint(new Point3D(p, mFace));
-        }
-
-        /// <summary>
-        /// 点要素の追加
-        /// </summary>
-        /// <param name="p">点座標</param>
         public void addPoint(Point3D p)
         {
             Element element = new Element(mLayerSize);
@@ -292,16 +284,6 @@ namespace Mini3DCad
             element.update3DData();
             mElementList.Add(element);
             mCommandHistory.Add(element.mPrimitive.toCommand());
-        }
-
-        /// <summary>
-        /// 線分追加
-        /// </summary>
-        /// <param name="sp">始点</param>
-        /// <param name="ep">終点</param>
-        public void addLine(PointD sp, PointD ep)
-        {
-            addLine(new Point3D(sp, mFace), new Point3D(ep, mFace));
         }
 
         /// <summary>
@@ -321,13 +303,13 @@ namespace Mini3DCad
         }
 
         /// <summary>
-        /// 円の追加
+        /// 円の追加(作成2D平面上)
         /// </summary>
         /// <param name="cp">中心点</param>
-        /// <param name="ep">円弧上の点</param>
-        public void addCircle(PointD cp, PointD ep)
+        /// <param name="ep">円周上の点</param>
+        public void addCircle(Point3D cp, Point3D ep)
         {
-            Arc3D arc3D = new Arc3D(new ArcD(cp, ep, Math.PI * 2), mFace);
+            Arc3D arc3D = new Arc3D(cp, cp.length(ep), 0, Math.PI * 2, mFace);
             addArc(arc3D);
         }
 
@@ -349,14 +331,14 @@ namespace Mini3DCad
         }
 
         /// <summary>
-        /// 円弧の追加
+        /// ３点円弧の追加
         /// </summary>
         /// <param name="sp">始点</param>
         /// <param name="mp">中間点</param>
         /// <param name="ep">終点</param>
-        public void addArc(PointD sp, PointD mp, PointD ep)
+        public void addArc(Point3D sp, Point3D mp, Point3D ep)
         {
-            Arc3D arc3D = new Arc3D(new ArcD(sp, mp, ep), mFace);
+            Arc3D arc3D = new Arc3D(sp, mp, ep);
             addArc(arc3D);
         }
 
@@ -377,21 +359,6 @@ namespace Mini3DCad
             } catch (Exception e) {
                 System.Diagnostics.Debug.WriteLine($"addArc: {e.Message}");
             }
-        }
-
-        /// <summary>
-        /// ポリラインの追加
-        /// </summary>
-        /// <param name="plist">2D座標点リスト</param>
-        public void addPolyline(List<PointD> plist)
-        {
-            Element element = new Element(mLayerSize);
-            element.mName = "ポリライン";
-            element.mPrimitive = createPolyline(plist);
-            element.mOperationNo = mOperationCount;
-            element.update3DData();
-            mElementList.Add(element);
-            mCommandHistory.Add(element.mPrimitive.toCommand());
         }
 
         /// <summary>
@@ -436,12 +403,10 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
-        public void addRect(PointD sp, PointD ep)
+        public void addRect(Point3D sp, Point3D ep)
         {
-            if (sp.x == ep.x || sp.y == ep.y)
-                return;
-            List<PointD> plist = new List<PointD>() {
-                sp, new PointD(sp.x, ep.y), ep, new PointD(ep.x, sp.y) };
+            List<Point3D> plist = new List<Point3D>() {
+                sp, new Point3D(sp.x, ep.y, sp.z), ep, new Point3D(ep.x, sp.y, ep.z) };
             Element element = new Element(mLayerSize);
             element.mName = "四角形";
             element.mPrimitive = createPolygon(plist);
@@ -455,16 +420,6 @@ namespace Mini3DCad
         /// ポリゴンの追加
         /// </summary>
         /// <param name="pist">座標点リスト</param>
-        public void addPolygon(List<PointD> plist)
-        {
-            Polygon3D polygon = new Polygon3D(plist, mFace);
-            addPolygon(polygon);
-        }
-
-        /// <summary>
-        /// ポリゴンの追加
-        /// </summary>
-        /// <param name="pist"></param>
         public void addPolygon(List<Point3D> plist)
         {
             Polygon3D polygon = new Polygon3D(plist);
@@ -515,10 +470,10 @@ namespace Mini3DCad
         /// <param name="picks">ピック要素</param>
         /// <param name="locList">座標リスト</param>
         /// <param name="copy">コピーの有無</param>
-        public void translate(List<PickData> picks, List<PointD> locList, bool copy = false)
+        public void translate(List<PickData> picks, List<Point3D> locList, bool copy = false)
         {
             for (int i = 1; i < locList.Count; i++) {
-                Point3D v = new Point3D(locList[i], mFace) - new Point3D(locList[0], mFace);
+                Point3D v = locList[i] - locList[0];
                 foreach (var pick in picks) {
                     Element element = mElementList[pick.mElementNo].toCopy();
                     element.mPrimitive.translate(v, pick.mPos, mFace);
@@ -541,11 +496,11 @@ namespace Mini3DCad
         /// <param name="picks">ピック要素</param>
         /// <param name="locList">座標リスト</param>
         /// <param name="copy">コピーの有無</param>
-        public void rotate(List<PickData> picks, List<PointD> locList, bool copy = false)
+        public void rotate(List<PickData> picks, List<Point3D> locList, bool copy = false)
         {
             for (int i = 2; i < locList.Count; i++) {
-                double ang = locList[0].angle2(locList[1], locList[i]);
-                Point3D cp = new Point3D(locList[0], mFace);
+                double ang = locList[0].toPoint(mFace).angle2(locList[1].toPoint(mFace), locList[i].toPoint(mFace));
+                Point3D cp = locList[0];
                 foreach (var pick in picks) {
                     Element element = mElementList[pick.mElementNo].toCopy();
                     element.mPrimitive.rotate(cp, -ang, pick.mPos, mFace);
@@ -565,15 +520,14 @@ namespace Mini3DCad
         /// <summary>
         /// オフセット
         /// </summary>
-        /// <param name="picks">ピック要素</param>
-        /// <param name="sp">始点</param>
-        /// <param name="ep">終点</param>
+        /// <param name="picks">ピックリスト</param>
+        /// <param name="locList">ロケイトリスト</param>
         /// <param name="copy">コピーの有無</param>
-        public void offset(List<PickData> picks, List<PointD> locList, bool copy = false)
+        public void offset(List<PickData> picks, List<Point3D> locList, bool copy = false)
         {
-            PointD sp = locList[0];
+            Point3D sp = locList[0];
             for (int i = 1; i < locList.Count; i++) {
-                PointD ep = locList[i];
+                Point3D ep = locList[i];
                 foreach (var pick in picks) {
                     Element element = mElementList[pick.mElementNo].toCopy();
                     if (element.mPrimitive.mPrimitiveId == PrimitiveId.Point ||
@@ -582,7 +536,7 @@ namespace Mini3DCad
                         element.mPrimitive.mPrimitiveId == PrimitiveId.Polyline ||
                         element.mPrimitive.mPrimitiveId == PrimitiveId.Polygon ||
                         element.mPrimitive.mPrimitiveId == PrimitiveId.Extrusion) {
-                        element.mPrimitive.offset(new Point3D(sp, mFace), new Point3D(ep, mFace), pick.mPos, mFace);
+                        element.mPrimitive.offset(sp, ep, pick.mPos, mFace);
                         element.mPrimitive.createSurfaceData();
                         element.mPrimitive.createVertexData();
                         element.mOperationNo = mOperationCount;
@@ -604,13 +558,11 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="copy">コピーの有無</param>
-        public void mirror(List<PickData> picks, PointD sp, PointD ep, bool copy = false)
+        public void mirror(List<PickData> picks, Point3D sp, Point3D ep, bool copy = false)
         {
-            Point3D ps = new Point3D(sp, mFace);
-            Point3D pe = new Point3D(ep, mFace);
             foreach (var pick in picks) {
                 Element element = mElementList[pick.mElementNo].toCopy();
-                element.mPrimitive.mirror(ps, pe, pick.mPos, mFace);
+                element.mPrimitive.mirror(sp, ep, pick.mPos, mFace);
                 element.mPrimitive.createSurfaceData();
                 element.mPrimitive.createVertexData();
                 element.mOperationNo = mOperationCount;
@@ -630,13 +582,11 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <param name="copy">コピーの有無</param>
-        public void trim(List<PickData> picks, PointD sp, PointD ep, bool copy = false)
+        public void trim(List<PickData> picks, Point3D sp, Point3D ep, bool copy = false)
         {
-            Point3D ps = new Point3D(sp, mFace);
-            Point3D pe = new Point3D(ep, mFace);
             foreach (var pick in picks) {
                 Element element = mElementList[pick.mElementNo].toCopy();
-                element.mPrimitive.trim(ps, pe, pick.mPos, mFace);
+                element.mPrimitive.trim(sp, ep, pick.mPos, mFace);
                 element.mPrimitive.createSurfaceData();
                 element.mPrimitive.createVertexData();
                 element.mOperationNo = mOperationCount;
@@ -653,16 +603,15 @@ namespace Mini3DCad
         /// 拡大縮小
         /// </summary>
         /// <param name="picks">ピック要素</param>
-        /// <param name="locList">ロケイト位置</param>
+        /// <param name="locList">ロケイトリスト</param>
         /// <param name="copy">コピー有無</param>
-        public void scale(List<PickData> picks, List<PointD> locList, bool copy = false)
+        public void scale(List<PickData> picks, List<Point3D> locList, bool copy = false)
         {
             for (int i = 2; i < locList.Count; i++) {
                 double scale = locList[0].length(locList[i]) / locList[0].length(locList[1]);
-                Point3D cp = new Point3D(locList[0], mFace);
                 foreach (var pick in picks) {
                     Element element = mElementList[pick.mElementNo].toCopy();
-                    element.mPrimitive.scale(cp, scale, pick.mPos, mFace);
+                    element.mPrimitive.scale(locList[0], scale, pick.mPos, mFace);
                     element.mPrimitive.createSurfaceData();
                     element.mPrimitive.createVertexData();
                     element.mOperationNo = mOperationCount;
@@ -680,13 +629,13 @@ namespace Mini3DCad
         /// ストレッチ
         /// </summary>
         /// <param name="picks">ピック要素</param>
-        /// <param name="locList">ロケイト位置</param>
+        /// <param name="locList">ロケイトリスト</param>
         /// <param name="arc">円弧ストレッチ</param>
         /// <param name="copy">コピー有無</param>
-        public void stretch(List<PickData> picks, List<PointD> locList, bool arc, bool copy = false)
+        public void stretch(List<PickData> picks, List<Point3D> locList, bool arc, bool copy = false)
         {
             if (1 < locList.Count) {
-                Point3D v = new Point3D(locList[1], mFace) - new Point3D(locList[0], mFace);
+                Point3D v = locList[1] - locList[0];
                 foreach (var pick in picks) {
                     Element element = mElementList[pick.mElementNo].toCopy();
                     element.mPrimitive.stretch(v, arc, pick.mPos, mFace);
@@ -708,7 +657,7 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="picks">ピックリスト</param>
         /// <param name="locList">ロケイトリスト</param>
-        public void divide(List<PickData> picks, List<PointD> locList)
+        public void divide(List<PickData> picks, List<Point3D> locList)
         {
             foreach (var pick in picks) {
                 Element element = mElementList[pick.mElementNo].toCopy();
@@ -840,7 +789,7 @@ namespace Mini3DCad
                     List<Point3D> plist = polyline.mPolyline.toPoint3D();
                     for (int i = 0; i < plist.Count - 1; i++) {
                         if (plist[i + 1].type == 1) {
-                            addArc(plist[i].toPoint(mFace), plist[i + 1].toPoint(mFace), plist[i + 2].toPoint(mFace));
+                            addArc(plist[i], plist[i + 1], plist[i + 2]);
                             i++;
                         } else
                             addLine(plist[i], plist[i + 1]);
@@ -856,7 +805,7 @@ namespace Mini3DCad
                         int i1 = (i + 1) % plist.Count;
                         int i2 = (i + 2) % plist.Count;
                         if (plist[i1].type == 1) {
-                            addArc(plist[ii].toPoint(mFace), plist[i1].toPoint(mFace), plist[i2].toPoint(mFace));
+                            addArc(plist[ii], plist[i1], plist[i2]);
                             i++;
                         } else
                             addLine(plist[i], plist[i1]);
@@ -878,9 +827,9 @@ namespace Mini3DCad
         /// <param name="pick">ピックデータ</param>
         /// <param name="sp">押出始点</param>
         /// <param name="ep">押出終点</param>
-        public void extrusion(List<PickData> picks, PointD sp, PointD ep)
+        public void extrusion(List<PickData> picks, Point3D sp, Point3D ep)
         {
-            Point3D v = new Point3D(ep, mFace) - new Point3D(sp, mFace);
+            Point3D v = ep - sp;
             foreach (var pick in picks) {
                 ExtrusionPrimitive push = createExtrusion(mElementList[pick.mElementNo].mPrimitive, v);
                 if (push == null)
@@ -1553,11 +1502,11 @@ namespace Mini3DCad
         /// クリップボードから取得した要素データを貼り付ける
         /// </summary>
         /// <param name="loc">配置座標</param>
-        public void pasteElement(PointD loc)
+        public void pasteElement(Point3D loc)
         {
             if (mCopyArea == null)
                 return;
-            Point3D vec = new Point3D(loc, mFace) - mCopyArea.mMin;
+            Point3D vec = loc - mCopyArea.mMin;
             for (int i = 0; i < mCopyElementList.Count; i++) {
                 Element element = mCopyElementList[i];
                 element.mPrimitive.translate(vec, new PointD(), mFace);
@@ -1592,9 +1541,9 @@ namespace Mini3DCad
         /// <param name="sp">始点</param>
         /// <param name="ep">終点</param>
         /// <returns>プリミティブ</returns>
-        public Primitive createLine(PointD sp, PointD ep)
+        public Primitive createLine(Point3D sp, Point3D ep)
         {
-            return createLine(new Line3D(sp, ep, mFace));
+            return createLine(new Line3D(sp, ep));
         }
 
         /// <summary>
@@ -1619,10 +1568,10 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="cp">中心</param>
         /// <param name="ep">円周上位置</param>
-        /// <returns></returns>
-        public Primitive createCircle(PointD cp, PointD ep)
+        /// <returns>プリミティブ</returns>
+        public Primitive createCircle(Point3D cp, Point3D ep)
         {
-            Arc3D arc3D = new Arc3D(new ArcD(cp, ep, Math.PI * 2), mFace);
+            Arc3D arc3D = new Arc3D(cp, cp.length(ep), mFace);
             return createArc(arc3D);
         }
 
@@ -1633,9 +1582,9 @@ namespace Mini3DCad
         /// <param name="mp">中間点</param>
         /// <param name="ep">終点</param>
         /// <returns>プリミティブ</returns>
-        public Primitive createArc(PointD sp, PointD mp, PointD ep)
+        public Primitive createArc(Point3D sp, Point3D mp, Point3D ep)
         {
-            Arc3D arc3D = new Arc3D(new ArcD(sp, mp, ep), mFace);
+            Arc3D arc3D = new Arc3D(sp, mp, ep);
             return createArc(arc3D);
         }
 
@@ -1659,11 +1608,11 @@ namespace Mini3DCad
         /// <summary>
         /// ポリラインプリミティブの作成
         /// </summary>
-        /// <param name="plist">2D座標点リスト</param>
+        /// <param name="plist">座標点リスト</param>
         /// <returns>プリミティブ</returns>
-        public Primitive createPolyline(List<PointD> plist)
+        public Primitive createPolyline(List<Point3D> plist)
         {
-            return createPolyline(new Polyline3D(plist, mFace));
+            return createPolyline(new Polyline3D(plist));
         }
 
         /// <summary>
@@ -1686,11 +1635,11 @@ namespace Mini3DCad
         /// <summary>
         /// ポリゴンプリミティブの作成
         /// </summary>
-        /// <param name="plist">2D座標点リスト</param>
+        /// <param name="plist">座標点リスト</param>
         /// <returns>プリミティブ</returns>
-        public Primitive createPolygon(List<PointD> plist)
+        public Primitive createPolygon(List<Point3D> plist)
         {
-            return createPolygon(new Polygon3D(plist, mFace));
+            return createPolygon(new Polygon3D(plist));
         }
 
         /// <summary>
@@ -1743,10 +1692,10 @@ namespace Mini3DCad
         /// <param name="element">ピック要素</param>
         /// <param name="locPos">分割点</param>
         /// <returns>結果</returns>
-        public bool dividePolygon(Element element, PointD locPos)
+        public bool dividePolygon(Element element, Point3D locPos)
         {
             PolygonPrimitive polygonPrimitive = (PolygonPrimitive)element.mPrimitive;
-            Polyline3D polyline = polygonPrimitive.mPolygon.divide(new Point3D(locPos, mFace));
+            Polyline3D polyline = polygonPrimitive.mPolygon.divide(locPos);
             if (polyline == null)
                 return false;
             Element ele = new Element(mLayerSize);
@@ -1769,10 +1718,10 @@ namespace Mini3DCad
         /// <param name="element">ピック要素</param>
         /// <param name="locPos">分割点</param>
         /// <returns>結果</returns>
-        public bool dividePolyline(Element element, PointD locPos)
+        public bool dividePolyline(Element element, Point3D locPos)
         {
             PolylinePrimitive polylinePrimitive = (PolylinePrimitive)element.mPrimitive;
-            List<Polyline3D> polylines = polylinePrimitive.mPolyline.divide(locPos, mFace);
+            List<Polyline3D> polylines = polylinePrimitive.mPolyline.divide(locPos);
             if (1 < polylines.Count) {
                 Element ele1 = new Element(mLayerSize);
                 ele1.mName = element.mName + "_1";
@@ -1807,10 +1756,10 @@ namespace Mini3DCad
         /// <param name="element">ピック要素</param>
         /// <param name="locPos">分割点</param>
         /// <returns>結果</returns>
-        public bool divideLine(Element element, PointD locPos)
+        public bool divideLine(Element element, Point3D locPos)
         {
             LinePrimitive linePrimitive = (LinePrimitive)element.mPrimitive;
-            List<Line3D> lines = linePrimitive.mLine.divide(locPos, mFace);
+            List<Line3D> lines = linePrimitive.mLine.divide(locPos);
             if (1 < lines.Count) {
                 Element ele1 = new Element(mLayerSize);
                 ele1.mName = element.mName + "_1";
@@ -1845,11 +1794,11 @@ namespace Mini3DCad
         /// <param name="element">ピック要素</param>
         /// <param name="locPos">分割点</param>
         /// <returns>結果</returns>
-        public bool divideArc(Element element, PointD locPos)
+        public bool divideArc(Element element, Point3D locPos)
         {
             ArcPrimitive arcPrimitive = (ArcPrimitive)element.mPrimitive;
             double divideAng = arcPrimitive.mDivideAngle;
-            List<Arc3D> arcs = arcPrimitive.mArc.divide(locPos, mFace);
+            List<Arc3D> arcs = arcPrimitive.mArc.divide(locPos);
             if (1 < arcs.Count) {
                 Element ele1 = new Element(mLayerSize);
                 ele1.mName = element.mName + "_1";
@@ -1913,12 +1862,11 @@ namespace Mini3DCad
             return true;
         }
 
-
         /// <summary>
         /// 計測
         /// </summary>
-        /// <param name="locList">ロケイト</param>
-        public void measure(List<PointD> locList)
+        /// <param name="locList">ロケイトリスト</param>
+        public void measure(List<Point3D> locList)
         {
             if (locList.Count == 2) {
                 string buf = "距離 : " + ylib.double2StrZeroSup(locList[0].length(locList[1]), "F8");

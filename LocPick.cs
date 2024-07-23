@@ -41,7 +41,7 @@ namespace Mini3DCad
             "垂点", "中心点",
         };
 
-        public List<PointD> mLocList = new();                       //  ロケイトの保存
+        public List<Point3D> mLocList = new();                      //  ロケイトの保存
         public List<PickData> mPickElement = new List<PickData>();  //  ピックエレメント
 
         public DataManage mDataManage;
@@ -74,28 +74,32 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="pickPos">ピック座標</param>
         /// <param name="picks">ピック要素</param>
-        public void autoLoc(PointD pickPos, List<int> picks)
+        public void autoLoc(PointD pickPos, List<int> picks, FACE3D face)
         {
-            PointD? wp = null;
+            Point3D? wp = null;
             if (ylib.onControlKey()) {
                 //  Ctrlキーでのメニュー表示で位置を選定
-                wp = locSelect(pickPos, picks);
+                wp = locSelect(pickPos, picks, face);
             } else {
                 //  ピックされているときは位置を自動判断
                 if (picks.Count == 1) {
                     //  ピックされているときは位置を自動判断
-                    wp = autoLoc(pickPos, picks[0]);
+                    wp = autoLoc(pickPos, face, picks[0]);
                 } else if (2 <= picks.Count) {
                     //  2要素の時は交点位置
-                    wp = intersectionLoc(picks[0], picks[1], pickPos);
-                    if (wp == null)
-                        wp = autoLoc(pickPos, picks[0]);
-                    if (wp == null)
-                        wp = autoLoc(pickPos, picks[1]);
+                    wp = intersectionLoc(picks[0], picks[1], pickPos, face);
+                    if (wp == null || double.IsNaN(wp.x))
+                        wp = autoLoc(pickPos, face, picks[0]);
+                    if (wp == null || double.IsNaN(wp.x))
+                        wp = autoLoc(pickPos, face, picks[1]);
                 }
             }
-            if (wp != null)
-                mLocList.Add(wp);
+            if (wp != null) {
+                if (mDataManage.mBaseLoc)
+                    mLocList.Add(new Point3D(wp.toPoint(face), face));
+                else
+                    mLocList.Add(wp);
+            }
         }
 
         /// <summary>
@@ -104,19 +108,19 @@ namespace Mini3DCad
         /// <param name="pos">ピック座標</param>
         /// <param name="entNo">要素番号</param>
         /// <returns>座標</returns>
-        private PointD autoLoc(PointD pos, int entNo = -1)
+        private Point3D autoLoc(PointD pos, FACE3D face, int entNo = -1)
         {
             if (mDataManage.mElementList[entNo].mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
                 ArcPrimitive arcPrimitive = (ArcPrimitive)mDataManage.mElementList[entNo].mPrimitive;
-                return arcPrimitive.mArc.nearPoint(pos, 4, mDataManage.mFace);
+                return arcPrimitive.mArc.nearPoint(pos, 4, face);
             } else if (mDataManage.mElementList[entNo].mPrimitive.mPrimitiveId == PrimitiveId.Polyline) {
                 PolylinePrimitive polylinePrimitive = (PolylinePrimitive)mDataManage.mElementList[entNo].mPrimitive;
-                return polylinePrimitive.mPolyline.nearPoint(pos, 4, mDataManage.mFace);
+                return polylinePrimitive.mPolyline.nearPoint(pos, 4, face);
             } else if (mDataManage.mElementList[entNo].mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
                 PolygonPrimitive polygonPrimitive = (PolygonPrimitive)mDataManage.mElementList[entNo].mPrimitive;
-                return polygonPrimitive.mPolygon.nearPoint(pos, 4, mDataManage.mFace);
+                return polygonPrimitive.mPolygon.nearPoint(pos, 4, face);
             } else
-                return mDataManage.mElementList[entNo].mPrimitive.nearPoint(pos, 4, mDataManage.mFace);
+                return mDataManage.mElementList[entNo].mPrimitive.nearPoint(pos, 4, face);
         }
 
         /// <summary>
@@ -126,13 +130,15 @@ namespace Mini3DCad
         /// <param name="entNo1">ピック要素番号</param>
         /// <param name="pos">ピック位置</param>
         /// <returns>交点座標</returns>
-        private PointD intersectionLoc(int entNo0, int entNo1, PointD pos)
+        private Point3D intersectionLoc(int entNo0, int entNo1, PointD pos, FACE3D face)
         {
             Primitive ent0 = mDataManage.mElementList[entNo0].mPrimitive;
             Primitive ent1 = mDataManage.mElementList[entNo1].mPrimitive;
-            LineD line0 = ent0.getLine(pos, mDataManage.mFace).toLineD(mDataManage.mFace);
-            LineD line1 = ent1.getLine(pos, mDataManage.mFace).toLineD(mDataManage.mFace);
-            return line0.intersection(line1);
+            Line3D line0 = ent0.getLine(pos, face);
+            Line3D line1 = ent1.getLine(pos, face);
+            PointD ip = line0.toLineD(face).intersection(line1.toLineD(face));
+            if (ip == null) return null;
+            return line0.intersection(ip, face);
         }
 
         /// <summary>
@@ -141,9 +147,9 @@ namespace Mini3DCad
         /// <param name="pos">ピック位置</param>
         /// <param name="picks">ピック要素</param>
         /// <returns>ロケイト座標</returns>
-        private PointD locSelect(PointD pos, List<int> picks)
+        private Point3D locSelect(PointD pos, List<int> picks, FACE3D face)
         {
-            if (picks.Count == 0) return pos;
+            if (picks.Count == 0) return new Point3D(pos, face);
             List<string> locMenu = new();
             locMenu.AddRange(mLocSelectMenu);
             Primitive ent = mDataManage.mElementList[picks[0]].mPrimitive;
@@ -161,10 +167,11 @@ namespace Mini3DCad
             dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
             dlg.mMenuList = locMenu;
             dlg.ShowDialog();
+            Point3D pos3 = new Point3D(pos, face);
             if (0 < dlg.mResultMenu.Length) {
-                pos = getLocSelectPos(dlg.mResultMenu, pos, picks);
+                pos3 = getLocSelectPos(dlg.mResultMenu, pos, picks, face);
             }
-            return pos;
+            return pos3;
         }
 
         /// <summary>
@@ -174,21 +181,22 @@ namespace Mini3DCad
         /// <param name="pos">ピック位置</param>
         /// <param name="picks">ピック要素</param>
         /// <returns>選択座標</returns>
-        private PointD getLocSelectPos(string selectMenu, PointD pos, List<int> picks)
+        private Point3D getLocSelectPos(string selectMenu, PointD pos, List<int> picks, FACE3D face)
         {
             Primitive ent = mDataManage.mElementList[picks[0]].mPrimitive;
-            PointD lastLoc = pos;
+            Point3D lastLoc = new Point3D(pos, face);
+            Point3D pos3 = new Point3D(pos, face);
             if (0 < mLocList.Count)
                 lastLoc = mLocList[mLocList.Count - 1];
-            List<PointD> plist = new List<PointD>();
+            List<Point3D> plist = new List<Point3D>();
             switch (selectMenu) {
-                case "端点・中間点": pos = ent.nearPoint(pos, 2, mDataManage.mFace); break;
-                case "3分割点": pos = ent.nearPoint(pos, 3, mDataManage.mFace); break;
-                case "4分割点": pos = ent.nearPoint(pos, 4, mDataManage.mFace); break;
-                case "5分割点": pos = ent.nearPoint(pos, 5, mDataManage.mFace); break;
-                case "6分割点": pos = ent.nearPoint(pos, 6, mDataManage.mFace); break;
-                case "8分割点": pos = ent.nearPoint(pos, 8, mDataManage.mFace); break;
-                case "垂点": pos = ent.nearPoint(lastLoc, 0, mDataManage.mFace); break;
+                case "端点・中間点": pos3 = ent.nearPoint(pos, 2, face); break;
+                case "3分割点": pos3 = ent.nearPoint(pos, 3, face); break;
+                case "4分割点": pos3 = ent.nearPoint(pos, 4, face); break;
+                case "5分割点": pos3 = ent.nearPoint(pos, 5, face); break;
+                case "6分割点": pos3 = ent.nearPoint(pos, 6, face); break;
+                case "8分割点": pos3 = ent.nearPoint(pos, 8, face); break;
+                case "垂点": pos3 = ent.nearPoint(lastLoc.toPoint(face), 0, face); break;
                 //case "接点":
                 //    if (ent.mPrimitiveId == PrimitiveId.Arc) {
                 //        ArcPrimitive arcEnt = (ArcPrimitive)ent;
@@ -200,21 +208,21 @@ namespace Mini3DCad
                 case "頂点":
                     if (ent.mPrimitiveId == PrimitiveId.Arc) {
                         ArcPrimitive arcEnt = (ArcPrimitive)ent;
-                        plist = arcEnt.mArc.toPeackList(mDataManage.mFace).ConvertAll(p => p.toPoint(mDataManage.mFace));
+                        plist = arcEnt.mArc.toPeackList();
                     }
                     if (plist != null && 0 < plist.Count)
-                        pos = plist.MinBy(p => p.length(pos));  //  最短位置
+                        pos3 = plist.MinBy(p => p.length(pos3));  //  最短位置(見直し要)
                     break;
                 case "中心点":
                     if (ent.mPrimitiveId == PrimitiveId.Arc) {
                         ArcPrimitive arcEnt = (ArcPrimitive)ent;
-                        pos = arcEnt.mArc.mCp.toPoint(mDataManage.mFace);
+                        pos3 = arcEnt.mArc.mCp;
                     } else {
-                        pos = ent.getArea().getCenter().toPoint(mDataManage.mFace);
+                        pos3 = ent.getArea().getCenter();
                     }
                     break;
             }
-            return pos;
+            return pos3;
         }
 
         /// <summary>
@@ -261,9 +269,10 @@ namespace Mini3DCad
                 double val;
                 int repeat = 1;
                 PointD wp = new PointD();
+                Point3D wp3 = new Point3D();
                 PointD p1, p2;
                 LineD line;
-                PointD lastLoc = new PointD(0, 0);
+                Point3D lastLoc = new Point3D();
                 Primitive ent;
                 if (0 < mLocList.Count)
                     lastLoc = mLocList[mLocList.Count - 1];
@@ -271,9 +280,15 @@ namespace Mini3DCad
                     case "座標入力":
                         //  xxx,yyy で入力
                         valstr = dlg.mEditText.Split(',');
-                        if (1 < valstr.Length) {
+                        if (valstr.Length == 1) {
+                            wp = new PointD(ycalc.expression(valstr[0]), 0);
+                            mLocList.Add(new Point3D(wp, mDataManage.mFace));
+                        } else if (valstr.Length == 2) {
                             wp = new PointD(ycalc.expression(valstr[0]), ycalc.expression(valstr[1]));
-                            mLocList.Add(wp);
+                            mLocList.Add(new Point3D(wp, mDataManage.mFace));
+                        } else if (valstr.Length == 3) {
+                            wp3 = new Point3D(ycalc.expression(valstr[0]), ycalc.expression(valstr[1]), ycalc.expression(valstr[2]));
+                            mLocList.Add(new Point3D(wp, mDataManage.mFace));
                         }
                         break;
                     case "相対座標入力":
@@ -281,10 +296,11 @@ namespace Mini3DCad
                         valstr = dlg.mEditText.Split(',');
                         if (1 < valstr.Length && 0 < mLocList.Count) {
                             wp = new PointD(ycalc.expression(valstr[0]), ycalc.expression(valstr[1]));
+                            wp3 = new Point3D(wp, mDataManage.mFace);
                             if (2 < valstr.Length)
                                 repeat = (int)ycalc.expression(valstr[2]);
                             for (int i = 0; i < repeat; i++)
-                                mLocList.Add(wp + mLocList.Last());
+                                mLocList.Add(wp3 + mLocList.Last());
                         }
                         break;
                     case "平行距離":
@@ -296,20 +312,20 @@ namespace Mini3DCad
                         if (1 < valstr.Length)
                             repeat = (int)ycalc.expression(valstr[1]);
                         ent = mDataManage.mElementList[mPickElement[mPickElement.Count - 1].mElementNo].mPrimitive;
-                        if (ent.mPrimitiveId== PrimitiveId.Arc) {
+                        if (ent.mPrimitiveId == PrimitiveId.Arc) {
                             ArcPrimitive arcEnt = (ArcPrimitive)ent;
-                            LineD la = new LineD(arcEnt.mArc.mCp.toPoint(mDataManage.mFace), lastLoc);
+                            LineD la = new LineD(arcEnt.mArc.mCp.toPoint(mDataManage.mFace), lastLoc.toPoint(mDataManage.mFace));
                             for (int i = 1; i < repeat + 1; i++) {
                                 la.setLength(la.length() + val);
-                                wp = la.pe.toCopy();
-                                mLocList.Add(wp);
+                                wp3 = new Point3D(la.pe, mDataManage.mFace);
+                                mLocList.Add(wp3);
                             }
                         } else {
                             line = ent.getLine(mPickElement[mPickElement.Count - 1].mPos, mDataManage.mFace).toLineD(mDataManage.mFace);
                             if (!line.isNaN()) {
                                 for (int i = 1; i < repeat + 1; i++) {
-                                    wp = line.offset(lastLoc, val * i);
-                                    mLocList.Add(wp);
+                                    wp3 = new Point3D(line.offset(lastLoc.toPoint(mDataManage.mFace), val * i), mDataManage.mFace);
+                                    mLocList.Add(wp3);
                                 }
                             }
                         }
@@ -319,12 +335,13 @@ namespace Mini3DCad
                         val = ycalc.expression(valstr[0]);
                         if (operation == OPERATION.circle) {
                             //  円の作成
-                            wp = lastLoc + new PointD(val, 0);
+                            wp = new PointD(val, 0);
+                            wp3 = lastLoc + new Point3D(wp, mDataManage.mFace);
                         } else {
                             break;
                         }
                         if (!wp.isNaN()) {
-                            mLocList.Add(wp);
+                            mLocList.Add(wp3);
                         }
                         break;
                     case "回転角":
@@ -334,14 +351,14 @@ namespace Mini3DCad
                             repeat = (int)ycalc.expression(valstr[1]);
                         PointD vec = new PointD(1, 0);
                         if (1 == mLocList.Count) {
-                            wp = mLocList[0] + vec;
-                            mLocList.Add(wp);
+                            wp = mLocList[0].toPoint(mDataManage.mFace) + vec;
+                            mLocList.Add(new Point3D(wp, mDataManage.mFace));
                         }
                         for (int i =1; i < repeat + 1; i++) {
-                            vec = mLocList[i] - mLocList[0];
+                            vec = mLocList[i].toPoint(mDataManage.mFace) - mLocList[0].toPoint(mDataManage.mFace);
                             vec.rotate(ylib.D2R(val));
-                            wp = mLocList[0] + vec;
-                            mLocList.Add(wp);
+                            wp = mLocList[0].toPoint(mDataManage.mFace) + vec;
+                            mLocList.Add(new Point3D(wp, mDataManage.mFace));
                         }
                         break;
                 }

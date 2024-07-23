@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Mini3DCad"
         mc:Ignorable="d"
-        Title="Mini3DCad" Height="450" Width="700" Closing="Window_Closing" Loaded="Window_Loaded"
+        Title="Mini3DCad" Height="500" Width="800" Closing="Window_Closing" Loaded="Window_Loaded"
         LayoutUpdated="Window_LayoutUpdated" MouseWheel="Window_MouseWheel" MouseMove="Window_MouseMove" 
         MouseLeftButtonDown="Window_MouseLeftButtonDown" MouseLeftButtonUp="Window_MouseLeftButtonUp" 
         MouseRightButtonDown="Window_MouseRightButtonDown" MouseRightButtonUp="Window_MouseRightButtonUp" PreviewKeyDown="Window_PreviewKeyDown" MouseDoubleClick="Window_MouseDoubleClick">
@@ -96,6 +96,8 @@
                             ToolTip="システム設定" >
                         <Image Source="Icon\Settings.png" ></Image>
                     </Button>
+                    <CheckBox x:Name="cbBaseLoc" Content="基準面" Click="cbBaseLoc_Click"
+                              ToolTip="オートロケイトで指定の基準面か要素上の位置かを設定"/>
                     <TextBlock Text="コマンド" FontSize="11"/>
                     <ComboBox x:Name="cbCommand" Width="370" IsEditable="True" PreviewKeyDown="cbCommand_PreviewKeyDown"
                               ToolTip="コマンド入力欄、Enterキーで実行"/>

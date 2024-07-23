@@ -107,7 +107,7 @@ namespace Mini3DCad
         /// <param name="face">2D平面</param>
         public override void trim(Point3D sp, Point3D ep, PointD pickPos, FACE3D face)
         {
-            mArc.trim(sp.toPoint(face), ep.toPoint(face), face);
+            mArc.trim(sp, ep);
         }
 
         /// <summary>

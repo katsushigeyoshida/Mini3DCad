@@ -6,17 +6,17 @@ namespace Mini3DCad
     public class Element
     {
         public Dictionary<PrimitiveId, string> mPrimitiveName = new Dictionary<PrimitiveId, string>() {
-            { PrimitiveId.Non, "" },
-            { PrimitiveId.Point, "点" },
-            { PrimitiveId.Line, "線分" },
-            { PrimitiveId.Arc, "円弧" },
-            { PrimitiveId.Polyline, "折線" },
-            { PrimitiveId.Polygon, "多角形" },
-            { PrimitiveId.Extrusion, "押出" },
-            { PrimitiveId.Blend, "ブレンド" },
+            { PrimitiveId.Non,           ""     },
+            { PrimitiveId.Point,         "点"   },
+            { PrimitiveId.Line,          "線分" },
+            { PrimitiveId.Arc,           "円弧" },
+            { PrimitiveId.Polyline,      "折線" },
+            { PrimitiveId.Polygon,       "多角形" },
+            { PrimitiveId.Extrusion,     "押出" },
+            { PrimitiveId.Blend,         "ブレンド" },
             { PrimitiveId.BlendPolyline, "ブレンド" },
-            { PrimitiveId.Revolution, "回転体" },
-            { PrimitiveId.Sweep, "掃引" },
+            { PrimitiveId.Revolution,    "回転体" },
+            { PrimitiveId.Sweep,         "掃引" },
         };
 
         public string mName;                    //  エレメント名(任意)
@@ -24,11 +24,13 @@ namespace Mini3DCad
         public List<Surface> mSurfaceList;      //  サーフェスデータリスト(LINE/TRYANGLE)
         public bool mBothShading = true;        //  両面陰面判定の有無
         public bool mDisp3D = true;             //  3Dでの表示/非表示
+        public bool mDisp2D = true;             //  2Dでの表示/非表示
+        public int mGroup = 0;                  //  グループ番号
         public bool mRemove = false;            //  削除フラグ
-        public Box3D mArea;                     //  要素領域
-        public int mOperationNo = -1;           //  操作位置
         public int mLinkNo = -1;                //  リンク先要素番号
         public byte[] mLayerBit;                //  レイヤーBit
+        public Box3D mArea;                     //  要素領域
+        public int mOperationNo = -1;           //  操作位置
 
         private YLib ylib = new YLib();
 
@@ -48,17 +50,6 @@ namespace Mini3DCad
         }
 
         /// <summary>
-        /// 2D表示処理
-        /// </summary>
-        /// <param name="draw"></param>
-        /// <param name="face">表示面</param>
-        public void draw2D(YWorldDraw draw, FACE3D face)
-        {
-            if (mArea != null && !draw.mClipBox.outsideChk(mArea.toBox(face)))
-                mPrimitive.draw2D(draw, face);
-        }
-
-        /// <summary>
         /// コピーの作成
         /// </summary>
         /// <returns></returns>
@@ -70,6 +61,8 @@ namespace Mini3DCad
             element.mSurfaceList = mSurfaceList.ConvertAll(p => p.toCopy());
             element.mBothShading = mBothShading;
             element.mDisp3D = mDisp3D;
+            element.mDisp2D = mDisp2D;
+            element.mGroup  = mGroup;
             element.mRemove = mRemove;
             element.mArea = mArea.toCopy();
             element.mOperationNo = mOperationNo;
@@ -101,6 +94,16 @@ namespace Mini3DCad
             Array.Copy(element.mLayerBit, mLayerBit, mLayerBit.Length);
         }
 
+        /// <summary>
+        /// 2D表示処理
+        /// </summary>
+        /// <param name="draw"></param>
+        /// <param name="face">表示面</param>
+        public void draw2D(YWorldDraw draw, FACE3D face)
+        {
+            if (mArea != null && !draw.mClipBox.outsideChk(mArea.toBox(face)) && mDisp2D)
+                mPrimitive.draw2D(draw, face);
+        }
 
         /// <summary>
         /// 表示条件の判定
@@ -200,6 +203,8 @@ namespace Mini3DCad
             buf = new string[] { "IsShading", mBothShading.ToString() };
             list.Add(buf);
             buf = new string[] { "Disp3D", mDisp3D.ToString() };
+            list.Add(buf);
+            buf = new string[] { "Group", mGroup.ToString() };
             list.Add(buf);
             buf = new string[] { "LayerSize", mLayerBit.Length.ToString() };
             list.Add(buf);
@@ -311,6 +316,8 @@ namespace Mini3DCad
                         mBothShading = ylib.boolParse(buf[1]);
                     } else if (buf[0] == "Disp3D") {
                         mDisp3D = ylib.boolParse(buf[1]);
+                    } else if (buf[0] == "Group") {
+                        mGroup = ylib.intParse(buf[1]);
                     } else if (buf[0] == "LayerSize") {
                         int layerSize = ylib.intParse(buf[1]);
                     } else if (buf[0] == "DispLayerBit") {

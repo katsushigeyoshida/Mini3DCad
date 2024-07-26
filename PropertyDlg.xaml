@@ -48,12 +48,15 @@
         <CheckBox Name="chOutlineDisp" Margin="340,65,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <CheckBox x:Name="chOutlineDispEnable" Margin="370,65,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <CheckBox x:Name="chFaceColorEnable" Margin="190,65,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
-        <Label Content="両面表示" Margin="5,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <!--<Label Content="両面表示" Margin="5,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <CheckBox Name="chBothShading" Margin="80,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <CheckBox x:Name="chBothShadingEnable" Margin="110,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
-        <Label Content="3D表示" Margin="170,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <CheckBox Name="chDisp3D" Margin="220,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
-        <CheckBox x:Name="chDisp3DEnable" Margin="250,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <CheckBox x:Name="chBothShadingEnable" Margin="110,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />-->
+        <Label Content="2D表示" Margin="5,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chDisp2D" Margin="80,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chDisp2DEnable" Margin="110,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        <Label Content="3D表示" Margin="160,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox Name="chDisp3D" Margin="210,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <CheckBox x:Name="chDisp3DEnable" Margin="240,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
         <Label Content="端面表示" Margin="280,85,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <CheckBox Name="chEdgeDisp" Margin="340,90,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
         <CheckBox x:Name="chEdgeDispEnable" Margin="370,90,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" />
@@ -83,6 +86,9 @@
         </ComboBox>
         <CheckBox x:Name="chLayerListAdd" Content="追加" Margin="0,175,50,0" VerticalAlignment="Top" HorizontalAlignment="Right" />
         <CheckBox x:Name="chLayerListEnable" Margin="0,175,20,0" VerticalAlignment="Top" HorizontalAlignment="Right"  />
+        <Label Name="lbGroupTitle" Content="グループ名" Margin="5,200,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" />
+        <ComboBox Name="cbGroup" Margin="80,200,50,0" IsEditable="True" VerticalAlignment="Top" />
+        <CheckBox x:Name="chGroupEnable" Margin="0,205,20,0" VerticalAlignment="Top" HorizontalAlignment="Right"  />
 
         <Button x:Name="btOK" IsDefault="True" Content="OK" Width="60" Margin="0,0,100,10" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btOK_Click" />
         <Button x:Name="btCancel" IsCancel="True" Content="Cancel" Width="60" Margin="0,0,20,10" VerticalAlignment="Bottom" HorizontalAlignment="Right" Click="btCancel_Click" />

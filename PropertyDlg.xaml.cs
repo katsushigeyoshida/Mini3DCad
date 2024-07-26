@@ -23,6 +23,8 @@ namespace Mini3DCad
         public bool mLineFontEnable = false;
         public bool mBothShading = false;           //  両面表示
         public bool mBothShadingEnable = false;
+        public bool mDisp2D = true;                 //  2D表示
+        public bool mDisp2DEnable = false;
         public bool mDisp3D = true;                 //  3D表示
         public bool mDisp3DEnable = false;
         public bool mEdgeDisp = true;               //  端面表示
@@ -47,6 +49,9 @@ namespace Mini3DCad
         public List<CheckBoxListItem> mChkList;     //  レイヤー使用リスト
         public bool mCkkListAdd = true;             //  レイヤ追加チェック
         public bool mCkkListEnable = false;
+        public string mGroup = "";                  //  グループ名
+        public List<string> mGroupList;
+        public bool mGroupEnable = false;
 
         private string[] mLineFontName = new string[] {
             "実線", "破線", "一点鎖線", "二点鎖線"};
@@ -74,8 +79,9 @@ namespace Mini3DCad
             cbLineFont.ItemsSource   = mLineFontName;
             cbLineFont.SelectedIndex = mLineFont;
             cbLineFont.IsEnabled     = mLineFontOn;
-            chBothShading.IsChecked  = mBothShading;
-            chBothShading.IsEnabled  = mBothShadingEnable;
+            //chBothShading.IsChecked  = mBothShading;
+            //chBothShading.IsEnabled  = mBothShadingEnable;
+            chDisp2D.IsChecked       = mDisp2D;
             chDisp3D.IsChecked       = mDisp3D;
             chEdgeDisp.IsChecked     = mEdgeDisp;
             chEdgeDisp.IsEnabled     = mEdgeDispEnable;
@@ -96,6 +102,8 @@ namespace Mini3DCad
             cbLayerList.Items.Clear();
             mChkList.ForEach(p => cbLayerList.Items.Add(p));
             chLayerListAdd.IsChecked = mCkkListAdd;
+            cbGroup.ItemsSource = mGroupList;
+            cbGroup.Text = mGroup;
 
             if (!mArcOn) {
                 tbArcRadius.IsEnabled = false;
@@ -112,7 +120,8 @@ namespace Mini3DCad
                 chLineColorEnable.Visibility     = Visibility.Hidden;
                 chFaceColorEnable.Visibility     = Visibility.Hidden;
                 chLineFontEnable.Visibility      = Visibility.Hidden;
-                chBothShadingEnable.Visibility   = Visibility.Hidden;
+                //chBothShadingEnable.Visibility   = Visibility.Hidden;
+                chDisp2DEnable.Visibility        = Visibility.Hidden;
                 chDisp3DEnable.Visibility        = Visibility.Hidden;
                 chEdgeDispEnable.Visibility      = Visibility.Hidden;
                 chOutlineDispEnable.Visibility   = Visibility.Hidden;
@@ -123,6 +132,7 @@ namespace Mini3DCad
                 chDivideAngEnable.Visibility     = Visibility.Hidden;
                 chLayerListAdd.Visibility        = Visibility.Hidden;
                 chLayerListEnable.Visibility     = Visibility.Hidden;
+                chGroupEnable.Visibility         = Visibility.Hidden;
             }
         }
 
@@ -156,23 +166,27 @@ namespace Mini3DCad
             }
             mLineColoeEnable   = chLineColorEnable.IsChecked == true;
             mFaceColorEnable   = chFaceColorEnable.IsChecked == true;
-            mBothShading       = chBothShading.IsChecked == true;
-            mBothShadingEnable = chBothShadingEnable.IsChecked == true;
-            mDisp3D            = chDisp3D.IsChecked == true;
-            mDisp3DEnable      = chDisp3DEnable.IsChecked == true;
-            mEdgeDisp          = chEdgeDisp.IsChecked == true;
+            //mBothShading       = chBothShading.IsChecked == true;
+            //mBothShadingEnable = chBothShadingEnable.IsChecked == true;
+            mDisp2D            = chDisp2D.IsChecked == true;
+            mDisp2DEnable      = chDisp2DEnable.IsChecked == true;
+            mDisp3D = chDisp3D.IsChecked == true;
+            mDisp3DEnable = chDisp3DEnable.IsChecked == true;
+            mEdgeDisp = chEdgeDisp.IsChecked == true;
             mEdgeDispEnable    = chEdgeDispEnable.IsChecked == true;
             mOutlineDisp       = chOutlineDisp.IsChecked == true;
             mOutlineDispEnable = chOutlineDispEnable.IsChecked == true;
-            mArcRadius     = ylib.doubleParse(tbArcRadius.Text, 1);
-            mArcStartAngle = ylib.doubleParse(tbArcStartAngle.Text, 1);
-            mArcEndAngle   = ylib.doubleParse(tbArcEndAngle.Text, 1);
-            mReverse       = chReverse.IsChecked == true;
-            mReverseEnable = chReverseEnable.IsChecked == true;
-            mDivideAng       = ylib.doubleParse(tbDivideAng.Text, 10);
-            mDivideAngEnable = chDivideAngEnable.IsChecked == true;
-            mCkkListAdd      = chLayerListAdd.IsChecked == true;
-            mCkkListEnable   = chLayerListEnable.IsChecked == true;
+            mArcRadius         = ylib.doubleParse(tbArcRadius.Text, 1);
+            mArcStartAngle     = ylib.doubleParse(tbArcStartAngle.Text, 1);
+            mArcEndAngle       = ylib.doubleParse(tbArcEndAngle.Text, 1);
+            mReverse           = chReverse.IsChecked == true;
+            mReverseEnable     = chReverseEnable.IsChecked == true;
+            mDivideAng         = ylib.doubleParse(tbDivideAng.Text, 10);
+            mDivideAngEnable   = chDivideAngEnable.IsChecked == true;
+            mCkkListAdd        = chLayerListAdd.IsChecked == true;
+            mCkkListEnable     = chLayerListEnable.IsChecked == true;
+            mGroup             = cbGroup.Text;
+            mGroupEnable       = chGroupEnable.IsChecked == true;
 
             DialogResult = true;
             Close();

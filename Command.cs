@@ -23,7 +23,7 @@ namespace Mini3DCad
         copyTranslate, copyRotate, copyOffset, copyMirror, copyTrim, copyScale, copyElement, pasteElement,
         extrusion, blend, revolution, sweep, release,
         measure, measureDistance, measureAngle,
-        zumenComment, dispLayer, addLayer, removeLayer, info, remove, undo,
+        zumenComment, dispLayer, addLayer, removeLayer, disp2DAll, disp3DAll, info, remove, undo,
         screenCopy, screenSave, imageTrimming,
         save, load, back, cancel, close
     }
@@ -78,8 +78,6 @@ namespace Mini3DCad
             new Command("2D編集",     "分割",         OPERATION.divide),
             new Command("2D編集",     "Ｒ面",         OPERATION.fillet),
             new Command("2D編集",     "接続",         OPERATION.connect),
-            new Command("2D編集",     "属性変更",     OPERATION.changeProperty),
-            new Command("2D編集",     "一括属性変更", OPERATION.changePropertyAll),
             new Command("2D編集",     "戻る",         OPERATION.back),
             new Command("2Dコピー",   "移動",         OPERATION.copyTranslate),
             new Command("2Dコピー",   "回転",         OPERATION.copyRotate),
@@ -98,6 +96,9 @@ namespace Mini3DCad
             new Command("3D編集",     "戻る",         OPERATION.back),
             new Command("設定",       "図面コメント", OPERATION.zumenComment),
             new Command("設定",       "表示レイヤ",   OPERATION.dispLayer),
+            new Command("設定",       "非表示解除",   OPERATION.disp2DAll),
+            new Command("設定",       "属性変更",     OPERATION.changeProperty),
+            new Command("設定",       "一括属性変更", OPERATION.changePropertyAll),
             new Command("設定",       "戻る",         OPERATION.back),
             new Command("計測",       "距離",         OPERATION.measureDistance),
             new Command("計測",       "角度",         OPERATION.measureAngle),
@@ -301,6 +302,10 @@ namespace Mini3DCad
                     addLayer(); ;
                     opeMode = OPEMODE.clear;
                     break;
+                case OPERATION.disp2DAll:
+                    disp2DReset();
+                    opeMode = OPEMODE.clear;
+                    break;
                 case OPERATION.measureAngle:
                     break;
                 case OPERATION.measureDistance:
@@ -396,6 +401,14 @@ namespace Mini3DCad
             mLayerChkListDlg.callbackRename = layerRename;
             mLayerChkListDlg.Show();
             mDataManage.mOperationCount++;
+        }
+
+        /// <summary>
+        /// 2D非表示を解除
+        /// </summary>
+        public void disp2DReset()
+        {
+            mDataManage.mElementList.ForEach(p => p.mDisp2D = true);
         }
 
         /// <summary>

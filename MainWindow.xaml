@@ -61,6 +61,9 @@
                     <Button x:Name="btAreaPick" ToolTip="領域ピック F7" Width="25" Height="25" Click="btAreaPick_Click"  >
                         <Image Source="Icon\WebPartZone.png" ></Image>
                     </Button>
+                    <Button x:Name="btPropertyChange" ToolTip="属性変更" Width="25" Height="25" Click="btCommand_Click"  >
+                        <Image Source="Icon\EditManifest.png" ></Image>
+                    </Button>
                 </ToolBar>
                 <ToolBar>
                     <TextBlock Text="色" FontSize="11" VerticalAlignment="Center"/>

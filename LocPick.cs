@@ -10,19 +10,19 @@ namespace Mini3DCad
     {
         public int mElementNo;                  //  要素No
         public PointD mPos;                     //  ピック位置
-        public FACE3D mDispMode;                //  表示面
+        public FACE3D mFace;                    //  表示面
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
         /// <param name="no">要素No</param>
         /// <param name="pos">ピック位置</param>
-        /// <param name="dispMode">表示面</param>
-        public PickData(int no, PointD pos, FACE3D dispMode)
+        /// <param name="face">表示面</param>
+        public PickData(int no, PointD pos, FACE3D face)
         {
             mElementNo = no;
             mPos = pos;
-            mDispMode = dispMode;
+            mFace = face;
         }
     }
 
@@ -385,6 +385,23 @@ namespace Mini3DCad
         public List<int> getPickNo(Box pickArea)
         {
             return mDataManage.findIndex(pickArea, mDataManage.mFace);
+        }
+
+        /// <summary>
+        /// グループ要素を取得
+        /// </summary>
+        /// <param name="picks">ピック要素</param>
+        /// <returns>要素リスト</returns>
+        public List<int> getGroup(List<int> picks)
+        {
+            List<int> grouplist = new List<int>();
+            for (int i = 0; i < picks.Count; i++) {
+                if (0 < mDataManage.mElementList[picks[i]].mGroup) {
+                    grouplist.AddRange(mDataManage.mGroupManage.
+                        getGroupNoList(mDataManage.mElementList, mDataManage.mElementList[picks[i]].mGroup));
+                }
+            }
+            return grouplist;
         }
 
         /// <summary>

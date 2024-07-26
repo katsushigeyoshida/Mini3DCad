@@ -30,6 +30,7 @@ namespace Mini3DCad
         public int mFirstEntityCount = 0;                               //  編集開始時の要素数
         public int mLayerSize = 64;                                     //  レイヤサイズ
         public Layer mLayer;                                            //  レイヤ
+        public GroupManage mGroupManage;                                //  グループ
         public string mZumenComment;                                    //  図面コメント
 
         public List<string[]> mImageFilters = new List<string[]>() {
@@ -57,6 +58,7 @@ namespace Mini3DCad
         {
             mMainWindow = mainWindow;
             mLayer = new Layer(mLayerSize);
+            mGroupManage = new GroupManage();
         }
 
         /// <summary>
@@ -1113,6 +1115,7 @@ namespace Mini3DCad
                 dlg.mLineFont = element.mPrimitive.mLineType;
                 dlg.mFaceColor = element.mPrimitive.mFaceColors[0];
                 dlg.mReverse = element.mPrimitive.mReverse;
+                dlg.mDisp2D = element.mDisp2D;
                 dlg.mDisp3D = element.mDisp3D;
                 dlg.mEdgeDisp = element.mPrimitive.mEdgeDisp;
                 dlg.mOutlineDisp = element.mPrimitive.mOutlineDisp;
@@ -1120,6 +1123,8 @@ namespace Mini3DCad
                 dlg.mBothShadingEnable = false;
                 dlg.mDivideAng = ylib.R2D(element.mPrimitive.mDivideAngle);
                 dlg.mChkList = mLayer.getLayerChkList(element.mLayerBit);
+                dlg.mGroupList = mGroupManage.getGroupNameList();
+                dlg.mGroup = mGroupManage.getGroupName(element.mGroup);
                 if (element.mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
                     dlg.mArcOn = true;
                     ArcPrimitive arc = (ArcPrimitive)element.mPrimitive;
@@ -1187,11 +1192,13 @@ namespace Mini3DCad
                     element.mPrimitive.mLineColor = dlg.mLineColor;
                     element.mPrimitive.mLineType = dlg.mLineFont;
                     element.mPrimitive.mFaceColors[0] = dlg.mFaceColor;
+                    element.mDisp2D = dlg.mDisp2D;
                     element.mDisp3D = dlg.mDisp3D;
                     element.mPrimitive.mOutlineDisp = dlg.mOutlineDisp;
                     element.mBothShading = dlg.mBothShading;
                     element.mLayerBit = mLayer.setLayerChkList(element.mLayerBit, dlg.mChkList);
                     element.mOperationNo = mOperationCount;
+                    element.mGroup = mGroupManage.add(dlg.mGroup);
                     if (element.mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
                         ArcPrimitive arc = (ArcPrimitive)element.mPrimitive;
                         arc.mArc.mR = dlg.mArcRadius;
@@ -1237,7 +1244,10 @@ namespace Mini3DCad
             dlg.mPropertyAll = true;
             dlg.mChkList = mLayer.getLayerChkList(true);
             dlg.mOutlineDispEnable = true;
+            dlg.mGroupList = mGroupManage.getGroupNameList();
+
             if (dlg.ShowDialog() != true) return;
+
             for (int i = 0; i < picks.Count; i++) {
                 Element element = mElementList[picks[i].mElementNo].toCopy();
                 if (dlg.mNameEnable)
@@ -1248,6 +1258,8 @@ namespace Mini3DCad
                     element.mPrimitive.mLineType = dlg.mLineFont;
                 if (dlg.mFaceColorEnable)
                     element.mPrimitive.mFaceColors[0] = dlg.mFaceColor;
+                if (dlg.mDisp2DEnable)
+                    element.mDisp2D = dlg.mDisp2D;
                 if (dlg.mDisp3DEnable)
                     element.mDisp3D = dlg.mDisp3D;
                 if (dlg.mEdgeDispEnable)
@@ -1266,6 +1278,8 @@ namespace Mini3DCad
                     element.mLayerBit = mLayer.setLayerChkList(element.mLayerBit, dlg.mChkList, dlg.mCkkListAdd == false);
                 if (dlg.mDivideAngEnable)
                     element.mPrimitive.mDivideAngle = ylib.D2R(dlg.mDivideAng);
+                if (dlg.mGroupEnable)
+                    element.mGroup = mGroupManage.add(dlg.mGroup);
                 element.mOperationNo = mOperationCount;
                 if (element.mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
                     ArcPrimitive arc = (ArcPrimitive)element.mPrimitive;
@@ -2107,6 +2121,8 @@ namespace Mini3DCad
                 list.Add(buf);
             }
             list.AddRange(mLayer.toDataList());
+            mGroupManage.squeeze(mElementList);
+            list.AddRange(mGroupManage.toDataList());
             buf = new string[] { "DataManageEnd" };
             list.Add(buf);
             return list;
@@ -2153,6 +2169,8 @@ namespace Mini3DCad
                         mArea = new Box3D(10);
                 } else if (buf[0] == "Layer") {
                     sp = mLayer.setDataList(dataList, sp);
+                } else if (buf[0] == "Group") {
+                    sp = mGroupManage.setDataList(dataList, sp);
                 } else if (buf[0] == "DataManageEnd") {
                     break;
                 }

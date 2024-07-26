@@ -429,6 +429,10 @@ namespace Mini3DCad
                 if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement, 0 == picks.Count))
                     commandClear();
             } else {
+                if (ylib.onControlKey()) {
+                    picks = mLocPick.getGroup(picks);
+                    mOperationMode = OPEMODE.areaPick;
+                }
                 mLocPick.pickElement(wpos, picks, mOperationMode);  //  ピック要素登録
                 mDraw.draw();
             }
@@ -854,6 +858,21 @@ namespace Mini3DCad
         {
             mPrevOpeMode = mOperationMode;
             mOperationMode = OPEMODE.areaPick;
+        }
+
+        /// <summary>
+        /// コマンドボタン
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btCommand_Click(object sender, RoutedEventArgs e)
+        {
+            Button button = (Button)sender;
+            if (button.Name.CompareTo("btPropertyChange") == 0) {
+                //  属性変更
+                mCommandOpe.execCommand(OPERATION.changeProperty, mLocPick.mPickElement);
+                commandClear();
+            }
         }
 
         /// <summary>

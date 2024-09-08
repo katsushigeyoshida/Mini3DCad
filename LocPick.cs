@@ -110,17 +110,7 @@ namespace Mini3DCad
         /// <returns>座標</returns>
         private Point3D autoLoc(PointD pos, FACE3D face, int entNo = -1)
         {
-            if (mDataManage.mElementList[entNo].mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
-                ArcPrimitive arcPrimitive = (ArcPrimitive)mDataManage.mElementList[entNo].mPrimitive;
-                return arcPrimitive.mArc.nearPoint(pos, 4, face);
-            } else if (mDataManage.mElementList[entNo].mPrimitive.mPrimitiveId == PrimitiveId.Polyline) {
-                PolylinePrimitive polylinePrimitive = (PolylinePrimitive)mDataManage.mElementList[entNo].mPrimitive;
-                return polylinePrimitive.mPolyline.nearPoint(pos, 4, face);
-            } else if (mDataManage.mElementList[entNo].mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
-                PolygonPrimitive polygonPrimitive = (PolygonPrimitive)mDataManage.mElementList[entNo].mPrimitive;
-                return polygonPrimitive.mPolygon.nearPoint(pos, 4, face);
-            } else
-                return mDataManage.mElementList[entNo].mPrimitive.nearPoint(pos, 4, face);
+            return nearPoint(mDataManage.mElementList[entNo].mPrimitive, pos, 4, face);
         }
 
         /// <summary>
@@ -134,15 +124,19 @@ namespace Mini3DCad
         {
             Primitive ent0 = mDataManage.mElementList[entNo0].mPrimitive;
             Primitive ent1 = mDataManage.mElementList[entNo1].mPrimitive;
+            Point3D? ip = ent0.intersection(ent1, pos, face);
+            if (ip != null)
+                return ip;
+
             Line3D line0 = ent0.getLine(pos, face);
             Line3D line1 = ent1.getLine(pos, face);
-            PointD ip = line0.toLineD(face).intersection(line1.toLineD(face));
+            PointD iip = line0.toLineD(face).intersection(line1.toLineD(face));
             if (ip == null) return null;
-            return line0.intersection(ip, face);
+            return line0.intersection(iip, face);
         }
 
         /// <summary>
-        /// Ctrl + マウス右ピックによるロケイトメニューの表ぞ
+        /// Ctrl + マウス右ピックによるロケイトメニューの表示
         /// </summary>
         /// <param name="pos">ピック位置</param>
         /// <param name="picks">ピック要素</param>
@@ -191,12 +185,12 @@ namespace Mini3DCad
             List<Point3D> plist = new List<Point3D>();
             switch (selectMenu) {
                 case "端点・中間点": pos3 = ent.nearPoint(pos, 2, face); break;
-                case "3分割点": pos3 = ent.nearPoint(pos, 3, face); break;
-                case "4分割点": pos3 = ent.nearPoint(pos, 4, face); break;
-                case "5分割点": pos3 = ent.nearPoint(pos, 5, face); break;
-                case "6分割点": pos3 = ent.nearPoint(pos, 6, face); break;
-                case "8分割点": pos3 = ent.nearPoint(pos, 8, face); break;
-                case "垂点": pos3 = ent.nearPoint(lastLoc.toPoint(face), 0, face); break;
+                case "3分割点": pos3 = nearPoint(ent, pos, 3, face); break; //ent.nearPoint(pos, 3, face); break;
+                case "4分割点": pos3 = nearPoint(ent, pos, 4, face); break; //ent.nearPoint(pos, 4, face); break;
+                case "5分割点": pos3 = nearPoint(ent, pos, 5, face); break; //ent.nearPoint(pos, 5, face); break;
+                case "6分割点": pos3 = nearPoint(ent, pos, 6, face); break;
+                case "8分割点": pos3 = nearPoint(ent, pos, 8, face); break;
+                case "垂点"   : pos3 = nearPoint(ent, lastLoc.toPoint(face), 0, face); break; //ent.nearPoint(lastLoc.toPoint(face), 0, face); break;
                 //case "接点":
                 //    if (ent.mPrimitiveId == PrimitiveId.Arc) {
                 //        ArcPrimitive arcEnt = (ArcPrimitive)ent;
@@ -221,9 +215,46 @@ namespace Mini3DCad
                         pos3 = ent.getArea().getCenter();
                     }
                     break;
+                case "交点":
+                    if (1 < picks.Count)
+                        pos3 = intersectionLoc(picks[0], picks[1], pos, face);
+                    break;
             }
             return pos3;
         }
+
+        /// <summary>
+        /// 指定点に近い要素上の座標を求める
+        /// </summary>
+        /// <param name="ent">要素</param>
+        /// <param name="pos">2D平面上の指定座標</param>
+        /// <param name="divNo">要素の分割数(0は垂点)</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>3D座標</returns>
+        private Point3D nearPoint(Primitive ent, PointD pos, int divNo, FACE3D face)
+        {
+            if (ent.mPrimitiveId == PrimitiveId.Arc) {
+                Arc3D arc = ((ArcPrimitive)ent).mArc;
+                if (divNo == 0)
+                    return arc.intersection(pos, face);
+                else
+                   return arc.nearPoint(pos, divNo, face);
+            } else if (ent.mPrimitiveId == PrimitiveId.Polyline) {
+                Polyline3D polyline = ((PolylinePrimitive)ent).mPolyline;
+                if (divNo == 0)
+                    return polyline.intersection(pos, face);
+                else
+                    return polyline.nearPoint(pos, divNo, face);
+            } else if (ent.mPrimitiveId == PrimitiveId.Polygon) {
+                Polygon3D polygon = ((PolygonPrimitive)ent).mPolygon;
+                if (divNo == 0)
+                    return polygon.intersection(pos, face);
+                else
+                    return polygon.nearPoint(pos, divNo, face);
+            }
+            return ent.nearPoint(pos, divNo, face);
+        }
+
 
         /// <summary>
         /// ロケイトメニューの表示(Windowsメニューキー)

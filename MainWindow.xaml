@@ -99,9 +99,9 @@
                             ToolTip="システム設定" >
                         <Image Source="Icon\Settings.png" ></Image>
                     </Button>
-                    <CheckBox x:Name="cbBaseLoc" Content="基準面" Click="cbBaseLoc_Click"
+                    <CheckBox x:Name="cbBaseLoc" Content="基準面ロケイト" Click="cbBaseLoc_Click"
                               ToolTip="オートロケイトで指定の基準面か要素上の位置かを設定"/>
-                    <TextBlock Text="コマンド" FontSize="11"/>
+                    <TextBlock Text=" コマンド" FontSize="11"/>
                     <ComboBox x:Name="cbCommand" Width="370" IsEditable="True" PreviewKeyDown="cbCommand_PreviewKeyDown"
                               ToolTip="コマンド入力欄、Enterキーで実行"/>
                     <StatusBarItem HorizontalAlignment="Right">

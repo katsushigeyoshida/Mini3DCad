@@ -307,7 +307,19 @@ namespace Mini3DCad
             }
             return -1;
         }
- 
+
+        /// <summary>
+        /// 2D平面上の交点
+        /// </summary>
+        /// <param name="primutive">対象要素</param>
+        /// <param name="pos">指定位置</param>
+        /// <param name="face">2D平面</param>
+        /// <returns>2D交点</returns>
+        public override Point3D? intersection(Primitive primutive, PointD pos, FACE3D face)
+        {
+            return null;
+        }
+
         /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>

@@ -432,6 +432,15 @@ namespace Mini3DCad
                         getGroupNoList(mDataManage.mElementList, mDataManage.mElementList[picks[i]].mGroup));
                 }
             }
+            //  重複削除
+            for (int i = grouplist.Count - 1; i >= 0; i--) {
+                for (int j = 0; j < i; j++) {
+                    if (grouplist[j] == grouplist[i]) {
+                        grouplist.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
             return grouplist;
         }
 

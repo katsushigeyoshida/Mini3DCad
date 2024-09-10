@@ -129,6 +129,8 @@ namespace Mini3DCad
         /// <param name="e"></param>
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (mCommandOpe.mMemoDlg != null)
+                mCommandOpe.mMemoDlg.Close();
             if (mCommandOpe.mLayerChkListDlg != null)
                 mCommandOpe.mLayerChkListDlg.Close();
             mCommandOpe.saveFile(true);
@@ -719,6 +721,8 @@ namespace Mini3DCad
             if (0 <= index) {
                 //  カレントデータ終了処理
                 mCommandOpe.saveFile(true);
+                if (mCommandOpe.mMemoDlg != null)
+                    mCommandOpe.mMemoDlg.Close();
                 if (mCommandOpe.mLayerChkListDlg != null)
                     mCommandOpe.mLayerChkListDlg.Close();
                 //  新規データ読込

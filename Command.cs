@@ -24,7 +24,7 @@ namespace Mini3DCad
         extrusion, blend, revolution, sweep, release,
         measure, measureDistance, measureAngle,
         zumenComment, dispLayer, addLayer, removeLayer, disp2DAll, disp3DAll, info, remove, undo,
-        screenCopy, screenSave, imageTrimming,
+        screenCopy, screenSave, imageTrimming, memo,
         save, load, back, cancel, close
     }
 
@@ -112,6 +112,7 @@ namespace Mini3DCad
             new Command("ツール",     "画面コピー",   OPERATION.screenCopy),
             new Command("ツール",     "画面保存",     OPERATION.screenSave),
             new Command("ツール",    "イメージトリミング", OPERATION.imageTrimming),
+            new Command("ツール",     "メモ",         OPERATION.memo),
             new Command("ツール",     "戻る",         OPERATION.back),
             new Command("キャンセル", "キャンセル",   OPERATION.cancel),
             new Command("終了",       "終了",         OPERATION.close),
@@ -195,6 +196,7 @@ namespace Mini3DCad
         public FACE3D mDispMode = FACE3D.XY;
         public string mDataFilePath = "";
         public ChkListDialog mLayerChkListDlg = null;           //  表示レイヤー設定ダイヤログ
+        public InputBox mMemoDlg = null;                        //  メモダイヤログ
         public MainWindow mMainWindow;
         private YLib ylib = new YLib();
 
@@ -336,6 +338,11 @@ namespace Mini3DCad
                     break;
                 case OPERATION.imageTrimming:
                     imageTrimming(mMainWindow);
+                    opeMode = OPEMODE.clear;
+                    break;
+                case OPERATION.memo:
+                    zumenMemo();
+                    opeMode = OPEMODE.clear;
                     break;
                 case OPERATION.back:
                     opeMode = OPEMODE.non;
@@ -475,8 +482,42 @@ namespace Mini3DCad
             dlg.Title = "図面のコメント";
             dlg.mEditText = mDataManage.mZumenComment;
             if (dlg.ShowDialog() == true) {
-                mDataManage.mZumenComment = dlg.mEditText;
-                mDataManage.mOperationCount++;
+                if (mDataManage.mZumenComment != dlg.mEditText) {
+                    mDataManage.mZumenComment = dlg.mEditText;
+                    mDataManage.mOperationCount++;
+                }
+            }
+        }
+
+        /// <summary>
+        /// メモデータ入力ダイヤログを開く
+        /// </summary>
+        public void zumenMemo()
+        {
+            if (mMemoDlg != null)
+                mMemoDlg.Close();
+            mMemoDlg = new InputBox();
+            mMemoDlg.Topmost = true;
+            mMemoDlg.mMultiLine = true;
+            mMemoDlg.Title = "めも";
+            mMemoDlg.mEditText = mDataManage.mMemo;
+            mMemoDlg.mCallBackOn = true;
+            mMemoDlg.callback = setMemoText;
+            mMemoDlg.Show();
+
+        }
+
+        /// <summary>
+        /// 図面のメモデータをmParaに設定する(CallBack)
+        /// </summary>
+        public void setMemoText()
+        {
+            if (mMemoDlg != null) {
+                mMemoDlg.updateData();
+                if (mDataManage.mMemo != mMemoDlg.mEditText) {
+                    mDataManage.mMemo = mMemoDlg.mEditText;
+                    mDataManage.mOperationCount++;
+                }
             }
         }
 
@@ -496,6 +537,7 @@ namespace Mini3DCad
         /// <param name="saveonly">保存のみ</param>
         public void saveFile(bool saveonly = false)
         {
+            setMemoText();
             if (0 < mDataFilePath.Length) {
                 mDataManage.saveData(mDataFilePath);
             } else if (!saveonly && 0 < mDataManage.mElementList.Count) {

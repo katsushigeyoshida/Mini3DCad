@@ -32,6 +32,7 @@ namespace Mini3DCad
         public Layer mLayer;                                            //  レイヤ
         public GroupManage mGroupManage;                                //  グループ
         public string mZumenComment;                                    //  図面コメント
+        public string mMemo;                                            //  メモ
 
         public List<string[]> mImageFilters = new List<string[]>() {
                     new string[] { "PNGファイル", "*.png" },
@@ -68,6 +69,7 @@ namespace Mini3DCad
         {
             mElementList.Clear();
             mZumenComment = "";
+            mMemo = "";
             mOperationCount = 0;
             mFirstEntityCount = 0;
             mLayer.clear();
@@ -1923,7 +1925,8 @@ namespace Mini3DCad
         {
             for (int i = 0; i < picks.Count; i++) {
                 string buf = mElementList[picks[i].mElementNo].propertyInfo();
-                buf += " レイヤ:[" + string.Join(",", mLayer.getLayerNameList(mElementList[picks[i].mElementNo].mLayerBit)) + "]";
+                buf += "\nレイヤ:[" + string.Join(",", mLayer.getLayerNameList(mElementList[picks[i].mElementNo].mLayerBit)) + "]";
+                buf += " グループ:[" + mGroupManage.getGroupName(mElementList[picks[i].mElementNo].mGroup) + "]";
                 buf += "\n" + mElementList[picks[i].mElementNo].mPrimitive.dataSummary("F2");
                 buf += "\n" + mElementList[picks[i].mElementNo].dataInfo();
                 ylib.messageBox(mMainWindow, buf,
@@ -2111,7 +2114,9 @@ namespace Mini3DCad
             list.Add(buf);
             buf = new string[] { "WireFrame", mWireFrame.ToString() };
             list.Add(buf);
-            buf = new string[] { "ZumenComment", mZumenComment };
+            buf = new string[] { "ZumenComment", ylib.strControlCodeCnv(mZumenComment) };
+            list.Add(buf);
+            buf = new string[] { "Memo", ylib.strControlCodeCnv(mMemo) };
             list.Add(buf);
             if (mArea != null) {
                 buf = new string[] { "Area",
@@ -2156,7 +2161,9 @@ namespace Mini3DCad
                 } else if (buf[0] == "WireFrame") {
                     mWireFrame = ylib.boolParse(buf[1]);
                 } else if (buf[0] == "ZumenComment") {
-                    mZumenComment = buf[1];
+                    mZumenComment = ylib.strControlCodeRev(buf[1]);
+                } else if (buf[0] == "Memo") {
+                    mMemo = ylib.strControlCodeRev(buf[1]);
                 } else if (buf[0] == "Area" && buf.Length == 7) {
                     mArea = new Box3D();
                     mArea.mMin.x = ylib.doubleParse(buf[1]);

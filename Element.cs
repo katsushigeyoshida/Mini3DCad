@@ -145,8 +145,9 @@ namespace Mini3DCad
         public string propertyInfo()
         {
             string buf = $"名称:[{mName}] 種類:[{mPrimitiveName[mPrimitive.mPrimitiveId]}]";
-            buf += $" 2D色:[{ylib.getBrushName(mPrimitive.mLineColor)}] 3D色:[{ylib.getBrushName(mPrimitive.mFaceColors[0])}]";
-            buf += $" 両面表示:[{mBothShading}] 3D表示:[{mDisp3D}] 反転:[{mPrimitive.mReverse}]";
+            buf += $" 2D色:[{ylib.getBrushName(mPrimitive.mLineColor)}]";
+            buf += $" 3D色:[{ylib.getBrushName(mPrimitive.mFaceColors[0])}]";
+            buf += $" 両面表示:[{mBothShading}] 2D表示:[{mDisp2D}] 3D表示:[{mDisp3D}] 反転:[{mPrimitive.mReverse}]";
             return buf;
         }
 

@@ -342,8 +342,9 @@ namespace Mini3DCad
         /// <param name="ep">終点</param>
         public void addArc(Point3D sp, Point3D mp, Point3D ep)
         {
-            Arc3D arc3D = new Arc3D(sp, mp, ep);
-            addArc(arc3D);
+            Arc3D arc = new Arc3D(sp, mp, ep);
+            if (arc.mCp != null && 0 < arc.mR)
+                addArc(arc);
         }
 
         /// <summary>

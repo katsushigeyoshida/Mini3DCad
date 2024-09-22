@@ -528,5 +528,35 @@ namespace Mini3DCad
             for (int i = 0; i < mPickElement.Count; i++)
                 mDataManage.mElementList[mPickElement[i].mElementNo].mPrimitive.mPick = false;
         }
+
+        /// <summary>
+        /// グループピックのメニューダイヤログを開く
+        /// </summary>
+        /// <param name="pos">ピック位置</param>
+        /// <param name="face">2D平面</param>
+        /// <returns></returns>
+        public bool groupSelectPick(PointD pos, FACE3D face)
+        {
+            MenuDialog dlg = new MenuDialog();
+            dlg.Title = "グループピックメニュー";
+            dlg.Owner = mMainWindow;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            dlg.mMenuList = mDataManage.mGroupManage.getGroupNameList();
+            dlg.ShowDialog();
+            if (0 < dlg.mResultMenu.Length) {
+                int groupNo = mDataManage.mGroupManage.getGroupNo(dlg.mResultMenu);
+                if (0 < groupNo) {
+                    List<PickData> groupList = new List<PickData>();
+                    for (int j = 0; j < mDataManage.mElementList.Count; j++) {
+                        if (groupNo == mDataManage.mElementList[j].mGroup &&
+                            !mDataManage.mElementList[j].mRemove)
+                            groupList.Add(new PickData(j, pos, face));
+                    }
+                    mPickElement.AddRange(groupList);
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

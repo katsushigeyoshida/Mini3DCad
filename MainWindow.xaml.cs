@@ -1052,6 +1052,8 @@ namespace Mini3DCad
                             break;
                     }
                 }
+                if (mOperationMode != OPEMODE.loc)
+                    mDraw.draw();
             }
             dispStatus(null);
         }
@@ -1061,9 +1063,15 @@ namespace Mini3DCad
         /// </summary>
         private void locMenu()
         {
-            mLocPick.locMenu(mCommandOpe.mOperation, mOperationMode);
-            if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement))
-                commandClear();
+            if (mOperationMode == OPEMODE.loc) {
+                //  ロケイトメニュー
+                mLocPick.locMenu(mCommandOpe.mOperation, mOperationMode);
+                if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement))
+                    commandClear();
+            } else if (mOperationMode != OPEMODE.loc) {
+                //  グループピックメニュー
+                mLocPick.groupSelectPick(mPrePosition, mDataManage.mFace);
+            }
         }
 
         /// <summary>

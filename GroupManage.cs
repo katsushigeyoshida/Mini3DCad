@@ -102,7 +102,7 @@ namespace Mini3DCad
                 }
             }
             foreach (var item in mGroupList) {
-                if (!noList.Contains(item.Key))
+                if (!noList.Contains(item.Key) || item.Value == "")
                     mGroupList.Remove(item.Key);
             }
         }

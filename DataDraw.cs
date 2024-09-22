@@ -131,7 +131,10 @@ namespace Mini3DCad
                     }
                     break;
                 case OPERATION.polyline:
-                    if (0 < locList.Count) {
+                    if (locList.Count == 1) {
+                        primitive = mDataManage.createLine(locList[0], lastPoint);
+                        primitive.draw2D(mGDraw, mFace);
+                    } else if (1 < locList.Count) {
                         List<Point3D> plist = locList.ConvertAll(p => p);
                         plist.Add(lastPoint);
                         primitive = mDataManage.createPolyline(plist);

@@ -138,32 +138,18 @@ namespace Mini3DCad
         /// <returns>2D交点</returns>
         public override Point3D? intersection(Primitive primutive, PointD pos, FACE3D face)
         {
-            PointD? ip = null;
-            PointD p = mPoint.toPoint(face);
             if (primutive.mPrimitiveId == PrimitiveId.Line) {
-                LineD line = ((LinePrimitive)primutive).mLine.toLineD(face);
-                ip = line.intersection(p);
-                if (ip != null)
-                    return ((LinePrimitive)primutive).mLine.intersection(ip, face);
+                Line3D line = ((LinePrimitive)primutive).mLine;
+                return line.intersection(mPoint, face);
             } else if (primutive.mPrimitiveId == PrimitiveId.Arc) {
-                EllipseD eli = ((ArcPrimitive)primutive).mArc.toEllipseD(face);
-                ip = eli.intersection(p);
-                if (ip != null)
-                    ((ArcPrimitive)primutive).mArc.intersection(ip, face);
+                Arc3D arc = ((ArcPrimitive)primutive).mArc;
+                return arc.intersection(mPoint, face);
             } else if (primutive.mPrimitiveId == PrimitiveId.Polyline) {
-                PolylineD polyline = ((PolylinePrimitive)primutive).mPolyline.toPolylineD(face);
-                List<PointD> iplist = polyline.intersection(p);
-                if (iplist != null && 0 < iplist.Count) {
-                    ip = iplist.MinBy(p => p.length(pos));
-                    return ((PolylinePrimitive)primutive).mPolyline.intersection(ip, face);
-                }
+                Polyline3D polyline = ((PolylinePrimitive)primutive).mPolyline;
+                return polyline.intersection(mPoint, pos, face);
             } else if (primutive.mPrimitiveId == PrimitiveId.Polygon) {
-                PolygonD polygon = ((PolygonPrimitive)primutive).mPolygon.toPolygonD(face);
-                List<PointD> iplist = polygon.intersection(p);
-                if (iplist != null && 0 < iplist.Count) {
-                    ip = iplist.MinBy(p => p.length(pos));
-                    return ((PolygonPrimitive)primutive).mPolygon.intersection(ip, face);
-                }
+                Polygon3D polygon = ((PolygonPrimitive)primutive).mPolygon;
+                return polygon.intersection(mPoint, pos, face);
             }
             return null;
         }

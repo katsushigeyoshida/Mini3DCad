@@ -77,7 +77,7 @@ namespace Mini3DCad
                     break;
                 case DRAWTYPE.QUADS:
                     for (int i = 0; i < mVertexList.Count; i += 4) {
-                        t = mVertexList[i];
+                        t = mVertexList[i + 1];
                         mVertexList[i + 1] = mVertexList[i + 3];
                         mVertexList[i + 3] = t;
                     }
@@ -100,6 +100,106 @@ namespace Mini3DCad
                     mVertexList.Reverse();
                     break;
             }
+        }
+
+        /// <summary>
+        /// サーフェースデータをポリラインの座標リストに変換
+        /// </summary>
+        /// <returns>座標リスト</returns>
+        public List<List<Point3D>> toPolylineList()
+        {
+            List<List<Point3D>> polylineList = new List<List<Point3D>>();
+            List<Point3D> bufList;
+            switch (mDrawType) {
+                case DRAWTYPE.LINES:
+                    for (int i = 0; i < mVertexList.Count - 1; i += 2) {
+                        List<Point3D> buf = new List<Point3D>() {
+                            mVertexList[i],
+                            mVertexList[i + 1],
+                        };
+                        polylineList.Add(buf);
+                    }
+                    break;
+                case DRAWTYPE.LINE_STRIP:
+                    bufList = new List<Point3D>();
+                    for (int i = 0; i < mVertexList.Count; i++) {
+                        bufList.Add(mVertexList[i]);
+                    }
+                    polylineList.Add(bufList);
+                    break;
+                case DRAWTYPE.LINE_LOOP:
+                    bufList = new List<Point3D>();
+                    for (int i = 0; i < mVertexList.Count; i++) {
+                        bufList.Add(mVertexList[i]);
+                    }
+                    bufList.Add(mVertexList[0]);
+                    polylineList.Add(bufList);
+                    break;
+                case DRAWTYPE.TRIANGLES:
+                    for (int i = 0; i < mVertexList.Count - 2; i += 3) {
+                        List<Point3D> buf = new List<Point3D>() {
+                            mVertexList[i],
+                            mVertexList[i + 1],
+                            mVertexList[i + 2],
+                        };
+                        polylineList.Add(buf);
+                    }
+                    break;
+                case DRAWTYPE.QUADS:
+                    for (int i = 0; i < mVertexList.Count - 3; i += 4) {
+                        List<Point3D> buf = new List<Point3D>() {
+                            mVertexList[i],
+                            mVertexList[i + 1],
+                            mVertexList[i + 2],
+                            mVertexList[i + 3],
+                        };
+                        polylineList.Add(buf);
+                    }
+                    break;
+                case DRAWTYPE.TRIANGLE_STRIP:
+                    for (int i = 0; i < mVertexList.Count - 2; i += 2) {
+                        List<Point3D> buf = new List<Point3D>() {
+                            mVertexList[i],
+                            mVertexList[i + 1],
+                            mVertexList[i + 2],
+                            mVertexList[i],
+                        };
+                        polylineList.Add(buf);
+                    }
+                    break;
+                case DRAWTYPE.QUAD_STRIP:
+                    for (int i = 0; i < mVertexList.Count - 3; i += 2) {
+                        List<Point3D> buf = new List<Point3D>() {
+                            mVertexList[i],
+                            mVertexList[i + 1],
+                            mVertexList[i + 3],
+                            mVertexList[i + 2],
+                            mVertexList[i],
+                        };
+                        polylineList.Add(buf);
+                    }
+                    break;
+                case DRAWTYPE.TRIANGLE_FAN:
+                    for (int i = 1; i < mVertexList.Count - 1; i++) {
+                        List<Point3D> buf = new List<Point3D>() {
+                            mVertexList[0],
+                            mVertexList[i],
+                            mVertexList[i + 1],
+                            mVertexList[0],
+                        };
+                        polylineList.Add(buf);
+                    }
+                    break;
+                case DRAWTYPE.POLYGON:
+                    bufList = new List<Point3D>();
+                    for (int i = 0; i < mVertexList.Count; i++) {
+                        bufList.Add(mVertexList[i]);
+                    }
+                    bufList.Add(mVertexList[0]);
+                    polylineList.Add(bufList);
+                    break;
+            }
+            return polylineList;
         }
 
         /// <summary>
@@ -240,14 +340,16 @@ namespace Mini3DCad
         /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>
-        /// <returns>文字列配列</returns>
-        public abstract string[] toDataList();
+        /// <returns>文字列配列リスト</returns>
+        public abstract List<string[]> toDataList();
 
         /// <summary>
         /// 文字列配列から固有データを設定
         /// </summary>
-        /// <param name="list">文字列配列</param>
-        public abstract void setDataList(string[] list);
+        /// <param name="list">文字列配列リスト</param>
+        /// <param name="sp">文字列配列位置</param>
+        /// <returns>文字列配列位置</returns>
+        public abstract int setDataList(List<string[]> dataList, int sp);
 
         /// <summary>
         /// プリミティブの個別情報

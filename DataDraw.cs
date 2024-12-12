@@ -1,5 +1,4 @@
 ﻿using CoreLib;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -143,9 +142,11 @@ namespace Mini3DCad
                     break;
                 case OPERATION.rect:
                     if (locList.Count == 1) {
+                        PointD p0 = locList[0].toPoint(mFace);
+                        PointD p2 = lastPoint.toPoint(mFace);
                         List<Point3D> plist = new List<Point3D>() {
-                            locList[0], new Point3D(locList[0].x, lastPoint.y, locList[0].z),
-                            lastPoint, new Point3D(lastPoint.x, locList[0].y, lastPoint.z)
+                            new Point3D(p0, mFace), new Point3D(new PointD(p0.x, p2.y), mFace),
+                            new Point3D(p2, mFace), new Point3D(new PointD(p2.x, p0.y), mFace)
                         };
                         primitive = mDataManage.createPolygon(plist);
                         primitive.draw2D(mGDraw, mFace);
@@ -253,7 +254,16 @@ namespace Mini3DCad
                 case OPERATION.extrusion:
                     if (locList.Count == 1) {
                         Point3D v = lastPoint - locList[0];
-                        foreach (var pick in pickData) {
+                        (List<PickData> polygons, List<PickData> notPolygons) = mDataManage.hollPlateElementType(pickData);
+                        int elementNo = pickData[0].mElementNo;
+                        //  ポリゴン要素(円を含む)
+                        if (0 < polygons.Count) {
+                            List<Polygon3D> polygonsData = mDataManage.getPolygon(polygons);
+                            primitive = mDataManage.createExtrusion(mDataManage.mElementList[elementNo].mPrimitive, polygonsData, v);
+                            primitive.draw2D(mGDraw, mFace);
+                        }
+                        //  ポリゴン要素以外
+                        foreach (var pick in notPolygons) {
                             primitive = mDataManage.createExtrusion(mDataManage.mElementList[pick.mElementNo].mPrimitive, v);
                             primitive.draw2D(mGDraw, mFace);
                         }

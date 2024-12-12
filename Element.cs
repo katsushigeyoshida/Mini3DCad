@@ -197,10 +197,7 @@ namespace Mini3DCad
             buf = new string[] { "Name", mName };
             list.Add(buf);
             list.Add(mPrimitive.toPropertyList());
-            list.Add(mPrimitive.toDataList());
-            if (mPrimitive.mPrimitiveId == PrimitiveId.Blend ||
-                mPrimitive.mPrimitiveId == PrimitiveId.BlendPolyline)
-                list.Add(mPrimitive.toDataList());
+            list.AddRange(mPrimitive.toDataList());
             buf = new string[] { "IsShading", mBothShading.ToString() };
             list.Add(buf);
             buf = new string[] { "Disp3D", mDisp3D.ToString() };
@@ -224,6 +221,8 @@ namespace Mini3DCad
         /// </summary>
         /// <param name="dataList">文字列配列リスト</param>
         /// <param name="sp">リスト開始位置</param>
+        /// <param name="wireFrame">ワイヤフレーム表示設定</param>
+        /// <param name="surfaceVertex">debug用サーフェース線分表示設定</param>
         /// <returns>リスト終了位置</returns>
         public int setDataList(List<string[]> dataList, int sp, bool wireFrame, bool surfaceVertex)
         {
@@ -235,70 +234,57 @@ namespace Mini3DCad
                             case "Line":
                                 LinePrimitive line = new LinePrimitive();
                                 line.setPropertyList(buf);
-                                buf = dataList[sp++];
-                                line.setDataList(buf);
+                                sp = line.setDataList(dataList, sp);
                                 mPrimitive = line;
                                 break;
                             case "Arc":
                                 ArcPrimitive arc = new ArcPrimitive();
                                 arc.setPropertyList(buf);
-                                buf = dataList[sp++];
-                                arc.setDataList(buf);
+                                sp = arc.setDataList(dataList, sp);
                                 mPrimitive = arc;
                                 break;
                             case "Polyline":
                                 PolylinePrimitive polyline = new PolylinePrimitive();
                                 polyline.setPropertyList(buf);
-                                buf = dataList[sp++];
-                                polyline.setDataList(buf);
+                                sp = polyline.setDataList(dataList, sp);
                                 polyline.mPolyline.squeeze();
                                 mPrimitive = polyline;
                                 break;
                             case "Polygon":
                                 PolygonPrimitive polygon = new PolygonPrimitive();
                                 polygon.setPropertyList(buf);
-                                buf = dataList[sp++];
-                                polygon.setDataList(buf);
+                                sp = polygon.setDataList(dataList, sp);
                                 polygon.mPolygon.squeeze();
                                 mPrimitive = polygon;
                                 break;
                             case "Extrusion":
                                 ExtrusionPrimitive extrusion = new ExtrusionPrimitive();
                                 extrusion.setPropertyList(buf);
-                                buf = dataList[sp++];
-                                extrusion.setDataList(buf);
+                                sp = extrusion.setDataList(dataList, sp);
                                 mPrimitive = extrusion;
                                 break;
                             case "Blend":
                                 BlendPrimitive blend = new BlendPrimitive();
                                 blend.setPropertyList(buf);
-                                buf = dataList[sp++];
-                                blend.setDataList(buf);
-                                buf = dataList[sp++];
-                                blend.setDataList(buf);
+                                sp = blend.setDataList(dataList, sp);
                                 mPrimitive = blend;
                                 break;
                             case "BlendPolyline":
                                 BlendPolylinePrimitive blendPolyline = new BlendPolylinePrimitive();
                                 blendPolyline.setPropertyList(buf);
-                                buf = dataList[sp++];
-                                blendPolyline.setDataList(buf);
-                                buf = dataList[sp++];
-                                blendPolyline.setDataList(buf);
+                                sp = blendPolyline.setDataList(dataList, sp);
                                 mPrimitive = blendPolyline;
                                 break;
                             case "Revolution":
                                 RevolutionPrimitive revolution = new RevolutionPrimitive();
                                 revolution.setPropertyList(buf);
-                                buf = dataList[sp++];
-                                revolution.setDataList(buf);
+                                sp = revolution.setDataList(dataList, sp);
                                 mPrimitive = revolution;
                                 break;
                             case "Sweep":
                                 SweepPrimitive sweep = new SweepPrimitive();
                                 sweep.setPropertyList(buf);
-                                buf = dataList[sp++];
-                                sweep.setDataList(buf);
+                                sp = sweep.setDataList(dataList, sp);
                                 mPrimitive = sweep;
                                 break;
                             default:
@@ -322,7 +308,6 @@ namespace Mini3DCad
                     } else if (buf[0] == "LayerSize") {
                         int layerSize = ylib.intParse(buf[1]);
                     } else if (buf[0] == "DispLayerBit") {
-                        //mDispLayerBit = new byte[mLayerSize / 8];
                         for (int i = 0; i < mLayerBit.Length && i < buf.Length - 1; i++) {
                             mLayerBit[i] = byte.Parse(buf[i + 1], NumberStyles.HexNumber);
                         }

@@ -410,8 +410,12 @@ namespace Mini3DCad
         /// <param name="ep">終点</param>
         public void addRect(Point3D sp, Point3D ep)
         {
+            PointD p0 = sp.toPoint(mFace);
+            PointD p2 = ep.toPoint(mFace);
             List<Point3D> plist = new List<Point3D>() {
-                sp, new Point3D(sp.x, ep.y, sp.z), ep, new Point3D(ep.x, sp.y, ep.z) };
+                new Point3D(p0, mFace), new Point3D(new PointD(p0.x, p2.y), mFace),
+                new Point3D(p2, mFace), new Point3D(new PointD(p2.x, p0.y), mFace)
+            };
             Element element = new Element(mLayerSize);
             element.mName = "四角形";
             element.mPrimitive = createPolygon(plist);
@@ -835,6 +839,94 @@ namespace Mini3DCad
         public void extrusion(List<PickData> picks, Point3D sp, Point3D ep)
         {
             Point3D v = ep - sp;
+            (List<PickData> polygons, List<PickData> notPolygons) = hollPlateElementType(picks);
+            hollExtrusion(polygons, v);
+            mulitiExtrusion(notPolygons, v);
+        }
+
+        /// <summary>
+        /// ピック要素からポリゴン要素(円はポリゴンに変換)とその他の要素を抽出
+        /// </summary>
+        /// <param name="picks">ピック要素</param>
+        /// <returns>(ポリゴン要素,その他の要素)</returns>
+        public (List<PickData>, List<PickData>) hollPlateElementType(List<PickData> picks)
+        {
+            List<PickData> polygons = new List<PickData>();
+            List<PickData> notPolygons = new List<PickData>();
+            foreach (var pick in picks) {
+                if (mElementList[pick.mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
+                    polygons.Add(pick);
+                } else if (mElementList[pick.mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
+                    ArcPrimitive arcPrimitive = (ArcPrimitive)mElementList[pick.mElementNo].mPrimitive;
+                    if (2 * Math.PI > arcPrimitive.mArc.mOpenAngle)
+                        notPolygons.Add(pick);
+                    else
+                        polygons.Add(pick);
+                } else {
+                    notPolygons.Add(pick);
+                }
+            }
+            return (polygons, notPolygons);
+        }
+
+        /// <summary>
+        /// ピック要素からポリゴン要素(円はポリゴンに変換)を抽出
+        /// </summary>
+        /// <param name="picks">ピック要素</param>
+        /// <returns>ポリゴンリスト</returns>
+        public List<Polygon3D> getPolygon(List<PickData> picks)
+        {
+            List<Polygon3D> polygons = new List<Polygon3D>();
+            foreach (var pick in picks) {
+                if (mElementList[pick.mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Polygon) {
+                    PolygonPrimitive primitive = (PolygonPrimitive)mElementList[pick.mElementNo].mPrimitive;
+                    polygons.Add(primitive.mPolygon);
+                } else if (mElementList[pick.mElementNo].mPrimitive.mPrimitiveId == PrimitiveId.Arc) {
+                    ArcPrimitive arcPrimitive = (ArcPrimitive)mElementList[pick.mElementNo].mPrimitive;
+                    if (2 * Math.PI <= arcPrimitive.mArc.mOpenAngle) {
+                        Polygon3D polygon = new Polygon3D(arcPrimitive.mArc.toPolyline3D(arcPrimitive.mDivideAngle));
+                        polygons.Add(polygon);
+                    }
+                }
+            }
+            return polygons;
+        }
+
+        /// <summary>
+        /// 穴付き押出処理(ポリゴン要素のみ)
+        /// </summary>
+        /// <param name="picks">ピック要素</param>
+        /// <param name="v">押出ベクトル</param>
+        private void hollExtrusion(List<PickData> picks, Point3D v)
+        {
+            if (picks.Count < 1) return;
+            int elementNo = picks[0].mElementNo;
+            List<Polygon3D> polygons = getPolygon(picks);
+            ExtrusionPrimitive push = createExtrusion(mElementList[elementNo].mPrimitive, polygons, v);
+            if (push == null) return;
+            Element element = new Element(mLayerSize);
+            element.mName = mElementList[elementNo].mName;
+            if (0 > element.mName.IndexOf("押出"))
+                element.mName += "-押出";
+            element.copyLayer(mElementList[elementNo]);
+            element.mPrimitive = push;
+            element.mOperationNo = mOperationCount;
+            element.update3DData();
+            mElementList.Add(element);
+
+            foreach (var pick in picks) {
+                mElementList[pick.mElementNo].mRemove = true;
+                addLink(pick.mElementNo);
+            }
+        }
+
+        /// <summary>
+        /// 複数要素の押出
+        /// </summary>
+        /// <param name="picks">ピック要素</param>
+        /// <param name="v">押出ベクトル</param>
+        private void mulitiExtrusion(List<PickData> picks, Point3D v)
+        {
             foreach (var pick in picks) {
                 ExtrusionPrimitive push = createExtrusion(mElementList[pick.mElementNo].mPrimitive, v);
                 if (push == null)
@@ -853,6 +945,7 @@ namespace Mini3DCad
                 addLink(pick.mElementNo);
             }
         }
+
 
         /// <summary>
         /// ブレンド処理
@@ -1069,9 +1162,13 @@ namespace Mini3DCad
                 if (element.mPrimitive.mPrimitiveId == PrimitiveId.Extrusion) {
                     //  押出解除
                     ExtrusionPrimitive extrusion = (ExtrusionPrimitive) element.mPrimitive;
-                    if (extrusion.mEdgeDisp && extrusion.mLoop)
-                        addPolygon(extrusion.mPolygon,extrusion.mLineColor, extrusion.mFaceColors[0], extrusion.mDivideAngle);
-                    else
+                    if (extrusion.mEdgeDisp && extrusion.mLoop) {
+                        if (extrusion.mPolygon != null && 0 < extrusion.mPolygon.mPolygon.Count)
+                            addPolygon(extrusion.mPolygon, extrusion.mLineColor, extrusion.mFaceColors[0], extrusion.mDivideAngle);
+                        if (extrusion.mInnerPolygon != null && 0 < extrusion.mInnerPolygon.Count)
+                            for (int j = 0; j < extrusion.mInnerPolygon.Count; j++)
+                                addPolygon(extrusion.mInnerPolygon[j], extrusion.mLineColor, extrusion.mFaceColors[0], extrusion.mDivideAngle);
+                    } else
                         addPolyline(extrusion.mPolygon.toPolyline3D(0, extrusion.mLoop), extrusion.mLineColor, extrusion.mFaceColors[0], extrusion.mDivideAngle);
                 } else if (element.mPrimitive.mPrimitiveId == PrimitiveId.Blend) {
                     //  ブレンド解除
@@ -1685,16 +1782,36 @@ namespace Mini3DCad
         public ExtrusionPrimitive createExtrusion(Primitive primitive, Point3D v)
         {
             ExtrusionPrimitive extrusion = new();
+            List<Polygon3D> innerPolygon = new();
             if (primitive.mPrimitiveId == PrimitiveId.Line ||
                 primitive.mPrimitiveId == PrimitiveId.Arc ||
                 primitive.mPrimitiveId == PrimitiveId.Polyline) {
-                extrusion = new ExtrusionPrimitive(new Polygon3D(primitive.mSurfaceDataList[0].mVertexList), v, false);
+                extrusion = new ExtrusionPrimitive(new Polygon3D(primitive.mSurfaceDataList[0].mVertexList), innerPolygon, v, false);
             } else if (primitive.mPrimitiveId == PrimitiveId.Polygon) {
                 PolygonPrimitive polygon = (PolygonPrimitive)primitive;
-                extrusion = new ExtrusionPrimitive(polygon.mPolygon, v, true);
+                extrusion = new ExtrusionPrimitive(polygon.mPolygon, innerPolygon, v, true);
             } else {
-                extrusion = new ExtrusionPrimitive(new Polygon3D(primitive.mSurfaceDataList[0].mVertexList), v, false);
+                extrusion = new ExtrusionPrimitive(new Polygon3D(primitive.mSurfaceDataList[0].mVertexList), innerPolygon, v, false);
             }
+            extrusion.copyProperty(primitive);
+            extrusion.createSurfaceData();
+            extrusion.createVertexData();
+            extrusion.mPrimitiveId = PrimitiveId.Extrusion;
+            extrusion.mPick = false;
+            return extrusion;
+        }
+
+        /// <summary>
+        /// 押出プリミティブの作成(穴付き複数ポリゴン)
+        /// </summary>
+        /// <param name="primitive"></param>
+        /// <param name="polygons"></param>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        public ExtrusionPrimitive createExtrusion(Primitive primitive, List<Polygon3D> polygons, Point3D v)
+        {
+            ExtrusionPrimitive extrusion = new();
+            extrusion = new ExtrusionPrimitive(null, polygons, v, true);
             extrusion.copyProperty(primitive);
             extrusion.createSurfaceData();
             extrusion.createVertexData();

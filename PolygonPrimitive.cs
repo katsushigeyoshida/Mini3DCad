@@ -196,7 +196,7 @@ namespace Mini3DCad
         /// 固有データを文字列配列に変換
         /// </summary>
         /// <returns>文字列配列</returns>
-        public override string[] toDataList()
+        public override List<string[]> toDataList()
         {
             bool multi = mPolygon.IsMultiType();
             List<string> dataList = new List<string>() {
@@ -213,17 +213,20 @@ namespace Mini3DCad
                 if (multi)
                     dataList.Add(mPolygon.mPolygon[i].type.ToString());
             }
-            return dataList.ToArray();
+            return new List<string[]>() { dataList.ToArray() };
         }
 
         /// <summary>
         /// 文字列配列から固有データを設定
         /// </summary>
-        /// <param name="list">文字列配列</param>
-        public override void setDataList(string[] list)
+        /// <param name="dataList">文字列配列リスト</param>
+        /// <param name="sp">文字列配列位置</param>
+        /// <returns>文字列配列位置</returns>
+        public override int setDataList(List<string[]> dataList, int sp)
         {
+            string[] list = dataList[sp];
             if (0 == list.Length || list[0] != "PolygonData")
-                return;
+                return sp;
             try {
                 int ival;
                 double val;
@@ -265,6 +268,7 @@ namespace Mini3DCad
             } catch (Exception e) {
                 System.Diagnostics.Debug.WriteLine($"Polygon setDataList {e.ToString()}");
             }
+            return ++sp;
         }
 
         /// <summary>

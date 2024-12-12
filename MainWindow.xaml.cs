@@ -431,7 +431,7 @@ namespace Mini3DCad
                 if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement, 0 == picks.Count))
                     commandClear();
             } else {
-                if (ylib.onControlKey()) {
+                if (ylib.onControlKey() && 0 < picks.Count) {
                     picks = mLocPick.getGroup(picks);
                     mOperationMode = OPEMODE.areaPick;
                 }

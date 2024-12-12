@@ -408,14 +408,28 @@ namespace Mini3DCad
         /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>
+        /// <returns>文字列配列リスト</returns>
+        public override List<string[]> toDataList()
+        {
+            List<string[]> datasList = new List<string[]>() { 
+                toDataList(mPolyline1, 1),
+                toDataList(mPolyline2, 2),
+            };
+            return datasList;
+        }
+
+        /// <summary>
+        /// ポリラインデータを文字列に変換
+        /// </summary>
+        /// <param name="polyline">ポリライン</param>
+        /// <param name="count">ポリラインNo</param>
         /// <returns>文字列配列</returns>
-        public override string[] toDataList()
+        private string[] toDataList(Polyline3D polyline, int count)
         {
             List<string> dataList;
-            Polyline3D polyline = mCount == 0 ? mPolyline1 : mPolyline2;
             bool multi = polyline.IsMultiType();
             dataList = new List<string>() {
-                    "BlendPolylineData" + (mCount + 1).ToString(),
+                    "BlendPolylineData" + count.ToString(),
                     "Cp", polyline.mCp.x.ToString(), polyline.mCp.y.ToString(), polyline.mCp.z.ToString(),
                     "U", polyline.mU.x.ToString(), polyline.mU.y.ToString(), polyline.mU.z.ToString(),
                     "V", polyline.mV.x.ToString(), polyline.mV.y.ToString(), polyline.mV.z.ToString(),
@@ -428,30 +442,36 @@ namespace Mini3DCad
                 if (multi)
                     dataList.Add(polyline.mPolyline[i].type.ToString());
             }
-            mCount++;
-            if (1 < mCount) mCount = 0;
             return dataList.ToArray();
         }
 
         /// <summary>
         /// 文字列配列から固有データを設定
         /// </summary>
-        /// <param name="list">文字列配列</param>
-        public override void setDataList(string[] list)
+        /// <param name="dataList">文字列配列リスト</param>
+        /// <param name="sp">文字列配列位置</param>
+        /// <returns>文字列配列位置</returns>
+        public override int setDataList(List<string[]> dataList, int sp)
         {
-            if (0 == list.Length)
-                return;
             try {
-                if (list[0] == "BlendPolylineData1") {
-                    mPolyline1 = getPolylineDataList(list);
-                    mPolyline1.squeeze();
-                } else if (list[0] == "BlendPolylineData2") {
-                    mPolyline2 = getPolylineDataList(list);
-                    mPolyline2.squeeze();
+                while (sp < dataList.Count) {
+                    string[] list = dataList[sp];
+                    if (0 == list.Length)
+                        break;
+                    if (list[0] == "BlendPolylineData1") {
+                        mPolyline1 = getPolylineDataList(list);
+                        mPolyline1.squeeze();
+                    } else if (list[0] == "BlendPolylineData2") {
+                        mPolyline2 = getPolylineDataList(list);
+                        mPolyline2.squeeze();
+                    } else
+                        break;
+                    sp++;
                 }
             } catch (Exception e) {
                 System.Diagnostics.Debug.WriteLine($"Extrusion setDataList {e.ToString()}");
             }
+            return sp;
         }
 
         /// <summary>

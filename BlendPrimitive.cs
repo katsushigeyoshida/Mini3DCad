@@ -176,30 +176,26 @@ namespace Mini3DCad
         private List<List<Point3D>> crateBlendVertexData()
         {
             List<List<Point3D>> vertexList = new List<List<Point3D>>();
-            //  1面(端面)
-            Polygon3D polygon1 = mPolygon1.toCopy();
-            vertexList.Add(polygon1.toPoint3D(mDivideAngle, true));
-            if (!mSurfaceVertex) {
+            if (mSurfaceVertex) {
+                //  Debug(Surface表示確認)
+                foreach (var surface in mSurfaceDataList)
+                    vertexList.AddRange(surface.toPolylineList());
+            } else {
+                //  1面(端面)
+                Polygon3D polygon1 = mPolygon1.toCopy();
                 vertexList.Add(polygon1.toPoint3D(mDivideAngle, true));
-            } else {
-                //  Debug(Surface表示確認)
-                vertexList.AddRange(getVertexList(polygon1));
-            }
-            //  2面(端面)
-            Polygon3D polygon2 = mPolygon2.toCopy();
-            vertexList.Add(polygon2.toPoint3D(mDivideAngle, true));
-            if (!mSurfaceVertex) {
+                vertexList.Add(polygon1.toPoint3D(mDivideAngle, true));
+                //  2面(端面)
+                Polygon3D polygon2 = mPolygon2.toCopy();
                 vertexList.Add(polygon2.toPoint3D(mDivideAngle, true));
-            } else {
-                //  Debug(Surface表示確認)
-                vertexList.AddRange(getVertexList(polygon2));
-            }
-            //  側面
-            for (int i = 0; i < polygon1.mPolygon.Count; i++) {
-                Point3D p1 = polygon1.toPoint3D(i);
-                Point3D p2 = polygon2.toPoint3D(i);
-                List<Point3D> plist = new List<Point3D>() { p1, p2 };
-                vertexList.Add(plist);
+                vertexList.Add(polygon2.toPoint3D(mDivideAngle, true));
+                //  側面
+                for (int i = 0; i < polygon1.mPolygon.Count; i++) {
+                    Point3D p1 = polygon1.toPoint3D(i);
+                    Point3D p2 = polygon2.toPoint3D(i);
+                    List<Point3D> plist = new List<Point3D>() { p1, p2 };
+                    vertexList.Add(plist);
+                }
             }
             return vertexList;
         }
@@ -373,19 +369,33 @@ namespace Mini3DCad
         /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>
+        /// <returns>文字列配列リスト</returns>
+        public override List<string[]> toDataList()
+        {
+            List<string[]> datasList = new List<string[]>() {
+                toDataList(mPolygon1, 1),
+                toDataList(mPolygon2, 2),
+            };
+            return datasList;
+        }
+
+        /// <summary>
+        /// ポリゴンデータを文字列に変換
+        /// </summary>
+        /// <param name="polygon">ポリゴン</param>
+        /// <param name="count">ポリゴンNo</param>
         /// <returns>文字列配列</returns>
-        public override string[] toDataList()
+        private string[] toDataList(Polygon3D polygon, int count)
         {
             List<string> dataList;
-            Polygon3D polygon = mCount == 0 ? mPolygon1 : mPolygon2;
             bool multi = polygon.IsMultiType();
             dataList = new List<string>() {
-                    "BlendData" + (mCount + 1).ToString(),
-                    "Cp", polygon.mCp.x.ToString(), polygon.mCp.y.ToString(), polygon.mCp.z.ToString(),
-                    "U", polygon.mU.x.ToString(), polygon.mU.y.ToString(), polygon.mU.z.ToString(),
-                    "V", polygon.mV.x.ToString(), polygon.mV.y.ToString(), polygon.mV.z.ToString(),
-                    "Size", polygon.mPolygon.Count.ToString(),
-                    "Multi", multi.ToString(),
+                "BlendData" + count.ToString(),
+                "Cp", polygon.mCp.x.ToString(), polygon.mCp.y.ToString(), polygon.mCp.z.ToString(),
+                "U", polygon.mU.x.ToString(), polygon.mU.y.ToString(), polygon.mU.z.ToString(),
+                "V", polygon.mV.x.ToString(), polygon.mV.y.ToString(), polygon.mV.z.ToString(),
+                "Size", polygon.mPolygon.Count.ToString(),
+                "Multi", multi.ToString(),
                 };
             for (int i = 0; i < polygon.mPolygon.Count; i++) {
                 dataList.Add(polygon.mPolygon[i].x.ToString());
@@ -393,30 +403,42 @@ namespace Mini3DCad
                 if (multi)
                     dataList.Add(polygon.mPolygon[i].type.ToString());
             }
-            mCount++;
-            if (1 < mCount) mCount = 0;
             return dataList.ToArray();
         }
+
 
         /// <summary>
         /// 文字列配列から固有データを設定
         /// </summary>
-        /// <param name="list">文字列配列</param>
-        public override void setDataList(string[] list)
+        /// <param name="dataList">文字列配列リスト</param>
+        /// <param name="sp">文字列配列位置</param>
+        /// <returns>文字列配列位置</returns>
+        public override int setDataList(List<string[]> dataList, int sp)
         {
-            if (0 == list.Length)
-                return;
             try {
-                if (list[0] == "BlendData1") {
-                    mPolygon1 = getPolygonDataList(list);
-                } else if (list[0] == "BlendData2") {
-                    mPolygon2 = getPolygonDataList(list);
+                while (sp < dataList.Count) {
+                    string[] list = dataList[sp];
+                    if (0 == list.Length)
+                        break;
+                    if (list[0] == "BlendData1") {
+                        mPolygon1 = getPolygonDataList(list);
+                    } else if (list[0] == "BlendData2") {
+                        mPolygon2 = getPolygonDataList(list);
+                    } else
+                        break;
+                    sp++;
                 }
             } catch (Exception e) {
                 System.Diagnostics.Debug.WriteLine($"Extrusion setDataList {e.ToString()}");
             }
+            return sp;
         }
 
+        /// <summary>
+        /// 文字配列データからポリゴンデータに変換
+        /// </summary>
+        /// <param name="list">文字列配列</param>
+        /// <returns>ポリゴン</returns>
         private Polygon3D getPolygonDataList(string[] list)
         {
             Polygon3D polygon = new Polygon3D();

@@ -164,8 +164,8 @@ namespace Mini3DCad
         /// <summary>
         /// 固有データを文字列配列に変換
         /// </summary>
-        /// <returns>文字列配列</returns>
-        public override string[] toDataList()
+        /// <returns>文字列配列リスト</returns>
+        public override List<string[]> toDataList()
         {
             List<string> dataList = new List<string>() {
                 "ArcData",
@@ -175,17 +175,20 @@ namespace Mini3DCad
                 "V", mArc.mV.x.ToString(), mArc.mV.y.ToString(), mArc.mV.z.ToString(),
                 "Sa", mArc.mSa.ToString(), "Ea", mArc.mEa.ToString()
             };
-            return dataList.ToArray();
+            return new List<string[]>() { dataList.ToArray() };
         }
 
         /// <summary>
         /// 文字列配列から固有データを設定
         /// </summary>
-        /// <param name="list">文字列配列</param>
-        public override void setDataList(string[] list)
+        /// <param name="dataList">文字列配列リスト</param>
+        /// <param name="sp">文字列配列位置</param>
+        /// <returns>文字列配列位置</returns>
+        public override int setDataList(List<string[]> dataList, int sp)
         {
+            string[] list = dataList[sp++];
             if (0 == list.Length || list[0] != "ArcData")
-                return;
+                return sp;
             try {
                 double val;
                 for (int i = 1; i < list.Length; i++) {
@@ -212,6 +215,7 @@ namespace Mini3DCad
             } catch (Exception e) {
                 System.Diagnostics.Debug.WriteLine($"Arc setDataList {e.ToString()}");
             }
+            return sp;
         }
 
         /// <summary>

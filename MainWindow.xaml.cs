@@ -348,7 +348,7 @@ namespace Mini3DCad
         private void Window_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             Point pos = e.GetPosition(mCurCanvas);
-            if (pos == mPreMousePos)
+            if (pos == mPreMousePos || mMouseRightButtonDown)
                 return;
             PointD wpos = mDraw.mGDraw.cnvScreen2World(new PointD(pos));
             //  2D表示操作
@@ -430,8 +430,8 @@ namespace Mini3DCad
                 //  データ登録(データ数不定コマンド)
                 if (mDataManage.defineData(mCommandOpe.mOperation, mLocPick.mLocList, mLocPick.mPickElement, 0 == picks.Count))
                     commandClear();
-            } else {
-                if (ylib.onControlKey() && 0 < picks.Count) {
+            } else if (0 < picks.Count) {
+                if (ylib.onControlKey()) {
                     picks = mLocPick.getGroup(picks);
                     mOperationMode = OPEMODE.areaPick;
                 }

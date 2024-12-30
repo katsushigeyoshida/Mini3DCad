@@ -122,12 +122,14 @@ namespace Mini3DCad
             }
         }
 
+
         /// <summary>
         /// 回転体の外形線作成
         /// </summary>
-        /// <param name="cp"></param>
-        /// <param name="outline"></param>
-        /// <returns></returns>
+        /// <param name="centerline">中心線</param>
+        /// <param name="outline">外形線</param>
+        /// <param name="divideAngle">分割角度</param>
+        /// <returns>外形線リスト</returns>
         private List<List<Point3D>> getCenterLineRotate(Line3D centerline, List<Point3D> outline, double divideAngle)
         {
             List<List<Point3D>> outLines = new List<List<Point3D>>();

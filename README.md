@@ -5,6 +5,9 @@
 当初、サーフェースのグラフィックライブラリを自作して作っていたが描画速度や機能的に限界があったので OpenGL を使って作成。  
 使い方などは[説明書](Document/Mini3DCad_Manual.pdf)を参照。  
 実行方法は[Mini3DCad.zip](Mini3DCad.zip)をダウンロードし適当なフォルダーに展開して Mini3DCad.exe を実行する。
+<img src="Image/download.png" width="80%">
+
+
 ### 画面
 2D表示    
 <img src="Image/MainWindow6pSw2D.png" width="80%">  

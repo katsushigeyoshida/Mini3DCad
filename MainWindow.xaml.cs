@@ -348,7 +348,7 @@ namespace Mini3DCad
         private void Window_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             Point pos = e.GetPosition(mCurCanvas);
-            if (pos == mPreMousePos || mMouseRightButtonDown)
+            if (pos == mPreMousePos)
                 return;
             PointD wpos = mDraw.mGDraw.cnvScreen2World(new PointD(pos));
             //  2D表示操作

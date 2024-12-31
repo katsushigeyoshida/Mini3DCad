@@ -1,32 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup />
-  <ItemGroup>
-    <Compile Update="ImageTrimming.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="PropertyDlg.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="SelectCategory.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="SysPropertyDlg.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Update="ImageTrimming.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="PropertyDlg.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="SelectCategory.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="SysPropertyDlg.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup />
 </Project>

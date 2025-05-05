@@ -80,6 +80,14 @@ namespace Mini3DCad
             if (ylib.onControlKey()) {
                 //  Ctrlキーでのメニュー表示で位置を選定
                 wp = locSelect(pickPos, picks, face);
+            } else if (ylib.onAltKey()) {
+                //  別々にピックした２要素の交点(Alt + RightMouse)
+                mPickElement.Add(new PickData(picks[0], pickPos, face));
+                if (mPickElement.Count == 2) {
+                    mLocList.Add(mDataManage.mElementList[mPickElement[0].mElementNo].mPrimitive.intersection(
+                        mDataManage.mElementList[mPickElement[1].mElementNo].mPrimitive, pickPos, face));
+                    mPickElement.Clear();
+                }
             } else {
                 //  ピックされているときは位置を自動判断
                 if (picks.Count == 1) {
@@ -143,17 +151,22 @@ namespace Mini3DCad
         /// <returns>ロケイト座標</returns>
         private Point3D locSelect(PointD pos, List<int> picks, FACE3D face)
         {
+            int n = 0;
             if (picks.Count == 0) return new Point3D(pos, face);
+            if (1 < picks.Count) {
+                n = pickSelect(picks);
+                n = Math.Min(0, n);
+            }
             List<string> locMenu = new();
             locMenu.AddRange(mLocSelectMenu);
-            Primitive ent = mDataManage.mElementList[picks[0]].mPrimitive;
+            Primitive ent = mDataManage.mElementList[picks[n]].mPrimitive;
             if (picks.Count == 1) {
                 if (ent.mPrimitiveId == PrimitiveId.Arc) {
                     locMenu.Add("頂点");
                     //locMenu.Add("接点");
                 }
-            } else if (1 < picks.Count) {
-                locMenu.Add("交点");
+            //} else if (1 < picks.Count) {
+            //    locMenu.Add("交点");
             }
             MenuDialog dlg = new MenuDialog();
             dlg.Title = "ロケイトメニュー";

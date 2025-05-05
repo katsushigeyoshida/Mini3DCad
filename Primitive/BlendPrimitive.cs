@@ -429,7 +429,7 @@ namespace Mini3DCad
                     sp++;
                 }
             } catch (Exception e) {
-                System.Diagnostics.Debug.WriteLine($"Extrusion setDataList {e.ToString()}");
+                System.Diagnostics.Debug.WriteLine($"Blend setDataList {e.ToString()}");
             }
             return sp;
         }
